@@ -43,6 +43,7 @@ typedef struct {
     int x;
     int y;
 } px_point;
+
 static px_point trade_amount_px_offsets[5] = {
     { 2, 0 },
     { 5, 2 },
@@ -92,6 +93,12 @@ static struct {
         int x_min;
         int x_max;
     } panel;
+    struct {
+        int x_min;
+        int x_max;
+        int y_min;
+        int y_max;
+    } sidebar;
 } data = { 0, 1 };
 
 static void init(void)
@@ -162,6 +169,29 @@ static void draw_paneling(void)
         image_draw(image_base + 2, data.panel.x_min, data.y_max - 120, COLOR_MASK_NONE, SCALE_NONE);
         image_draw(image_base + 2, data.panel.x_max - 16, data.y_max - 120, COLOR_MASK_NONE, SCALE_NONE);
     }
+    // Sidebar background (fixed 3 slices horizontally, dynamic height)
+    const int tile_w = 70;
+    const int tile_h = 40;
+    
+    int x0 = data.sidebar.x_min;
+    int x1 = x0 + tile_w;
+    int x2 = x1 + tile_w;
+    int x3 = x2 + tile_w;
+    int x5 = data.sidebar.x_max - tile_w;  // last column aligns to right
+    
+    for (int y = data.sidebar.y_min; y < data.sidebar.y_max; y += tile_h) {
+        image_draw(image_base + 3, x0, y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(image_base + 3, x1, y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(image_base + 3, x2, y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(image_base + 3, x3, y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(image_base + 3, x5, y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+    //sidebar decorative border
+    for (int y = data.sidebar.y_min; y < data.sidebar.y_max; y += 86) {
+        image_draw(image_base, data.sidebar.x_min, y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+
+
 }
 
 static void draw_trade_resource(resource_type resource, int trade_max, int x_offset, int y_offset)
@@ -381,7 +411,7 @@ static void draw_background(void)
     empire_get_map_size(&map_width, &map_height);
     int max_width = map_width + WIDTH_BORDER;
     int max_height = map_height + HEIGHT_BORDER;
-
+    
     data.x_min = s_width <= max_width ? 0 : (s_width - max_width) / 2;
     data.x_max = s_width <= max_width ? s_width : data.x_min + max_width;
     data.y_min = s_height <= max_height ? 0 : (s_height - max_height) / 2;
@@ -404,6 +434,33 @@ static void draw_background(void)
         image_draw_blurred_fullscreen(image_group(GROUP_EMPIRE_MAP), 3);
         graphics_shade_rect(0, 0, screen_width(), screen_height(), 7);
     }
+    // --- Calculate usable map area inside decorative borders ---
+    int map_draw_x_min = data.x_min + 16;
+    int map_draw_x_max = data.x_max - 16;
+    int map_draw_y_min = data.y_min + 16;
+    int map_draw_y_max = data.y_max - 120;  // Already done for bottom panel
+
+    int usable_map_width = map_draw_x_max - map_draw_x_min;
+    int usable_map_height = map_draw_y_max - map_draw_y_min;
+
+    // --- Reserve 20% of usable map WIDTH for sidebar ---
+    int sidebar_width = (int)(usable_map_width * 0.20f);
+
+    // --- Store final sidebar coordinates in new variables ---
+    data.sidebar.x_min = map_draw_x_max - sidebar_width;
+    data.sidebar.x_max = map_draw_x_max;
+    data.sidebar.y_min = map_draw_y_min;
+    data.sidebar.y_max = map_draw_y_max;
+
+    // --- (Optional) Visual debug: draw sidebar as white block ---
+    graphics_draw_rect(
+        data.sidebar.x_min,
+        data.sidebar.y_min,
+        data.sidebar.x_max - data.sidebar.x_min,
+        data.sidebar.y_max - data.sidebar.y_min,
+        COLOR_WHITE);
+
+    
 }
 
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
@@ -597,22 +654,32 @@ static void draw_invasion_warning(int x, int y, int image_id)
 
 static void draw_map(void)
 {
-    graphics_set_clip_rectangle(data.x_min + 16, data.y_min + 16,
-        data.x_max - data.x_min - 32, data.y_max - data.y_min - 136);
+    // Recalculate inner bounds (same as draw_background)
+    int map_clip_x_min = data.x_min + 16;
+    int map_clip_y_min = data.y_min + 16;
+    int map_clip_x_max = data.sidebar.x_min;  // Stop before sidebar starts
+    int map_clip_y_max = data.y_max - 120;
 
-    empire_set_viewport(data.x_max - data.x_min - 32, data.y_max - data.y_min - 136);
+    graphics_set_clip_rectangle(
+        map_clip_x_min,
+        map_clip_y_min,
+        map_clip_x_max - map_clip_x_min,
+        map_clip_y_max - map_clip_y_min);
 
-    data.x_draw_offset = data.x_min + 16;
-    data.y_draw_offset = data.y_min + 16;
+    empire_set_viewport(map_clip_x_max - map_clip_x_min, map_clip_y_max - map_clip_y_min);
+
+    data.x_draw_offset = map_clip_x_min;
+    data.y_draw_offset = map_clip_y_min;
     empire_adjust_scroll(&data.x_draw_offset, &data.y_draw_offset);
+
     image_draw(empire_get_image_id(), data.x_draw_offset, data.y_draw_offset, COLOR_MASK_NONE, SCALE_NONE);
 
     empire_object_foreach(draw_empire_object);
-
     scenario_invasion_foreach_warning(draw_invasion_warning);
 
     graphics_reset_clip_rectangle();
 }
+
 
 static void draw_city_name(const empire_city *city)
 {

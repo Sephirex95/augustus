@@ -55,3 +55,9 @@ ext/SDL2/*.zip
 ext/SDL2/*.tar.gz
 
 res/augustus.icns
+<<<<<<< Updated upstream
+=======
+*.ps1
+CMakeLists.txt
+/Image_library
+>>>>>>> Stashed changes
