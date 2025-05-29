@@ -5,6 +5,7 @@
 #include "building/construction.h"
 #include "building/granary.h"
 #include "building/industry.h"
+#include "building/storage.h"
 #include "city/view.h"
 #include "core/config.h"
 #include "core/log.h"
@@ -493,6 +494,29 @@ static void draw_building_top(int grid_offset, building *b, int x, int y)
     }
     if (b->type == BUILDING_WAREHOUSE) {
         image_draw(image_group(GROUP_BUILDING_WAREHOUSE) + 17, x - 4, y - 42, color_mask, scale);
+        if (b->has_plague) {
+            return;
+        }
+        static int base_permission_image[8];
+        if (!base_permission_image[0]) {
+            base_permission_image[0] = 0xdeadbeef; // Invalid image ID, just to confirm the other values have been set
+            base_permission_image[1] = assets_get_image_id("UI", "Warehouse_Flag_Market");
+            base_permission_image[2] = assets_get_image_id("UI", "Warehouse_Flag_Land");
+            base_permission_image[3] = assets_get_image_id("UI", "Warehouse_Flag_Market_Land");
+            base_permission_image[4] = assets_get_image_id("UI", "Warehouse_Flag_Sea");
+            base_permission_image[5] = assets_get_image_id("UI", "Warehouse_Flag_Market_Sea");
+            base_permission_image[6] = assets_get_image_id("UI", "Warehouse_Flag_Land_Sea");
+            base_permission_image[7] = assets_get_image_id("UI", "Warehouse_Flag_All");
+        }
+        const building_storage *storage = building_storage_get(b->storage_id);
+        int flag_permission_mask = 0x7;
+        int permissions = (~storage->permissions) & flag_permission_mask;
+        if (!permissions) {
+            return;
+        }
+        image_draw(base_permission_image[permissions] + b->data.warehouse.flag_frame, x, y, color_mask, scale);
+    
+        building_animation_advance_storage_flag(b, base_permission_image[permissions]);
     }
 
     image_draw_isometric_top_from_draw_tile(map_image_at(grid_offset), x, y, color_mask, scale);

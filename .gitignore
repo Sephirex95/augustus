@@ -55,3 +55,7 @@ ext/SDL2/*.zip
 ext/SDL2/*.tar.gz
 
 res/augustus.icns
+/Image_library
+res/asset_packer.exe
+build_full.ps1
+build_mini.ps1
