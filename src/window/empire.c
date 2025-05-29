@@ -169,28 +169,23 @@ static void draw_paneling(void)
         image_draw(image_base + 2, data.panel.x_min, data.y_max - 120, COLOR_MASK_NONE, SCALE_NONE);
         image_draw(image_base + 2, data.panel.x_max - 16, data.y_max - 120, COLOR_MASK_NONE, SCALE_NONE);
     }
-    // Sidebar background (fixed 3 slices horizontally, dynamic height)
-    const int tile_w = 70;
-    const int tile_h = 40;
-    
-    int x0 = data.sidebar.x_min;
-    int x1 = x0 + tile_w;
-    int x2 = x1 + tile_w;
-    int x3 = x2 + tile_w;
-    int x5 = data.sidebar.x_max - tile_w;  // last column aligns to right
-    
-    for (int y = data.sidebar.y_min; y < data.sidebar.y_max; y += tile_h) {
-        image_draw(image_base + 3, x0, y, COLOR_MASK_NONE, SCALE_NONE);
-        image_draw(image_base + 3, x1, y, COLOR_MASK_NONE, SCALE_NONE);
-        image_draw(image_base + 3, x2, y, COLOR_MASK_NONE, SCALE_NONE);
-        image_draw(image_base + 3, x3, y, COLOR_MASK_NONE, SCALE_NONE);
-        image_draw(image_base + 3, x5, y, COLOR_MASK_NONE, SCALE_NONE);
+    // Sidebar background 
+    graphics_set_clip_rectangle(data.sidebar.x_min, data.sidebar.y_min,
+        data.sidebar.x_max - data.sidebar.x_min,
+        data.sidebar.y_max - data.sidebar.y_min);
+    int asset_id = assets_lookup_image_id(ASSET_UI_VERTICAL_EMPIRE_PANEL);
+
+    for (int x = data.sidebar.x_min; x < data.sidebar.x_max; x += 40) {
+        for (int y = data.sidebar.y_min; y < data.sidebar.y_max; y += 70) {
+            image_draw(asset_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+        }
     }
+
     //sidebar decorative border
     for (int y = data.sidebar.y_min; y < data.sidebar.y_max; y += 86) {
         image_draw(image_base, data.sidebar.x_min, y, COLOR_MASK_NONE, SCALE_NONE);
     }
-
+    graphics_reset_clip_rectangle();
 
 }
 
@@ -444,7 +439,10 @@ static void draw_background(void)
     int usable_map_height = map_draw_y_max - map_draw_y_min;
 
     // --- Reserve 20% of usable map WIDTH for sidebar ---
-    int sidebar_width = (int)(usable_map_width * 0.20f);
+    int raw_sidebar_width = (int)(usable_map_width * 0.20f);
+    int tile_width = 40;
+    int sidebar_width = (raw_sidebar_width / tile_width) * tile_width;  // round down to nearest multiple of 40
+
 
     // --- Store final sidebar coordinates in new variables ---
     data.sidebar.x_min = map_draw_x_max - sidebar_width;
