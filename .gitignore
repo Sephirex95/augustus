@@ -59,4 +59,3 @@ res/augustus.icns
 res/asset_packer.exe
 build_full.ps1
 build_mini.ps1
-CMakeLists.txt
