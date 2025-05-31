@@ -1196,4 +1196,5 @@
 	<image id="Empire_panel_texture_vertical">
 		<layer group="172" image="3" rotate="90" x="0" y="0" width="70" height="40"/>
 	</image>
+	<image id="Empire_sidebar_city_badge" src ="Empire_sidebar_city_badge"/>
 </assetlist>
