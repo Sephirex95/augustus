@@ -1206,7 +1206,12 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (obj->type == EMPIRE_OBJECT_CITY) {
             data.selected_city = empire_city_get_for_object(selected_object - 1);
             const empire_city *city = empire_city_get(data.selected_city);
-            if (city->type == EMPIRE_CITY_TRADE && city->is_open) {
+            if (city->type == EMPIRE_CITY_TRADE) { //&& city->is_open) {
+                if (!city->is_open){
+                    generic_buttons_handle_mouse(
+                        m, (data.panel.x_min + data.panel.x_max - 500) / 2, data.y_max - 105,
+                        generic_button_open_trade, 1, &data.selected_button);
+                    }
                 for (int i = 0; i < trade_button_count; i++) {
                     const trade_resource_button *btn = &trade_buttons[i];
                     if (m->x >= btn->x && m->x < btn->x + btn->width &&
@@ -1219,12 +1224,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
                     }
                 }
                 
-            } else if (!city->is_open) {
-                generic_buttons_handle_mouse(
-                    m, (data.panel.x_min + data.panel.x_max - 500) / 2, data.y_max - 105,
-                    generic_button_open_trade, 1, &data.selected_button);
-
-        }
+            }
         // allow de-selection only for objects that are currently selected/drawn, otherwise exit empire map
         if (input_go_back_requested(m, h)) {
             switch (obj->type) {
@@ -1267,14 +1267,14 @@ static void handle_input(const mouse *m, const hotkeys *h)
 }
 }
 
-static int is_mouse_hit(tooltip_context *c, int x, int y, int size)
+/* static int is_mouse_hit(tooltip_context *c, int x, int y, int size)
 {
     int mx = c->mouse_x;
     int my = c->mouse_y;
     return x <= mx && mx < x + size && y <= my && my < y + size;
-}
+} */
 
-static int get_tooltip_resource(tooltip_context *c)
+/* static int get_tooltip_resource(tooltip_context *c)
 {
     const empire_city *city = empire_city_get(data.selected_city);
     // we only want to check tooltips on our own closed cities.
@@ -1307,7 +1307,7 @@ static int get_tooltip_resource(tooltip_context *c)
     }
 
     return 0;
-}
+} */
 
 static void get_tooltip_trade_route_type(tooltip_context *c)
 {
@@ -1347,7 +1347,7 @@ static void get_tooltip_trade_route_type(tooltip_context *c)
 
 static void get_tooltip(tooltip_context *c)
 {
-    int resource = data.focus_resource ? data.focus_resource : get_tooltip_resource(c);
+    int resource = data.focus_resource;
     if (resource) {
         c->type = TOOLTIP_BUTTON;
         c->precomposed_text = resource_get_data(resource)->text;
