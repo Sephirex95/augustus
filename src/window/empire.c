@@ -659,11 +659,19 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     trade_row_style style_buys  = get_trade_row_style(city, 0, item->width, TRADE_STYLE_SIDEBAR);
     // draw background + name + badge
     inner_panel_draw(x_offset, y_offset, x_blocks, y_blocks);
-
     if (item->is_focused) {
-        log_info("Sidebar city focused: %s", (const char *)name, 0);
-        button_border_draw(item->x + 40, item->y - 2, item->width - 80, item->height, 1);
-
+        // Shade the entire panel area with a light shade (value 0-7)
+        // Lower numbers are darker, higher numbers are lighter
+        graphics_shade_rect(
+            item->x, 
+            item->y,
+            item->width - BLOCK_SIZE/2,
+            item->height - BLOCK_SIZE/2,
+            2  // 0-7
+        );
+    }
+    if (entry->city_id == data.selected_city) {
+        button_border_draw(item->x,item->y, item->width - BLOCK_SIZE/2, item->height - BLOCK_SIZE/2, 1);
     }
     int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
     image_draw(badge_id, x_offset + 5, y_offset + 5, COLOR_MASK_NONE, SCALE_NONE);
@@ -1254,11 +1262,9 @@ static void draw_foreground(void)
             const uint8_t *name = empire_city_get_name(city);
         }
     }
-    log_info("GRID BOX: focused_item.index = %d", NULL, sidebar_grid_box.focused_item.index);
-    log_info("GRID BOX: focused_item.is_focused = %d", NULL, sidebar_grid_box.focused_item.is_focused);
-
     draw_paneling();
     draw_sidebar_grid_box();  // grid_box uses usable_sidebar dimensions
+    grid_box_request_refresh(&sidebar_grid_box);
     draw_city_name(city);
     draw_panel_buttons(city);
     draw_object_info();
