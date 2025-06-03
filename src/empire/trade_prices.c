@@ -34,7 +34,7 @@ static int trade_get_caravanserai_factor(int percent)
 {
     int caravanserai_percent = 0;
     if (building_caravanserai_is_fully_functional()) {
-        building *b = building_get(city_buildings_get_caravanserai());
+        building *b = building_get(building_find(BUILDING_CARAVANSERAI));
         caravanserai_percent = trade_percentage_from_laborers(percent, b);
     }
     return caravanserai_percent;
@@ -54,7 +54,7 @@ static int trade_get_lighthouse_factor(int percent)
 static int trade_factor_sell(int land_trader)
 {
     int percent = 0;
-    if (land_trader && city_buildings_has_caravanserai()) {
+    if (land_trader && building_find(BUILDING_CARAVANSERAI)) {
         trade_policy policy = city_trade_policy_get(LAND_TRADE_POLICY);
 
         if (policy == TRADE_POLICY_1) {

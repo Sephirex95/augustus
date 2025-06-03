@@ -137,7 +137,7 @@ static void draw_background(void)
                     land_policy == TRADE_POLICY_1 ? COLOR_MASK_PURPLE : COLOR_MASK_DARK_GREEN);
                 if(land_policy == TRADE_POLICY_2){
                         text_draw_number_centered(trade_price_sell(r, 1),
-                        price_shift + i * resource_offset, line_sell_position + 2 * number_margin, 30, FONT_SMALL_PLAIN);
+                        price_shift + i * resource_offset, line_sell_position + number_margin, 30, FONT_SMALL_PLAIN);
                     }else{
                         text_draw_number_centered_colored(trade_price_sell(r, 1),
                         price_shift + i * resource_offset, line_sell_position + number_margin, 30, FONT_SMALL_PLAIN,
@@ -153,7 +153,6 @@ static void draw_background(void)
                 text_draw_number_centered_colored(trade_price_buy(r, 0), // sea route
                     price_shift + i * resource_offset, line_buy_position + 2 * number_margin, 30, FONT_SMALL_PLAIN,
                     sea_policy == TRADE_POLICY_1 ? COLOR_MASK_PURPLE : COLOR_MASK_DARK_GREEN);
-                
                 if(sea_policy == TRADE_POLICY_2){
                         text_draw_number_centered(trade_price_sell(r, 0),
                         price_shift + i * resource_offset, line_sell_position + 2 * number_margin, 30, FONT_SMALL_PLAIN);
