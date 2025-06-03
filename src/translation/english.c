@@ -416,7 +416,7 @@ static translation_string all_strings[] = {
     {TR_BUILDING_CARAVANSERAI_POLICY_1_TITLE, "Consilium venditor terrae" },
     {TR_BUILDING_CARAVANSERAI_POLICY_1, "Landed seller's policy: Land exports earn 20% more, but land imports are 10% more expensive." },
     {TR_BUILDING_CARAVANSERAI_POLICY_2_TITLE, "Consilium emptor terrae" },
-    {TR_BUILDING_CARAVANSERAI_POLICY_2, "Landed buyer's policy: Land imports are 20% cheaper, but land exports earn 10% less." },
+    {TR_BUILDING_CARAVANSERAI_POLICY_2, "Landed buyer's policy: Land imports are 20% cheaper." },
     {TR_BUILDING_CARAVANSERAI_POLICY_3_TITLE, "Consilium quantitas terrae" },
     {TR_BUILDING_CARAVANSERAI_POLICY_3, "Landed quantity policy: Trade caravans carry 4 additional goods, but the Caravanserai consumes 20% more food." },
     {TR_BUILDING_CARAVANSERAI_NO_EMPLOYEES, "The Caravanserai has no employees. Food can't be collected." },
@@ -436,7 +436,7 @@ static translation_string all_strings[] = {
     {TR_BUILDING_LIGHTHOUSE_POLICY_1_TITLE, "Consilium venditor maritimae" },
     {TR_BUILDING_LIGHTHOUSE_POLICY_1, "Maritime seller's policy: Sea exports earn 20% more, but sea imports are 10% more expensive." },
     {TR_BUILDING_LIGHTHOUSE_POLICY_2_TITLE, "Consilium emptor maritimae" },
-    {TR_BUILDING_LIGHTHOUSE_POLICY_2, "Maritime buyer's policy: Sea imports are 20% cheaper, but sea exports earn 10% less." },
+    {TR_BUILDING_LIGHTHOUSE_POLICY_2, "Maritime buyer's policy: Sea imports are 20% cheaper." },
     {TR_BUILDING_LIGHTHOUSE_POLICY_3_TITLE, "Consilium quantitas maritimae" }, // XXX "quantitatis"? Can anybody double check?
     {TR_BUILDING_LIGHTHOUSE_POLICY_3, "Maritime quantity policy: Trade ships carry 4 additional goods, but the Lighthouse consumes 20% more timber." },
     {TR_EDITOR_ALLOWED_BUILDINGS_MONUMENTS, "Monuments"},
