@@ -281,23 +281,25 @@ void empire_select_object(int x, int y)
     data.selected_object = empire_object_get_closest(map_x, map_y);
 }
 
-void empire_select_object_by_id(int object_id) 
+void empire_select_object_by_id(int object_id)
 {
-    //needs to simulate entire map-click interface. 
-    //Downstream object selection to be adjusted to allow different logic.
-    if (object_id <= 0 || object_id >= empire_object_count()) return;
+    object_id +=1 ;// index 0 means no selection, so increase by 1
+    if (object_id <= 0) {
+        data.selected_object = 0;
+        return;
+    }
 
-    const empire_object *obj = empire_object_get(object_id - 1);
+    const empire_object *obj = empire_object_get(object_id);
+    if (!obj) {
+        data.selected_object = 0;
+        return;
+    }
 
-    int obj_x = scenario_empire_is_expanded() ? obj->expanded.x : obj->x;
-    int obj_y = scenario_empire_is_expanded() ? obj->expanded.y : obj->y;
-
-    // Adjust back for scroll, so it matches the map-click interface
-    int screen_x = obj_x - data.scroll_x;
-    int screen_y = obj_y - data.scroll_y;
-
-    empire_select_object(screen_x, screen_y);
+    // In the empire view, objects are indexed starting from 1
+    // because 0 means "no selection"
+    data.selected_object = object_id;
 }
+
 
 
 int empire_can_export_resource_to_city(int city_id, int resource)
