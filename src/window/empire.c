@@ -37,6 +37,7 @@
 #include "core/log.h"
 
 #include <math.h>
+#include <stdio.h>
 
 #define WIDTH_BORDER 32
 #define HEIGHT_BORDER 136
@@ -121,7 +122,7 @@ typedef struct {
 
     // Segment spacing
     int seg_space_0;         // Space before border start
-    int seg_space_1;         // Space between border start and cost
+    int seg_space_1;         // Space between border start and cost string
     int seg_space_2;         // Space between cost and currency
     int seg_space_3;         // Space between currency and text
     int seg_space_4;         // Space between text and icon
@@ -1229,15 +1230,104 @@ static void draw_empire_object(const empire_object *obj)
             image_id = assets_lookup_image_id(ASSET_FIRST_ORNAMENT) - 1 - image_id;
         }
     }
-    image_draw(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE);
     const image *img = image_get(image_id);
+
+    switch (obj->type) {
+        case EMPIRE_OBJECT_CITY: {
+            int city_id = empire_city_get_for_object(obj->id);
+            const empire_city *city = empire_city_get(city_id);
+    
+            if (data.selected_city == city_id) {
+                float obj_draw_scale = 0.8f; // 120% scale for selected city
+                int scaled_offset_x = img->width / 2;
+                int scaled_offset_y = img->height / 2;
+                char buffer[256];  // Make sure it's large enough for your values
+                snprintf(buffer, sizeof(buffer),
+                "scale=%.2f,scaled_x=%.2f,scaled_y=%.2f,default_x=%d,default_y=%d,img_w=%d,img_h=%d",
+                obj_draw_scale,
+                (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x,
+                (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y,
+                data.x_draw_offset + x,
+                data.y_draw_offset + y,
+                img->width,
+                img->height
+                );
+
+
+                // log_info("Drawing selected city with scale", NULL, obj_draw_scale);
+                // log_info("scaled X", NULL, (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x);
+                // log_info("scaled Y", NULL, (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y);
+                // log_info("default x", NULL, data.x_draw_offset + x);
+                // log_info("default y", NULL, data.y_draw_offset + y);
+                // log_info("img width", NULL, img->width);
+                // log_info("img height", NULL, img->height);
+
+                log_info("Packed draw data", buffer, 0);
+
+                image_draw(
+                    image_id,
+                    (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x,
+                    (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y,
+                    COLOR_MASK_NONE,
+                    obj_draw_scale
+                ); //final coordinates are / obj_draw_scale , so the entire calculation needs to be * obj_draw_scale to get the correct position I believe
+                
+                break;
+            }
+    
+            // Non-selected city falls through to default drawing
+            // (no break here on purpose)
+        }
+    
+        default:
+            image_draw(
+                image_id,
+                data.x_draw_offset + x,
+                data.y_draw_offset + y,
+                COLOR_MASK_NONE,
+                SCALE_NONE
+            );
+            break;
+    }
+    
+       // const image *img = image_get(image_id);
+    // if (img->animation && img->animation->speed_id) {
+    //     int new_animation = empire_object_update_animation(obj, image_id);
+    //     image_draw(image_id + new_animation,
+    //         data.x_draw_offset + x + img->animation->sprite_offset_x,
+    //         data.y_draw_offset + y + img->animation->sprite_offset_y,
+    //         COLOR_MASK_NONE, obj_draw_scale);
+    // }
+    // Also scale animation if present
+    //const image *img = image_get(image_id);
     if (img->animation && img->animation->speed_id) {
         int new_animation = empire_object_update_animation(obj, image_id);
+        float anim_x = img->animation->sprite_offset_x * SCALE_NONE;
+        float anim_y = img->animation->sprite_offset_y * SCALE_NONE;
         image_draw(image_id + new_animation,
-            data.x_draw_offset + x + img->animation->sprite_offset_x,
-            data.y_draw_offset + y + img->animation->sprite_offset_y,
+            data.x_draw_offset + x + anim_x,
+            data.y_draw_offset + y + anim_y,
             COLOR_MASK_NONE, SCALE_NONE);
     }
+    // //log_info("data.selected_city", NULL, data.selected_city);
+    // //log_info("drawing object type:", NULL, obj->type);
+    // if (obj->type == EMPIRE_OBJECT_CITY) {
+    //     // highlight logic for selected trade city
+    //     int city_id = empire_city_get_for_object(obj->id);
+    //     const empire_city *city = empire_city_get(city_id);
+    //     //log_info("Object is an EMPIRE CITY: name cityid",empire_city_get_name(city), city_id);
+        
+    //     if (data.selected_city == city_id) {
+    //         log_info("Drawing currently selected city.drawing highlight for city, cityid",empire_city_get_name(city), city_id);
+    //         // Draw a border around the trade city? 
+    //         // draw this icon at 120% scale
+    //         int new_animation = empire_object_update_animation(obj, image_id);
+    //         image_draw(image_id + new_animation,
+    //             data.x_draw_offset + x + img->animation->sprite_offset_x,
+    //             data.y_draw_offset + y + img->animation->sprite_offset_y,
+    //             COLOR_MASK_NONE, 2); // 1.2f is a scale factor for the border
+    //     }
+    // }
     // Manually fix the Hagia Sophia
     if (obj->image_id == 8122) {
         image_id = assets_lookup_image_id(ASSET_HAGIA_SOPHIA_FIX);
