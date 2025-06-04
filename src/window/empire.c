@@ -166,6 +166,7 @@ static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
 static void button_advisor(int advisor, int param2);
 static void button_show_prices(int param1, int param2);
+static void image_draw_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent); //(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE)
 //static void button_open_trade(const generic_button *button);
 
 //static void setup_sidebar_dimensions(void); //replaced by setup_sidebar
@@ -233,6 +234,7 @@ static struct {
     unsigned int focus_button_id;
     int is_scrolling;
     int finished_scroll;
+    int hovered_object;
     resource_type focus_resource;
     struct {
         int x_min;
@@ -927,9 +929,20 @@ static void draw_city_info(const empire_object *object)
     int y_offset = data.y_max - 88;
 
     const empire_city *city = empire_city_get(data.selected_city);
+    //const empire_object *obj = empire_object_get(selected_object - 1);
+    int image_id;
+    // if (city->type == EMPIRE_CITY_DISTANT_FOREIGN ||
+    //     city->type == EMPIRE_CITY_FUTURE_ROMAN) {
+    //     image_id = image_group(GROUP_EMPIRE_FOREIGN_CITY);
+    // } else if (city->type == EMPIRE_CITY_TRADE) {
+    //     // Fix cases where empire map still gives a blue flag for new trade cities
+    //     // (e.g. Massilia in campaign Lugdunum)
+    //     image_id = image_group(GROUP_EMPIRE_CITY_TRADE);
+    // }
     switch (city->type) {
         case EMPIRE_CITY_DISTANT_ROMAN:
             lang_text_draw_centered(47, 12, x_offset, y_offset + 42, 240, FONT_NORMAL_GREEN);
+            image_id = image_group(GROUP_EMPIRE_CITY_DISTANT_ROMAN);
             break;
         case EMPIRE_CITY_VULNERABLE_ROMAN:
             if (city_military_distant_battle_city_is_roman()) {
@@ -942,6 +955,7 @@ static void draw_city_info(const empire_object *object)
         case EMPIRE_CITY_DISTANT_FOREIGN:
         case EMPIRE_CITY_FUTURE_ROMAN:
             lang_text_draw_centered(47, 0, x_offset, y_offset + 42, 240, FONT_NORMAL_GREEN);
+            image_id = image_group(GROUP_EMPIRE_CITY);
             break;
         case EMPIRE_CITY_OURS:
             lang_text_draw_centered(47, 1, x_offset, y_offset + 42, 240, FONT_NORMAL_GREEN);
@@ -1230,104 +1244,21 @@ static void draw_empire_object(const empire_object *obj)
             image_id = assets_lookup_image_id(ASSET_FIRST_ORNAMENT) - 1 - image_id;
         }
     }
-    const image *img = image_get(image_id);
+    if ((data.hovered_object == obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY){       
+       
 
-    switch (obj->type) {
-        case EMPIRE_OBJECT_CITY: {
-            int city_id = empire_city_get_for_object(obj->id);
-            const empire_city *city = empire_city_get(city_id);
-    
-            if (data.selected_city == city_id) {
-                float obj_draw_scale = 0.8f; // 120% scale for selected city
-                int scaled_offset_x = img->width / 2;
-                int scaled_offset_y = img->height / 2;
-                char buffer[256];  // Make sure it's large enough for your values
-                snprintf(buffer, sizeof(buffer),
-                "scale=%.2f,scaled_x=%.2f,scaled_y=%.2f,default_x=%d,default_y=%d,img_w=%d,img_h=%d",
-                obj_draw_scale,
-                (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x,
-                (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y,
-                data.x_draw_offset + x,
-                data.y_draw_offset + y,
-                img->width,
-                img->height
-                );
-
-
-                // log_info("Drawing selected city with scale", NULL, obj_draw_scale);
-                // log_info("scaled X", NULL, (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x);
-                // log_info("scaled Y", NULL, (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y);
-                // log_info("default x", NULL, data.x_draw_offset + x);
-                // log_info("default y", NULL, data.y_draw_offset + y);
-                // log_info("img width", NULL, img->width);
-                // log_info("img height", NULL, img->height);
-
-                log_info("Packed draw data", buffer, 0);
-
-                image_draw(
-                    image_id,
-                    (data.x_draw_offset + x) * obj_draw_scale + scaled_offset_x,
-                    (data.y_draw_offset + y) * obj_draw_scale + scaled_offset_y,
-                    COLOR_MASK_NONE,
-                    obj_draw_scale
-                ); //final coordinates are / obj_draw_scale , so the entire calculation needs to be * obj_draw_scale to get the correct position I believe
-                
-                break;
-            }
-    
-            // Non-selected city falls through to default drawing
-            // (no break here on purpose)
-        }
-    
-        default:
-            image_draw(
-                image_id,
-                data.x_draw_offset + x,
-                data.y_draw_offset + y,
-                COLOR_MASK_NONE,
-                SCALE_NONE
-            );
-            break;
+        image_draw_scaled_centered(image_id, data.x_draw_offset + x,data.y_draw_offset + y, COLOR_MASK_NONE, 120 );
+    }else{
+        image_draw(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE);
     }
-    
-       // const image *img = image_get(image_id);
-    // if (img->animation && img->animation->speed_id) {
-    //     int new_animation = empire_object_update_animation(obj, image_id);
-    //     image_draw(image_id + new_animation,
-    //         data.x_draw_offset + x + img->animation->sprite_offset_x,
-    //         data.y_draw_offset + y + img->animation->sprite_offset_y,
-    //         COLOR_MASK_NONE, obj_draw_scale);
-    // }
-    // Also scale animation if present
-    //const image *img = image_get(image_id);
+    const image *img = image_get(image_id);
     if (img->animation && img->animation->speed_id) {
         int new_animation = empire_object_update_animation(obj, image_id);
-        float anim_x = img->animation->sprite_offset_x * SCALE_NONE;
-        float anim_y = img->animation->sprite_offset_y * SCALE_NONE;
         image_draw(image_id + new_animation,
-            data.x_draw_offset + x + anim_x,
-            data.y_draw_offset + y + anim_y,
+            data.x_draw_offset + x + img->animation->sprite_offset_x,
+            data.y_draw_offset + y + img->animation->sprite_offset_y,
             COLOR_MASK_NONE, SCALE_NONE);
     }
-    // //log_info("data.selected_city", NULL, data.selected_city);
-    // //log_info("drawing object type:", NULL, obj->type);
-    // if (obj->type == EMPIRE_OBJECT_CITY) {
-    //     // highlight logic for selected trade city
-    //     int city_id = empire_city_get_for_object(obj->id);
-    //     const empire_city *city = empire_city_get(city_id);
-    //     //log_info("Object is an EMPIRE CITY: name cityid",empire_city_get_name(city), city_id);
-        
-    //     if (data.selected_city == city_id) {
-    //         log_info("Drawing currently selected city.drawing highlight for city, cityid",empire_city_get_name(city), city_id);
-    //         // Draw a border around the trade city? 
-    //         // draw this icon at 120% scale
-    //         int new_animation = empire_object_update_animation(obj, image_id);
-    //         image_draw(image_id + new_animation,
-    //             data.x_draw_offset + x + img->animation->sprite_offset_x,
-    //             data.y_draw_offset + y + img->animation->sprite_offset_y,
-    //             COLOR_MASK_NONE, 2); // 1.2f is a scale factor for the border
-    //     }
-    // }
     // Manually fix the Hagia Sophia
     if (obj->image_id == 8122) {
         image_id = assets_lookup_image_id(ASSET_HAGIA_SOPHIA_FIX);
@@ -1335,6 +1266,109 @@ static void draw_empire_object(const empire_object *obj)
     }
 }
 
+static void image_draw_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent) {
+    float obj_draw_scale = 100.0f/draw_scale_percent;
+    const image *img = image_get(image_id);
+
+    float scaled_x = (((x) + img->width / 2.0f) - (img->width / obj_draw_scale) / 2.0f) * obj_draw_scale;
+    float scaled_y = (((y) + img->height / 2.0f) - (img->height / obj_draw_scale) / 2.0f) * obj_draw_scale;
+
+    image_draw(image_id, scaled_x, scaled_y, color, obj_draw_scale);
+}
+
+
+
+static void draw_empire_object_scaled_centered(const empire_object *obj, int draw_scale_percent){
+    // to definitely distinguish it from how scale float is used in draw and render functions
+    // this function uses scale as an int of percent to draw the item at,
+    // so that 100 is regular scale, 200 is 2x the size
+    // the scaling will affect the starting x and y, but keep the geometrical center of the object
+
+    if (obj->type == EMPIRE_OBJECT_TRADE_WAYPOINT || obj->type == EMPIRE_OBJECT_BORDER_EDGE) {
+        return;
+    }
+    if (obj->type == EMPIRE_OBJECT_LAND_TRADE_ROUTE || obj->type == EMPIRE_OBJECT_SEA_TRADE_ROUTE) {
+        if (!empire_city_is_trade_route_open(obj->trade_route_id)) {
+            return;
+        }
+        if (scenario_empire_id() == SCENARIO_CUSTOM_EMPIRE) {
+            window_empire_draw_trade_waypoints(obj, data.x_draw_offset, data.y_draw_offset);
+        }
+    }
+    int x, y, image_id;
+    if (scenario_empire_is_expanded()) {
+        x = obj->expanded.x;
+        y = obj->expanded.y;
+        image_id = obj->expanded.image_id;
+    } else {
+        x = obj->x;
+        y = obj->y;
+        image_id = obj->image_id;
+    }
+    if (obj->type == EMPIRE_OBJECT_BORDER) {
+        window_empire_draw_border(obj, data.x_draw_offset, data.y_draw_offset);
+    }
+    if (obj->type == EMPIRE_OBJECT_CITY) {
+        const empire_city *city = empire_city_get(empire_city_get_for_object(obj->id));
+        if (city->type == EMPIRE_CITY_DISTANT_FOREIGN ||
+            city->type == EMPIRE_CITY_FUTURE_ROMAN) {
+            image_id = image_group(GROUP_EMPIRE_FOREIGN_CITY);
+        } else if (city->type == EMPIRE_CITY_TRADE) {
+            // Fix cases where empire map still gives a blue flag for new trade cities
+            // (e.g. Massilia in campaign Lugdunum)
+            image_id = image_group(GROUP_EMPIRE_CITY_TRADE);
+        }
+    }
+    if (obj->type == EMPIRE_OBJECT_BATTLE_ICON) {
+        // handled later
+        return;
+    }
+    if (obj->type == EMPIRE_OBJECT_ENEMY_ARMY) {
+        if (city_military_months_until_distant_battle() <= 0) {
+            return;
+        }
+        if (city_military_distant_battle_enemy_months_traveled() != obj->distant_battle_travel_months) {
+            return;
+        }
+    }
+    if (obj->type == EMPIRE_OBJECT_ROMAN_ARMY) {
+        if (!city_military_distant_battle_roman_army_is_traveling()) {
+            return;
+        }
+        if (city_military_distant_battle_roman_months_traveled() != obj->distant_battle_travel_months) {
+            return;
+        }
+    }
+    if (obj->type == EMPIRE_OBJECT_ORNAMENT) {
+        if (image_id < 0) {
+            image_id = assets_lookup_image_id(ASSET_FIRST_ORNAMENT) - 1 - image_id;
+        }
+    }
+    const image *img = image_get(image_id);
+    float obj_draw_scale = 100 / draw_scale_percent; // convert given int % scale into float for rendering
+            
+    // Ensure float division
+    float scaled_w_center = ((float)img->width / obj_draw_scale) / 2.0f;
+    float scaled_h_center= ((float)img->height / obj_draw_scale) / 2.0f;
+
+    //int x_offset = data.x_draw_offset;
+    //int y_offset = data.y_draw_offset;
+
+    int default_x = data.x_draw_offset + x;
+    int default_y = data.y_draw_offset + y;
+
+    float scaled_x = default_x - scaled_w_center;
+    float scaled_y = default_y - scaled_h_center;
+    image_draw(
+        image_id,
+        (((data.x_draw_offset + x) + img->width/2) - (img->width/obj_draw_scale) /2)*obj_draw_scale,
+        (((data.y_draw_offset + y) + img->height/2) - (img->height/obj_draw_scale) /2)*obj_draw_scale,
+        COLOR_MASK_NONE,
+        obj_draw_scale
+    ); //final coordinates are / obj_draw_scale , so the entire calculation needs to be * obj_draw_scale to get the correct position I believe
+               
+
+}
 static void draw_invasion_warning(int x, int y, int image_id)
 {
     image_draw(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE);
@@ -1473,15 +1507,9 @@ static int is_outside_map(int x, int y)
         y < data.y_min + 16 || y >= data.y_max - 120);
 }
 
-
 static void determine_selected_object(const mouse *m)
 {
-    if (!m->left.went_up || data.finished_scroll) {
-        data.finished_scroll = 0;
-        return;
-    }
-    
-    if (is_outside_map(m->x, m->y)) {
+    if (is_outside_map(m->x, m->y)) { //maybe run this before first if instead
         // Check if it's inside the sidebar instead
         if (m->x >= data.sidebar.x_min && m->x < data.sidebar.x_max &&
             m->y >= data.sidebar.y_min && m->y < data.sidebar.y_max) {
@@ -1492,11 +1520,25 @@ static void determine_selected_object(const mouse *m)
         data.finished_scroll = 0;
         return;
     }
-    // this is map click - proceed
-    //log_info("map click detected - x:", NULL, m->x);
-    //log_info("map click detected - y:", NULL, m->y);
-    empire_select_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
-    window_invalidate();
+    if (!m->left.went_up || data.finished_scroll) {
+            //return; // instead of returning, determine hovered object
+            int hovered_obj_id = empire_get_hovered_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
+            empire_object *obj = empire_object_get(hovered_obj_id);
+            data.hovered_object = hovered_obj_id;
+            log_info("hovered object:",NULL,data.hovered_object);
+            return;
+    }else{
+        // this is map click - proceed
+        log_info("map click detected - x:", NULL, m->x);
+        log_info("map click detected - y:", NULL, m->y);
+        empire_select_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
+        log_info("selected object:",NULL,empire_selected_object());
+        window_invalidate();
+    }
+    
+    
+
+
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)
@@ -1524,6 +1566,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
     data.focus_button_id = 0;
     data.focus_resource = 0;
+    data.hovered_object = 0;
     unsigned int button_id;
     image_buttons_handle_mouse(m, data.panel.x_min + 20, data.y_max - 44, image_button_help, 1, &button_id);
     if (button_id) {
@@ -1634,6 +1677,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
             }
         }
     }
+    
 }
 
 static void get_tooltip_trade_route_type(tooltip_context *c)

@@ -280,7 +280,13 @@ void empire_select_object(int x, int y)
 
     data.selected_object = empire_object_get_closest(map_x, map_y);
 }
+int empire_get_hovered_object(int x, int y)
+{
+    int map_x = x + data.scroll_x;
+    int map_y = y + data.scroll_y;
 
+    return empire_object_get_closest(map_x, map_y);
+}
 void empire_select_object_by_id(int object_id)
 {
     object_id +=1 ;// index 0 means no selection, so increase by 1
