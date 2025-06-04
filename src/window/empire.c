@@ -44,7 +44,8 @@
 #define SIDEBAR_WIDTH_PERCENT 0.25f
 #define RESOURCE_ICON_WIDTH 26
 #define RESOURCE_ICON_HEIGHT 26
-
+#define VERTICAL_TILE_WIDTH 40
+#define VERTICAL_TILE_HEIGHT 72
 #define TRADE_DOT_SPACING 10
 #define MAX_SIDEBAR_CITIES 64
 #define SIDEBAR_CONTENT_MARGIN (WIDTH_BORDER / 2)
@@ -155,6 +156,7 @@ static open_trade_button_style get_open_trade_button_style(int x, int y, trade_s
 //static int measure_open_trade_button_width(const empire_city *city, trade_icon_type icon_type, const open_trade_button_style *style); //shouldnt be necessary
 // \/ measurement helper functions
 static int measure_trade_row_width(const empire_city *city, int is_sell, const trade_row_style *style); // ???
+static void image_draw_silh_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent);
 static void image_draw_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent); 
 static void animation_draw_scaled(const image *img, int image_id, int new_animation, int x, int y, color_t color, int draw_scale_percent);
 // 
@@ -212,6 +214,7 @@ void register_open_trade_button(int x, int y, int width, int height, int route_i
 static struct {
     unsigned int selected_button;
     int selected_city; 
+    int anim_frame;
     int selected_trade_route; // this is the trade route id, stored in here after button is clicked
     int x_min, x_max, y_min, y_max;
     int x_draw_offset, y_draw_offset;
@@ -220,6 +223,7 @@ static struct {
     int finished_scroll;
     int hovered_object;
     int hovered_resource_button;
+    
     resource_type focus_resource;
     struct {
         int x_min;
@@ -233,7 +237,7 @@ static struct {
         int scroll;
         int scroll_max;
     } sidebar;
-} data = { 0, 1 };
+} data = { 0, 1 , 0};
 
 
 static void init(void)
@@ -876,16 +880,7 @@ static void draw_city_info(const empire_object *object)
     int y_offset = data.y_max - 88;
 
     const empire_city *city = empire_city_get(data.selected_city);
-    //const empire_object *obj = empire_object_get(selected_object - 1);
     int image_id;
-    // if (city->type == EMPIRE_CITY_DISTANT_FOREIGN ||
-    //     city->type == EMPIRE_CITY_FUTURE_ROMAN) {
-    //     image_id = image_group(GROUP_EMPIRE_FOREIGN_CITY);
-    // } else if (city->type == EMPIRE_CITY_TRADE) {
-    //     // Fix cases where empire map still gives a blue flag for new trade cities
-    //     // (e.g. Massilia in campaign Lugdunum)
-    //     image_id = image_group(GROUP_EMPIRE_CITY_TRADE);
-    // }
     switch (city->type) {
         case EMPIRE_CITY_DISTANT_ROMAN:
             lang_text_draw_centered(47, 12, x_offset, y_offset + 42, 240, FONT_NORMAL_GREEN);
@@ -1007,20 +1002,14 @@ static void draw_background(void)
 
     int usable_map_width = map_draw_x_max - map_draw_x_min;
     //int usable_map_height = map_draw_y_max - map_draw_y_min;
-
     // --- Reserve 20% of usable map WIDTH for sidebar ---
     int raw_sidebar_width = (int)(usable_map_width * SIDEBAR_WIDTH_PERCENT);
-    int tile_width = 40;
-    int sidebar_width = (raw_sidebar_width / tile_width) * tile_width;  // round down to nearest multiple of 40
-
-
+    int sidebar_width = (raw_sidebar_width / VERTICAL_TILE_WIDTH) * VERTICAL_TILE_WIDTH;  // round down to nearest multiple of tile width
     // --- Store final sidebar coordinates in new variables ---
     data.sidebar.x_min = map_draw_x_max - sidebar_width;
     data.sidebar.x_max = map_draw_x_max;
     data.sidebar.y_min = map_draw_y_min;
-    data.sidebar.y_max = map_draw_y_max;
-
-    
+    data.sidebar.y_max = map_draw_y_max;    
 }
 
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
@@ -1048,29 +1037,95 @@ static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_o
     return remaining;
 }
 
+// void window_empire_draw_trade_waypoints(const empire_object *trade_route, int x_offset, int y_offset)
+// {
+//     const empire_object *our_city = empire_object_get_our_city();
+//     const empire_object *trade_city = empire_object_get_trade_city(trade_route->trade_route_id);
+//     int last_x = our_city->x + 25;
+//     int last_y = our_city->y + 25;
+//     int remaining = TRADE_DOT_SPACING;
+//     int image_id = trade_route->type == EMPIRE_OBJECT_LAND_TRADE_ROUTE ?
+//         assets_get_image_id("UI", "LandRouteDot") :
+//         assets_get_image_id("UI", "SeaRouteDot");
+//     for (int i = trade_route->id + 1; i < empire_object_count(); i++) {
+//         empire_object *obj = empire_object_get(i);
+//         if (obj->type != EMPIRE_OBJECT_TRADE_WAYPOINT || obj->trade_route_id != trade_route->trade_route_id) {
+//             break;
+//         }
+//         remaining = draw_images_at_interval(image_id, x_offset, y_offset, last_x, last_y, obj->x, obj->y,
+//             TRADE_DOT_SPACING, remaining);
+//         last_x = obj->x;
+//         last_y = obj->y;
+//     }
+//     draw_images_at_interval(image_id, x_offset, y_offset, last_x, last_y, trade_city->x + 25, trade_city->y + 25,
+//         TRADE_DOT_SPACING, remaining);
+// }
+
 void window_empire_draw_trade_waypoints(const empire_object *trade_route, int x_offset, int y_offset)
 {
+    int is_sea = trade_route->type == EMPIRE_OBJECT_SEA_TRADE_ROUTE;
+    int sea_image_id = assets_get_image_id("UI", "SeaRouteDot");
+    int land_image_id = assets_get_image_id("UI", "LandRouteDot");
+
+    // Build a list of all dot positions in the correct order.
+    int dot_count = 0;
+    struct { int x, y; } dot_pos[128]; // Arbitrary upper limit
+
     const empire_object *our_city = empire_object_get_our_city();
     const empire_object *trade_city = empire_object_get_trade_city(trade_route->trade_route_id);
     int last_x = our_city->x + 25;
     int last_y = our_city->y + 25;
     int remaining = TRADE_DOT_SPACING;
-    int image_id = trade_route->type == EMPIRE_OBJECT_LAND_TRADE_ROUTE ?
-        assets_get_image_id("UI", "LandRouteDot") :
-        assets_get_image_id("UI", "SeaRouteDot");
+
     for (int i = trade_route->id + 1; i < empire_object_count(); i++) {
         empire_object *obj = empire_object_get(i);
-        if (obj->type != EMPIRE_OBJECT_TRADE_WAYPOINT || obj->trade_route_id != trade_route->trade_route_id) {
-            break;
+        if (obj->type != EMPIRE_OBJECT_TRADE_WAYPOINT || obj->trade_route_id != trade_route->trade_route_id) break;
+        // Calculate positions at intervals
+        int dx = obj->x - last_x, dy = obj->y - last_y;
+        float dist = sqrtf(dx * dx + dy * dy);
+        float nx = (float)dx / dist, ny = (float)dy / dist;
+        float px = last_x, py = last_y, pos = remaining;
+        while (pos < dist && dot_count < 128) {
+            dot_pos[dot_count].x = (int)(px + nx * pos);
+            dot_pos[dot_count].y = (int)(py + ny * pos);
+            dot_count++;
+            pos += TRADE_DOT_SPACING;
         }
-        remaining = draw_images_at_interval(image_id, x_offset, y_offset, last_x, last_y, obj->x, obj->y,
-            TRADE_DOT_SPACING, remaining);
+        remaining = (int)(pos - dist);
         last_x = obj->x;
         last_y = obj->y;
     }
-    draw_images_at_interval(image_id, x_offset, y_offset, last_x, last_y, trade_city->x + 25, trade_city->y + 25,
-        TRADE_DOT_SPACING, remaining);
+    // Final leg to trade city
+    int dx = (trade_city->x + 25) - last_x, dy = (trade_city->y + 25) - last_y;
+    float dist = sqrtf(dx * dx + dy * dy);
+    float nx = (float)dx / dist, ny = (float)dy / dist;
+    float px = last_x, py = last_y, pos = remaining;
+    while (pos < dist && dot_count < 128) {
+        dot_pos[dot_count].x = (int)(px + nx * pos);
+        dot_pos[dot_count].y = (int)(py + ny * pos);
+        dot_count++;
+        pos += TRADE_DOT_SPACING;
+    }
+
+    int anim_dot = (dot_count > 0) ? ((data.anim_frame / 180) % dot_count) : -1;
+    for (int i = 0; i < dot_count; i++) {
+        int img;
+        float scale;
+    
+        if (i == anim_dot) {
+            img = is_sea ? land_image_id : sea_image_id; // animate using opposite image
+            scale = 120; // scale up the animated dot
+        } else {
+            img = is_sea ? sea_image_id : land_image_id;
+            scale = 100; // normal scale
+        }
+    
+        image_draw_scaled_centered(img, dot_pos[i].x + x_offset, dot_pos[i].y + y_offset, COLOR_MASK_NONE, scale);
+    }
+    
+    
 }
+
 
 void window_empire_draw_border(const empire_object *border, int x_offset, int y_offset)
 {
@@ -1140,6 +1195,8 @@ static void draw_empire_object(const empire_object *obj)
         }
         if (scenario_empire_id() == SCENARIO_CUSTOM_EMPIRE) {
             window_empire_draw_trade_waypoints(obj, data.x_draw_offset, data.y_draw_offset);
+            data.anim_frame++;
+            //const empire_object *trade_route, int x_offset, int y_offset, int anim_frame
         }
     }
     int x, y, image_id;
@@ -1192,15 +1249,23 @@ static void draw_empire_object(const empire_object *obj)
         }
     }
     const image *img = image_get(image_id);
-    if ((data.hovered_object == obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY){ 
-        //actions for currently hovered city objects 
-        //int city_from_object = empire_city_get_for_object(obj->id);
-        //log_info("city")
-        image_draw_scaled_centered(image_id, data.x_draw_offset + x,data.y_draw_offset + y, COLOR_MASK_NONE, 120 );
-        if (img->animation && img->animation->speed_id) {
+    if (((data.hovered_object == obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY) ||
+        ((empire_selected_object()== obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY)) { 
+        // actions for currently hovered or selected city objects 
+        if  ((empire_selected_object()== obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY) {
+            image_draw_scaled_centered(image_id, data.x_draw_offset + x,data.y_draw_offset + y, COLOR_MASK_NONE, 130 );
             int new_animation = empire_object_update_animation(obj, image_id);
-            animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset +y, COLOR_MASK_NONE, 120);
+            animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset +y, COLOR_MASK_NONE, 130);
+        
+        }else{
+            image_draw_scaled_centered(image_id, data.x_draw_offset + x,data.y_draw_offset + y, COLOR_MASK_NONE, 120 );
+        
+            if (img->animation && img->animation->speed_id) {
+                int new_animation = empire_object_update_animation(obj, image_id);
+                animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset +y, COLOR_MASK_NONE, 120);
+            }
         }
+
     }else{
         image_draw(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE);
         if (img->animation && img->animation->speed_id) {
@@ -1211,7 +1276,6 @@ static void draw_empire_object(const empire_object *obj)
                 COLOR_MASK_NONE, SCALE_NONE);
         }
     }
-
 
     // Manually fix the Hagia Sophia
     if (obj->image_id == 8122) {
@@ -1230,12 +1294,25 @@ static void animation_draw_scaled(const image *img, int image_id, int new_animat
 
     image_draw(image_id + new_animation, anim_x, anim_y, COLOR_MASK_NONE, obj_draw_scale);
 }
-static void image_draw_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent) {
+static void image_draw_silh_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent) {
     float obj_draw_scale = 100.0f/draw_scale_percent;
     const image *img = image_get(image_id);
 
     float scaled_x = (((x) + img->width / 2.0f) - (img->width / obj_draw_scale) / 2.0f) * obj_draw_scale;
     float scaled_y = (((y) + img->height / 2.0f) - (img->height / obj_draw_scale) / 2.0f) * obj_draw_scale;
+
+    image_draw_silhouette(image_id, scaled_x, scaled_y, color, obj_draw_scale);
+}
+static void image_draw_scaled_centered(int image_id, int x, int y, color_t color, int draw_scale_percent) {
+    float obj_draw_scale = 100.0f/draw_scale_percent;
+    const image *img = image_get(image_id);
+    
+    float scaled_x = (((x) + img->width / 2.0f) - (img->width / obj_draw_scale) / 2.0f) * obj_draw_scale;
+    float scaled_y = (((y) + img->height / 2.0f) - (img->height / obj_draw_scale) / 2.0f) * obj_draw_scale;
+    char randomstr[345];
+    sprintf(randomstr, "%d", x);  // or "%f" for float
+
+    log_info("scaled_x",randomstr,scaled_x);
 
     image_draw(image_id, scaled_x, scaled_y, color, obj_draw_scale);
 }
@@ -1302,6 +1379,7 @@ static void draw_panel_buttons(void)
         button_border_draw(btn->x - 1, btn->y - 1, btn->width + 2, btn->height + 2, 1);
         }
 }
+
 static void draw_sidebar_grid_box(void)
 {
     graphics_set_clip_rectangle(
@@ -1310,30 +1388,10 @@ static void draw_sidebar_grid_box(void)
         data.sidebar.x_max - data.sidebar.x_min,
         data.sidebar.y_max - data.sidebar.y_min
     );
-    
-
-    //grid_box_update_total_items(&sidebar_grid_box, sidebar_city_count);
     grid_box_draw(&sidebar_grid_box);
 
     graphics_reset_clip_rectangle();
 }
-
-// static void draw_open_trade_button_highlight(const mouse *m)
-// {
-//     int mx = m->x;
-//     int my = m->y;
-
-//     for (int i = 0; i < trade_open_button_count; ++i) {
-//         const trade_open_button *btn = &trade_open_buttons[i];
-
-//         if (mx >= btn->x && mx < btn->x + btn->width &&
-//             my >= btn->y && my < btn->y + btn->height) {
-//             button_border_draw(btn->x - 1, btn->y - 1, btn->width + 2, btn->height + 2, 1);
-//             break;
-//         }
-//     }
-// }
-
 
 static void draw_trade_button_highlights(void) {
     for (int i = 0; i < resource_button_count; ++i) {
@@ -1390,7 +1448,7 @@ static int is_outside_map(int x, int y)
 
 static void determine_selected_object(const mouse *m)
 {
-    if (is_outside_map(m->x, m->y)) { //maybe run this before first if instead
+    if (is_outside_map(m->x, m->y)) { 
         // Check if it's inside the sidebar instead
         if (m->x >= data.sidebar.x_min && m->x < data.sidebar.x_max &&
             m->y >= data.sidebar.y_min && m->y < data.sidebar.y_max) {
@@ -1402,18 +1460,12 @@ static void determine_selected_object(const mouse *m)
         return;
     }
     if (!m->left.went_up || data.finished_scroll) {
-            //return; // instead of returning, determine hovered object
             int hovered_obj_id = empire_get_hovered_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
-            empire_object *obj = empire_object_get(hovered_obj_id);
+            //empire_object *obj = empire_object_get(hovered_obj_id);
             data.hovered_object = hovered_obj_id;
-            log_info("hovered object on map:",NULL,data.hovered_object);
             return;
     }else{
-        // this is map click - proceed
-        //log_info("map click detected - x:", NULL, m->x);
-        //log_info("map click detected - y:", NULL, m->y);
         empire_select_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
-        //log_info("selected object:",NULL,empire_selected_object());
         window_invalidate();
     }
 }
