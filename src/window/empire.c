@@ -1312,7 +1312,7 @@ static void image_draw_scaled_centered(int image_id, int x, int y, color_t color
     char randomstr[345];
     sprintf(randomstr, "%d", x);  // or "%f" for float
 
-    log_info("scaled_x",randomstr,scaled_x);
+    //log_info("scaled_x",randomstr,scaled_x);
 
     image_draw(image_id, scaled_x, scaled_y, color, obj_draw_scale);
 }
