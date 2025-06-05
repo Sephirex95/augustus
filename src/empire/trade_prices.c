@@ -60,7 +60,7 @@ static int trade_factor_sell(int land_trader)
         if (policy == TRADE_POLICY_1) {
             percent = trade_get_caravanserai_factor(POLICY_1_BONUS_PERCENT); // trader buy 20% more
         } else if (policy == TRADE_POLICY_2) {
-            percent -= trade_get_caravanserai_factor(POLICY_2_MALUS_PERCENT); // trader buy 10% less
+            percent -= trade_get_caravanserai_factor(POLICY_2_MALUS_PERCENT); // trader buy 0% less
         }
     } else if (!land_trader && building_find(BUILDING_LIGHTHOUSE)) {
         trade_policy policy = city_trade_policy_get(SEA_TRADE_POLICY);
@@ -68,7 +68,7 @@ static int trade_factor_sell(int land_trader)
         if (policy == TRADE_POLICY_1) {
             percent = trade_get_lighthouse_factor(POLICY_1_BONUS_PERCENT); // trader buy 20% more
         } else if (policy == TRADE_POLICY_2) {
-            percent -= trade_get_lighthouse_factor(POLICY_2_MALUS_PERCENT); // trader buy 10% less
+            percent -= trade_get_lighthouse_factor(POLICY_2_MALUS_PERCENT); // trader buy 0% less
         }
     }
     return percent;
@@ -124,6 +124,19 @@ int trade_price_sell(resource_type resource, int land_trader)
 {
     return calc_adjust_with_percentage(prices[resource].sell, 100 + trade_factor_sell(land_trader));
 }
+
+int trade_factor_sign(int land_trader, int is_sell) { //return sign of price compared to base
+    int factor = is_sell ? trade_factor_sell(land_trader) : trade_factor_buy(land_trader);
+
+    if (factor > 0) {
+        return 1;
+    } else if (factor < 0) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
 
 int trade_price_change(resource_type resource, int amount)
 {
