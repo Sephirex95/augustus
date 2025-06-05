@@ -826,7 +826,7 @@ static void setup_sidebar(void)
 
     sidebar_grid_box.x = data.sidebar.x_min + sidebar_margin_left;
     sidebar_grid_box.y = data.sidebar.y_min + sidebar_margin_top;
-    sidebar_grid_box.width = data.sidebar.x_max - data.sidebar.x_min - BLOCK_SIZE -2; 
+    sidebar_grid_box.width = data.sidebar.x_max - data.sidebar.x_min -2; 
     sidebar_grid_box.height = data.sidebar.y_max - data.sidebar.y_min - sidebar_margin_top - sidebar_margin_bottom;
     sidebar_grid_box.item_height = 120;
     sidebar_grid_box.num_columns = 1;
