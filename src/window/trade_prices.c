@@ -146,14 +146,14 @@ static void draw_background(void)
                 
                 text_draw_number_centered_colored(trade_price_buy(r, 1), // land route buy
                     price_shift + i * resource_offset, line_buy_position + number_margin, 30, FONT_SMALL_PLAIN,
-                    land_policy == TRADE_POLICY_1 ? COLOR_MASK_PURPLE : COLOR_MASK_DARK_GREEN);
+                    get_price_color(1,0));
                 if(land_policy == TRADE_POLICY_2){ // land route sell 
                         text_draw_number_centered(trade_price_sell(r, 1), 
                         price_shift + i * resource_offset, line_sell_position + number_margin, 30, FONT_SMALL_PLAIN);
                     }else{
                         text_draw_number_centered_colored(trade_price_sell(r, 1), 
                         price_shift + i * resource_offset, line_sell_position + number_margin, 30, FONT_SMALL_PLAIN,
-                        land_policy == TRADE_POLICY_1 ? COLOR_MASK_DARK_GREEN : COLOR_MASK_PURPLE);
+                        get_price_color(1,1));
                     }
             } else {
                 text_draw_number_centered(trade_price_buy(r, 1), //buy
@@ -164,14 +164,14 @@ static void draw_background(void)
             if (has_sea_trade_policy) {
                 text_draw_number_centered_colored(trade_price_buy(r, 0), // sea route
                     price_shift + i * resource_offset, line_buy_position + 2 * number_margin, 30, FONT_SMALL_PLAIN,
-                    sea_policy == TRADE_POLICY_1 ? COLOR_MASK_PURPLE : COLOR_MASK_DARK_GREEN);
+                    get_price_color(0,0));
                 if(sea_policy == TRADE_POLICY_2){
                         text_draw_number_centered(trade_price_sell(r, 0),
                         price_shift + i * resource_offset, line_sell_position + 2 * number_margin, 30, FONT_SMALL_PLAIN);
                     }else{
                         text_draw_number_centered_colored(trade_price_sell(r, 0),
                     price_shift + i * resource_offset, line_sell_position + 2 * number_margin, 30, FONT_SMALL_PLAIN,
-                    sea_policy == TRADE_POLICY_1 ? COLOR_MASK_DARK_GREEN : COLOR_MASK_PURPLE);}
+                    get_price_color(0,1));}
 
             } else {
                 text_draw_number_centered(trade_price_buy(r, 0), // sea route
