@@ -84,7 +84,6 @@ static void draw_background(void)
 
     int has_land_trade_policy = has_caravanserai && land_policy && land_policy != TRADE_POLICY_3;
     int has_sea_trade_policy = has_lighthouse && sea_policy && sea_policy != TRADE_POLICY_3;
-    //int same_policy = land_policy == sea_policy;
     int window_height = 11;
     int line_buy_position = 86;
     int line_sell_position = 126;
