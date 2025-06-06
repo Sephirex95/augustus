@@ -1552,6 +1552,7 @@ static void window_building_draw_monument_caravanserai_construction_process(buil
     window_building_draw_monument_construction_process(c, TR_BUILDING_CARAVANSERAI_PHASE_1,
         TR_BUILDING_CARAVANSERAI_PHASE_1_TEXT, TR_BUILDING_MONUMENT_CONSTRUCTION_DESC);
 }
+
 static void window_building_draw_monument_lighthouse_construction_process(building_info_context *c)
 {
     window_building_draw_monument_construction_process(c, TR_BUILDING_LIGHTHOUSE_PHASE_1,
