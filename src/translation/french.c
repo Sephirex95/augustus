@@ -1597,7 +1597,7 @@ static translation_string all_strings[] = {
     {TR_BUILDING_LATRINES_MISSING_EVOLVE, "Cette maison ne peut pas évoluer, car elle n'a pas accès à des latrines ou à l'eau propre d'une fontaine."},
     {TR_BUILDING_LATRINES_MISSING_DEVOLVE, "Cette maison va bientôt régresser, car elle n'a pas accès à des latrines ou à l'eau propre d'une fontaine."},
     {TR_BUILDING_LATRINES_NO_WORKERS, "Sans employés pour entretenir les latrines, les citoyens évitent de venir s'y relaxer."},
-
+    {TR_CONFIG_DRAW_ASCLEPIUS, "Afficher le Bâton d'Asclépios pour le menu d'hygiène"},
 };
 
 void translation_french(const translation_string **strings, int *num_strings)
