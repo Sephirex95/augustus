@@ -147,7 +147,7 @@ static void draw_background(void)
                 text_draw_number_centered_colored(trade_price_buy(r, 1), // land route buy
                     price_shift + i * resource_offset, line_buy_position + number_margin, 30, FONT_SMALL_PLAIN,
                     get_price_color(1,0));
-                if(land_policy == TRADE_POLICY_2){ // land route sell 
+                if(land_policy == TRADE_POLICY_2) { // land route sell 
                         text_draw_number_centered(trade_price_sell(r, 1), 
                         price_shift + i * resource_offset, line_sell_position + number_margin, 30, FONT_SMALL_PLAIN);
                     } else {
