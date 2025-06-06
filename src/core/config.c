@@ -75,6 +75,7 @@ static const char *ini_keys[] = {
     "gameplay_change_nonmilitary_gates_allow_walkers",
     "ui_show_speedrun_info",
     "ui_show_desirability_range",
+    "ui_draw_asclepius",
 };
 
 static const char *ini_string_keys[] = {
