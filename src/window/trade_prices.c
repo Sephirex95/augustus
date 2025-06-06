@@ -182,24 +182,6 @@ static void draw_background(void)
         }
     }
 
-    // if (data.four_line) {
-    //     int y_pos_buy = line_buy_position + number_margin - 5;
-    //     int y_pos_sell = line_sell_position + number_margin - 5;
-
-    //     int image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1;
-
-    //     image_draw(image_id, 16, y_pos_buy, COLOR_MASK_NONE, SCALE_NONE);
-    //     image_draw(image_id, 16, y_pos_sell, COLOR_MASK_NONE, SCALE_NONE);
-
-    //     image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE);
-    //     if (!same_policy) {
-    //         y_pos_buy += number_margin;
-    //         y_pos_sell += number_margin;
-    //     }
-    //     image_draw(image_id, 16, y_pos_buy, COLOR_MASK_NONE, SCALE_NONE);
-    //     image_draw(image_id, 16, y_pos_sell, COLOR_MASK_NONE, SCALE_NONE);
-    // }
-
     if (data.four_line) {
         int y_positions[4] = {
             line_buy_position + number_margin,         // land buy
