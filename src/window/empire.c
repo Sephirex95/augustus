@@ -276,7 +276,7 @@ static int is_sidebar_border(const mouse *m) {
 
 static int is_map(const mouse *m) {
     if (m->x >= data.x_min + WIDTH_BORDER &&
-        m->x <  1490 && //m->x < data.sidebar.x_min &&
+        m->x < data.sidebar.x_min &&
         m->y >= data.y_min + WIDTH_BORDER &&
         m->y <  data.y_max - BOTTOM_PANEL_HEIGHT -WIDTH_BORDER ) {
         return 1;
@@ -1517,6 +1517,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (scroll_get_delta(m, &position, SCROLL_TYPE_EMPIRE)) {
         empire_scroll_map(position.x, position.y);
     }
+    
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!sidebar_border_btn.is_collapsed) {
         grid_box_handle_input(&sidebar_grid_box, m, 1);

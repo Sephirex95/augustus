@@ -82,9 +82,6 @@ int grid_box_has_scrollbar(const grid_box_type *grid_box)
 static void draw_scrollbar(grid_box_type *grid_box)
 {
     scrollbar_type *scrollbar = &grid_box->scrollbar;
-
-    log_info("gridbox.x =", NULL, grid_box->x);    
-    log_info("gridbox.width =", NULL, grid_box->width);  
     scrollbar->x = grid_box->x + grid_box->width + 4- 2 * BLOCK_SIZE + grid_box->offset_scrollbar_x;
     scrollbar->y = grid_box->y;
     scrollbar->on_scroll_callback = window_request_refresh;
@@ -216,6 +213,7 @@ static int set_focused_item(grid_box_type *grid_box, unsigned int position, unsi
     return mouse_x != old_x || mouse_y != old_y;
 }
 
+
 static int determine_focus(grid_box_type *grid_box, int x, int y)
 {
     unsigned int inner_padding = grid_box->draw_inner_panel ? BLOCK_SIZE / 2 : 0;
@@ -258,21 +256,23 @@ static int determine_focus(grid_box_type *grid_box, int x, int y)
 int grid_box_handle_input(grid_box_type *grid_box, const mouse *m, int in_dialog)
 {
     scrollbar_type *scrollbar = &grid_box->scrollbar;
-
+    
     if (scrollbar_handle_mouse(scrollbar, m, in_dialog)) {
         grid_box_request_refresh(grid_box);
         return 1;
     }
-
     if (determine_focus(grid_box, m->x, m->y)) {
+
         grid_box_request_refresh(grid_box);
     }
 
     if (!m->left.went_up || grid_box->focused_item.index == NO_POSITION) {
+
         return 0;
     }
 
     if (grid_box->on_click) {
+
         grid_box->on_click(&grid_box->focused_item);
     }
 
