@@ -11,7 +11,7 @@ void city_draw_bridge(int x, int y, float scale, int grid_offset)
         map_sprite_clear_tile(grid_offset);
         return;
     }
-    if (map_terrain_is(grid_offset, TERRAIN_BUILDING)) {
+    if (map_terrain_is(grid_offset, TERRAIN_BUILDING) && (!map_terrain_is(grid_offset, TERRAIN_ROAD))){
         return;
     }
     color_t color_mask = 0;
