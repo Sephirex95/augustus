@@ -1292,7 +1292,24 @@ static void draw_empire_object(const empire_object *obj)
         ((empire_selected_object()== obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY)) { 
         // actions for currently hovered or selected city objects 
         if  ((empire_selected_object()== obj->id+1) && obj->type ==  EMPIRE_OBJECT_CITY) {
+            const int offsets[16][2] = {
+                {1, 0}, {0, 1}, {-1, 0}, {0, -1},
+                {3, 0}, {0, 3}, {-3, 0}, {0, -3},
+                {1, 1}, {-1, 1}, {-1, -1}, {1, -1},
+                {3, 3}, {-3, 3}, {-3, -3}, {3, -3}
+            }; // 3 an 1 offsets worked best in testing, other values can be used for readability if necessary
+            for (int i = 0; i < 16; i++) {
+                int dx = offsets[i][0];
+                int dy = offsets[i][1];
+                image_draw_silh_scaled_centered(image_id,
+                    data.x_draw_offset + x + dx,
+                    data.y_draw_offset + y + dy,
+                    COLOR_MASK_DIMMED_PURPLE, // any mask will work
+                    130);
+            }
+
             image_draw_scaled_centered(image_id, data.x_draw_offset + x,data.y_draw_offset + y, COLOR_MASK_NONE, 130 );
+            
             int new_animation = empire_object_update_animation(obj, image_id);
             animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset +y, COLOR_MASK_NONE, 130);
         
