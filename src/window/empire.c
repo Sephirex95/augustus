@@ -1304,7 +1304,7 @@ static void draw_empire_object(const empire_object *obj)
                 image_draw_silh_scaled_centered(image_id,
                     data.x_draw_offset + x + dx,
                     data.y_draw_offset + y + dy,
-                    COLOR_MASK_DIMMED_PURPLE, // any mask will work
+                    COLOR_MASK_ORANGE_GOLD, // any mask will work
                     130);
             }
 
