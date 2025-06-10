@@ -9,6 +9,7 @@
 #include "map/aqueduct.h"
 #include "map/building.h"
 #include "map/building_tiles.h"
+#include "map/bridge.h"
 #include "map/data.h"
 #include "map/desirability.h"
 #include "map/elevation.h"
@@ -1011,7 +1012,7 @@ void map_tiles_update_region_meadow(int x_min, int y_min, int x_max, int y_max)
 
 static void set_water_image(int x, int y, int grid_offset)
 {
-    if ((map_terrain_get(grid_offset) & (TERRAIN_WATER | TERRAIN_BUILDING)) == TERRAIN_WATER) {
+    if (((map_terrain_get(grid_offset) & (TERRAIN_WATER | TERRAIN_BUILDING)) == TERRAIN_WATER) || (map_is_bridge(grid_offset))) {
         const terrain_image *img = map_image_context_get_shore(grid_offset);
         int image_id = image_group(GROUP_TERRAIN_WATER) + img->group_offset + img->item_offset;
         if (map_terrain_exists_tile_in_radius_with_type(x, y, 1, 2, TERRAIN_BUILDING)) {

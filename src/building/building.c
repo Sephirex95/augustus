@@ -235,6 +235,8 @@ building *building_create(building_type type, int x, int y)
     if (building_type_is_roadblock(b->type) && b->type != BUILDING_ROADBLOCK && b->type != BUILDING_GATEHOUSE &&
         b->type != BUILDING_PALISADE_GATE && config_get(CONFIG_GP_CH_GATES_DEFAULT_TO_PASS_ALL_WALKERS)) {
         b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
+    } else if (building_type_is_roadblock(b->type) && (b->type == BUILDING_LOW_BRIDGE || b->type == BUILDING_SHIP_BRIDGE)){
+        b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL; //exclude bridges from above condition and always allow everyone on bridges when built
     }
 
     b->x = x;

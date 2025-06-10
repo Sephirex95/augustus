@@ -1,14 +1,19 @@
 #include "bridge.h"
 
+#include "building/building.h"
+#include "building/type.h"
 #include "city/view.h"
 #include "core/direction.h"
+#include "map/building.h"
 #include "map/data.h"
 #include "map/figure.h"
 #include "map/grid.h"
+#include "map/building_tiles.h"
 #include "map/property.h"
 #include "map/routing_terrain.h"
 #include "map/sprite.h"
 #include "map/terrain.h"
+#include "core/log.h"
 
 #define MAX_DISTANCE_BETWEEN_PILLARS 12
 #define MINIMUM_DISTANCE_FOR_PILLARS 9
@@ -223,10 +228,15 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     }
 
     int grid_offset = map_grid_offset(x, y);
+    building *b = building_create(!is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE, x, y); // create a size 1 building,
+
     for (int i = 0; i < bridge.length; i++) {
         map_terrain_add(grid_offset, TERRAIN_ROAD);
+        map_terrain_add(grid_offset, TERRAIN_BUILDING);
         int value = map_bridge_get_sprite_id(i, bridge.length, bridge.direction, is_ship_bridge);
         map_sprite_bridge_set(grid_offset, value);
+
+        map_building_set(grid_offset, b->id);
         grid_offset += bridge.direction_grid_delta;
     }
 
@@ -297,6 +307,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
     } else {
         map_sprite_clear_tile(grid_offset);
         map_terrain_remove(grid_offset, TERRAIN_ROAD);
+        map_terrain_remove(grid_offset, TERRAIN_BUILDING);
     }
     while (map_is_bridge(grid_offset + offset_up)) {
         grid_offset += offset_up;
@@ -305,6 +316,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         } else {
             map_sprite_clear_tile(grid_offset);
             map_terrain_remove(grid_offset, TERRAIN_ROAD);
+            map_terrain_remove(grid_offset, TERRAIN_BUILDING);
         }
     }
 }
