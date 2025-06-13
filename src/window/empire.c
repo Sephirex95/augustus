@@ -826,7 +826,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
 
     // draw trade icon
     int image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1 - city->is_sea_trade;
-    image_draw(image_id, x_offset + 250, y_offset + 9+ 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(image_id, x_offset + 280, y_offset + 9+ 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
 
     // Move y_offset down for trade info rows
     y_offset += 44;
