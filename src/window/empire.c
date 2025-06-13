@@ -794,7 +794,9 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     empire_city *city = empire_city_get(entry->city_id);
     const uint8_t *name = empire_city_get_name(city);
     //const grid_box_type *sidebar_grid_box;
+    
     int item_usable_width = get_usable_width(&sidebar_grid_box)+ sidebar_grid_box.offset_scrollbar_x;
+    graphics_set_clip_rectangle(data.sidebar.x_min,data.sidebar.y_min,item_usable_width,data.sidebar.y_max); 
     int x_blocks = item_usable_width / BLOCK_SIZE;
     int y_blocks = item->height  / BLOCK_SIZE;
 
@@ -820,17 +822,42 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     if (entry->city_id == data.selected_city) {
         button_border_draw(item->x,item->y, item_usable_width, item->height-data.sidebar.margin_bottom, 1);
     }
+
     int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
-    image_draw(badge_id, x_offset + 5, y_offset + 5, COLOR_MASK_NONE, SCALE_NONE);
-    text_draw(name, x_offset + BLOCK_SIZE, y_offset + 9, FONT_LARGE_BLACK, 0);
-
-    // draw trade icon
+    int badge_width = image_get(badge_id)->width;
+    int trade_route_icon_offset;
     int image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1 - city->is_sea_trade;
-    image_draw(image_id, x_offset + 280, y_offset + 9+ 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
+    int available_width = item_usable_width - data.sidebar.margin_right;
+    int badge_and_icon_width = badge_width + 2 + 34;
+    int badge_margin = 5;
 
+    if (badge_and_icon_width <= available_width) {
+        // Everything fits
+        image_draw(badge_id, x_offset + badge_margin, y_offset + badge_margin, COLOR_MASK_NONE, SCALE_NONE);
+
+        text_draw(name, x_offset+ badge_margin + BLOCK_SIZE, y_offset + 9, FONT_LARGE_BLACK, 0);
+        int trade_route_icon_offset =  badge_width + BLOCK_SIZE;
+        if ((trade_route_icon_offset + badge_margin + 2 + 34) <= item_usable_width) {
+            image_draw(image_id, x_offset + trade_route_icon_offset  + badge_margin, y_offset + 9 + 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
+        }
+
+    } else if (badge_width <= available_width) {
+        // Only badge fits, check if the icon fits inside it
+        image_draw(badge_id, x_offset + badge_margin, y_offset + badge_margin, COLOR_MASK_NONE, SCALE_NONE);
+
+        int city_name_end = text_draw(name, x_offset + badge_margin + BLOCK_SIZE, y_offset + 9, FONT_LARGE_BLACK, 0);
+
+        int icon_fits_in_badge = (city_name_end + badge_margin + 2 + 34) <= (x_offset +badge_margin + badge_width);
+        if (icon_fits_in_badge) {
+            image_draw(image_id, x_offset + badge_margin + city_name_end + BLOCK_SIZE + 2, y_offset + 9 + 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
+        }
+
+    } else {
+        // Not enough room for badge + icon
+        text_draw(name, x_offset + badge_margin, y_offset + 9, FONT_LARGE_BLACK, 0);
+    }
     // Move y_offset down for trade info rows
     y_offset += 44;
-    //will fix later
     if (city->is_open) {
             y_offset += 8; // For Sells
             draw_trade_row(city, 1, x_offset, y_offset, &style_sells);   
@@ -845,6 +872,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
         open_trade_button_style style = get_open_trade_button_style(item->x,y_offset, TRADE_STYLE_SIDEBAR);
         draw_open_trade_button(city, &style, TRADE_ICON_NONE);
     }
+    graphics_reset_clip_rectangle();
 }
 
 static void on_sidebar_city_click(const grid_box_item *item)
