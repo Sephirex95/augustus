@@ -796,7 +796,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     //const grid_box_type *sidebar_grid_box;
     
     int item_usable_width = get_usable_width(&sidebar_grid_box)+ sidebar_grid_box.offset_scrollbar_x;
-    graphics_set_clip_rectangle(data.sidebar.x_min,data.sidebar.y_min,item_usable_width,data.sidebar.y_max); 
+    graphics_set_clip_rectangle(data.sidebar.x_min,data.sidebar.y_min,item_usable_width + 4,data.sidebar.y_max); // 4px extra reserved for the border drawn AROUND the item
     int x_blocks = item_usable_width / BLOCK_SIZE;
     int y_blocks = item->height  / BLOCK_SIZE;
 
@@ -953,7 +953,7 @@ static void setup_sidebar_gridbox(void){
         entry->empire_object_id = city->empire_object_id; //this is the empire object id, which is the index in the empire object array
         entry->x = data.sidebar.x_min+ data.sidebar.margin_left;
         entry->y = y;
-        y += entry->height;
+        y += SIDEBAR_ENTRY_HEIGHT;
         sidebar_city_count++;
     }
     sidebar_grid_box.x = data.sidebar.x_min + data.sidebar.margin_left;
@@ -1542,19 +1542,22 @@ static void determine_selected_object(const mouse *m){
     if (is_map(m)){
         if (!m->left.went_up || data.finished_scroll) {
                 int hovered_obj_id = empire_get_hovered_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
-                //empire_object *obj = empire_object_get(hovered_obj_id);
                 data.hovered_object = hovered_obj_id;
                 return;
             }else{
                 empire_select_object(m->x - data.x_min - 16, m->y - data.y_min - 16);
                 window_invalidate();
             }
-    } else {
+    } else if (is_sidebar(m)){
+        if (sidebar_grid_box.focused_item.index == NO_POSITION){
+            data.hovered_object = NO_POSITION;
+        }
+    } else{
         data.finished_scroll = 0;
+        data.hovered_object = NO_POSITION;
         return;
     }
 }
-
 
 static void handle_input(const mouse *m, const hotkeys *h)
 {
@@ -1584,7 +1587,6 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
     data.focus_button_id = 0;
     data.focus_resource = 0;
-
     unsigned int button_id;
     image_buttons_handle_mouse(m, data.panel.x_min + 20, data.y_max - 44, image_button_help, 1, &button_id);
     if (button_id) {

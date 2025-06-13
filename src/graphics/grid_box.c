@@ -227,10 +227,20 @@ static int determine_focus(grid_box_type *grid_box, int x, int y)
     }
     unsigned int mouse_x = x - grid_box->x - inner_padding;
     unsigned int mouse_y = y - grid_box->y;
+    // Limit mouse_y to usable height
+    unsigned int max_visible_rows = grid_box->scrollbar.elements_in_view;
+    unsigned int usable_height = max_visible_rows * grid_box->item_height;
+
+    if (mouse_y > usable_height || mouse_x > width) {
+        grid_box->focused_item.index = NO_POSITION;
+        grid_box->focused_item.is_focused = 0;
+        return old_index != NO_POSITION;
+    }
 
     unsigned int position = mouse_y / grid_box->item_height * grid_box->num_columns;
     unsigned int item_width = (width - inner_padding * 2) / grid_box->num_columns;
     position += mouse_x / item_width;
+
 
     if (position + grid_box->scrollbar.scroll_position * grid_box->num_columns >= grid_box->total_items) {
         grid_box->focused_item.index = NO_POSITION;
