@@ -949,8 +949,8 @@ static void setup_sidebar_gridbox(void){
 
         sidebar_city_entry *entry = &sidebar_cities[sidebar_city_count];
         entry->sidebar_item_id = sidebar_city_count; //this is the index in the sidebar_cities array
-        entry->city_id = i; //story city id which is the index in the empire city array
-        entry->empire_object_id = city->empire_object_id; //this is the empire object id, which is the index in the empire object array
+        entry->city_id = i; //store city id, which is the index in the empire city array
+        entry->empire_object_id = city->empire_object_id; //store the empire object id, which is the index in the empire object array
         entry->x = data.sidebar.x_min+ data.sidebar.margin_left;
         entry->y = y;
         y += SIDEBAR_ENTRY_HEIGHT;
