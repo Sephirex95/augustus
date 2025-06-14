@@ -20,6 +20,10 @@ int map_bridge_get_sprite_id(int index, int length, int direction, int is_ship_b
  */
 int map_bridge_add(int x, int y, int is_ship_bridge);
 
+int get_y_bridge_tiles(int grid_offset);
+
+int get_x_bridge_tiles(int grid_offset);
+
 void map_bridge_remove(int grid_offset, int mark_deleted);
 
 void map_bridge_update_after_rotate(int counter_clockwise);

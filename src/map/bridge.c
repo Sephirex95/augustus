@@ -263,7 +263,7 @@ int map_is_bridge(int grid_offset)
     return map_terrain_is(grid_offset, TERRAIN_WATER) && map_terrain_is(grid_offset, TERRAIN_ROAD) && map_terrain_is(grid_offset, TERRAIN_BUILDING);
 }
 
-static int get_y_bridge_tiles(int grid_offset)
+int get_y_bridge_tiles(int grid_offset)
 {
     int tiles = 0;
     if (map_is_bridge(grid_offset + map_grid_delta(0, -1))) {
@@ -281,7 +281,7 @@ static int get_y_bridge_tiles(int grid_offset)
     return tiles;
 }
 
-static int get_x_bridge_tiles(int grid_offset)
+int get_x_bridge_tiles(int grid_offset)
 {
     int tiles = 0;
     if (map_is_bridge(grid_offset + map_grid_delta(-1, 0))) {
