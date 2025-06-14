@@ -30,6 +30,7 @@
 #include "input/input.h"
 #include "map/aqueduct.h"
 #include "map/building.h"
+#include "map/bridge.h"
 #include "map/figure.h"
 #include "map/grid.h"
 #include "map/image.h"
@@ -48,6 +49,8 @@
 #include "window/building/military.h"
 #include "window/building/terrain.h"
 #include "window/building/utility.h"
+
+
 
 #define OFFSET(x,y) (x + GRID_SIZE * y)
 
@@ -288,8 +291,8 @@ static void init(int grid_offset)
     city_resource_determine_available(1);
     context.type = BUILDING_INFO_TERRAIN;
     context.figure.drawn = 0;
-    if (!context.building_id && map_sprite_bridge_at(grid_offset) > 0) { //this are 'map bridges' or bridges placed prior to the change
-        if (map_terrain_is(grid_offset, TERRAIN_WATER)) {        
+    if (map_is_bridge(grid_offset)) { //change this to is_bridge later after testing
+        if (map_terrain_is(grid_offset, TERRAIN_WATER)) {
             context.terrain_type = TERRAIN_INFO_BRIDGE;
         } else {
             context.terrain_type = TERRAIN_INFO_EMPTY;
@@ -334,10 +337,6 @@ static void init(int grid_offset)
         context.terrain_type = TERRAIN_INFO_EMPTY;
     } else {
         building *b = building_get(context.building_id);
-        if (b->type == BUILDING_LOW_BRIDGE || b->type == BUILDING_SHIP_BRIDGE) {
-            context.terrain_type = TERRAIN_INFO_ROAD; //ensure right treatment of the desc menu down the line
-        }
-
         context.type = BUILDING_INFO_BUILDING;
         context.worker_percentage = calc_percentage(b->num_workers, model_get_building(b->type)->laborers);
         switch (b->type) {
@@ -714,9 +713,7 @@ static void draw_background(void)
         } else if (btype == BUILDING_OBELISK) {
             window_building_draw_obelisk(&context);
         } else if (building_type_is_roadblock(btype) && context.show_special_orders) {
-            window_building_draw_roadblock_orders(&context);   
-        } else if (btype == BUILDING_LOW_BRIDGE || btype == BUILDING_SHIP_BRIDGE){
-            window_building_draw_bridge_roadblock(&context);
+            window_building_draw_roadblock_orders(&context);            
         } else if (btype == BUILDING_ROADBLOCK) {
             window_building_draw_roadblock(&context);
         } else if (btype == BUILDING_TRIUMPHAL_ARCH) {
@@ -884,6 +881,12 @@ static void draw_foreground(void)
         }
     } else if (context.type == BUILDING_INFO_LEGION) {
         window_building_draw_legion_info_foreground(&context);
+    } else if (context.terrain_type == TERRAIN_INFO_BRIDGE){
+            if (context.show_special_orders) {
+                window_building_draw_roadblock_orders_foreground(&context);
+            } else {
+                window_building_draw_roadblock_button(&context);
+            }
     }
 
     // general buttons
@@ -932,11 +935,9 @@ static int handle_specific_building_info_mouse(const mouse *m)
     if (context.type == BUILDING_INFO_LEGION) {
         return window_building_handle_mouse_legion_info(m, &context);
     } else if (context.figure.drawn) {
-        if (context.type == BUILDING_INFO_BUILDING){ //bridges are buildings with drawn figures
-            return window_building_handle_mouse_bridge(m, &context);
-        }
         return window_building_handle_mouse_figure_list(m, &context);
-    } else if (context.type == BUILDING_INFO_BUILDING) {
+
+    } else if (context.type == BUILDING_INFO_BUILDING){
         int btype = building_get(context.building_id)->type;
 
         if (building_has_supplier_inventory(btype)) {

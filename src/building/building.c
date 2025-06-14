@@ -33,6 +33,8 @@
 #include "map/terrain.h"
 #include "map/tiles.h"
 
+#include "map/bridge.h"
+
 #define BUILDING_ARRAY_SIZE_STEP 2000
 
 #define WATER_DESIRABILITY_RANGE 3
@@ -238,6 +240,9 @@ building *building_create(building_type type, int x, int y)
     } else if (building_type_is_roadblock(b->type) && (b->type == BUILDING_LOW_BRIDGE || b->type == BUILDING_SHIP_BRIDGE)){
         b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL; //exclude bridges from above condition and always allow everyone on bridges when built
     }
+    if (building_type_is_bridge(b->type)){ //bridges always allow everyone by default
+        b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
+    }
 
     b->x = x;
     b->y = y;
@@ -320,7 +325,7 @@ void building_update_state(void)
             continue;
         }
         if (b->state == BUILDING_STATE_UNDO || b->state == BUILDING_STATE_DELETED_BY_PLAYER) {
-            if (b->type == BUILDING_TOWER || b->type == BUILDING_GATEHOUSE) {
+            if (b->type == BUILDING_TOWER || b->type == BUILDING_GATEHOUSE || b->type == BUILDING_SHIP_BRIDGE || b->type == BUILDING_LOW_BRIDGE)  {
                 wall_recalc = 1;
                 road_recalc = 1;
             } else if (b->type == BUILDING_RESERVOIR) {
@@ -332,8 +337,9 @@ void building_update_state(void)
                 road_recalc = 1;
             }
             map_building_tiles_remove(b->id, b->x, b->y);
-            if (building_type_is_roadblock(b->type) && b->size == 1) {
+            if (building_type_is_roadblock(b->type) && b->size == 1 && !building_type_is_bridge(b->type)) {
                 // Leave the road behind the deleted roadblock
+                // except for bridges - they are coded as size 1 too
                 map_terrain_add(b->grid_offset, TERRAIN_ROAD);
                 road_recalc = 1;
             }
