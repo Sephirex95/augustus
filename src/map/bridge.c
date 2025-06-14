@@ -230,23 +230,11 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     int grid_offset = map_grid_offset(x, y);
     int bridge_type = !is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE;
 
-
-    int prev_part = 0;
+    building *b = building_create(bridge_type, x, y); 
+    //int prev_part = 0;
     for (int i = 0; i < bridge.length; i++) {
         int new_x = map_grid_offset_to_x(grid_offset);
         int new_y = map_grid_offset_to_y(grid_offset);
-
-        building *b = building_create(bridge_type, new_x, new_y);  // create new segment
-        b->prev_part_building_id = prev_part;                      // link to previous
-
-        // If this is not the first piece, link previous to this one
-        if (i != 0) {
-            building *prev_b = building_get(prev_part);
-            if (prev_b) {
-                prev_b->next_part_building_id = b->id;
-            }
-        }
-        prev_part = b->id;  // store current ID for next loop
 
         map_terrain_add(grid_offset, TERRAIN_ROAD);
         map_terrain_add(grid_offset, TERRAIN_BUILDING);
@@ -255,7 +243,6 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
         map_sprite_bridge_set(grid_offset, value);
 
         grid_offset += bridge.direction_grid_delta;
-        b->next_part_building_id = 0;
     }
 
 
@@ -325,6 +312,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         map_property_mark_deleted(grid_offset);
     } else {
         map_sprite_clear_tile(grid_offset);
+        map_terrain_set(grid_offset, TERRAIN_WATER);
         //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
         int building_id = map_building_at(grid_offset);
         building *b = building_get(building_id);
@@ -337,7 +325,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         } else {
 
             map_sprite_clear_tile(grid_offset);
-            //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
+            map_terrain_set(grid_offset, TERRAIN_WATER); //wont be necessary since map_building_tiles_remove will set water here
             int building_id = map_building_at(grid_offset);
             building *b = building_get(building_id);
             b->state = BUILDING_STATE_DELETED_BY_PLAYER; //maybe deleted by game?
