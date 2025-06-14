@@ -7,6 +7,7 @@
 #include "core/direction.h"
 #include "core/image.h"
 #include "map/aqueduct.h"
+#include "map/bridge.h"
 #include "map/building.h"
 #include "map/building_tiles.h"
 #include "map/data.h"
@@ -21,7 +22,7 @@
 #include "map/terrain.h"
 #include "scenario/map.h"
 
-#include "map/bridge.h"
+
 
 #define OFFSET(x,y) (x + GRID_SIZE * y)
 

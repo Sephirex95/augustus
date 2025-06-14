@@ -14,10 +14,9 @@
 #include "core/random.h"
 #include "game/resource.h"
 #include "map/random.h"
-#include "scenario/property.h"
-
 #include "map/sprite.h"
 #include "map/grid.h"
+#include "scenario/property.h"
 
 static const struct {
     int group;

@@ -1,7 +1,12 @@
 #include "bridge.h"
 
+#include "building/building.h"
+#include "building/type.h"
 #include "city/view.h"
 #include "core/direction.h"
+#include "game/undo.h"
+#include "map/building.h"
+#include "map/building_tiles.h"
 #include "map/data.h"
 #include "map/figure.h"
 #include "map/grid.h"
@@ -9,12 +14,6 @@
 #include "map/routing_terrain.h"
 #include "map/sprite.h"
 #include "map/terrain.h"
-
-#include "building/building.h"
-#include "building/type.h"
-#include "map/building.h"
-#include "game/undo.h"
-#include "map/building_tiles.h"
 #include "map/tiles.h"
 
 #define MAX_DISTANCE_BETWEEN_PILLARS 12

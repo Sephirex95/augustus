@@ -1,13 +1,13 @@
 #include "terrain.h"
 
+#include "building/building.h"
 #include "city/map.h"
 #include "core/image.h"
+#include "map/bridge.h"
+#include "map/building.h"
 #include "map/grid.h"
 #include "map/ring.h"
 #include "map/routing.h"
-#include "map/bridge.h"
-#include "building/building.h"
-#include "map/building.h"
 #include "map/sprite.h"
 
 static grid_u32 terrain_grid;

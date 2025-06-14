@@ -30,6 +30,7 @@
 #include "input/input.h"
 #include "map/aqueduct.h"
 #include "map/building.h"
+#include "map/bridge.h"
 #include "map/figure.h"
 #include "map/grid.h"
 #include "map/image.h"
@@ -49,7 +50,7 @@
 #include "window/building/terrain.h"
 #include "window/building/utility.h"
 
-#include "map/bridge.h"
+
 
 #define OFFSET(x,y) (x + GRID_SIZE * y)
 

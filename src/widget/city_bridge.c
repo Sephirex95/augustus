@@ -1,11 +1,12 @@
 #include "city_bridge.h"
 
 #include "graphics/image.h"
+#include "map/bridge.h"
 #include "map/property.h"
 #include "map/sprite.h"
 #include "map/terrain.h"
 
-#include "map/bridge.h"
+
 
 void city_draw_bridge(int x, int y, float scale, int grid_offset)
 {
