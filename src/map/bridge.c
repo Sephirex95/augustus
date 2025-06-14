@@ -12,6 +12,8 @@
 
 #include "building/building.h"
 #include "map/building.h"
+#include "game/undo.h"
+#include "map/building_tiles.h"
 
 #define MAX_DISTANCE_BETWEEN_PILLARS 12
 #define MINIMUM_DISTANCE_FOR_PILLARS 9
@@ -321,19 +323,29 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         map_property_mark_deleted(grid_offset);
     } else {
         map_sprite_clear_tile(grid_offset);
-        map_terrain_remove(grid_offset, TERRAIN_ROAD);
-        map_terrain_remove(grid_offset, TERRAIN_BUILDING);
+        //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
+        int building_id = map_building_at(grid_offset);
+        int bridge_x = map_grid_offset_to_x(grid_offset);
+        int bridge_y = map_grid_offset_to_y(grid_offset);
+
+        map_building_tiles_remove(building_id,bridge_x, bridge_y);
     }
     while (map_is_bridge(grid_offset + offset_up)) {
         grid_offset += offset_up;
         if (mark_deleted) {
             map_property_mark_deleted(grid_offset);
         } else {
+
             map_sprite_clear_tile(grid_offset);
-            map_terrain_remove(grid_offset, TERRAIN_ROAD);
-            map_terrain_remove(grid_offset, TERRAIN_BUILDING);
+            //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
+            int building_id = map_building_at(grid_offset);
+            int bridge_x = map_grid_offset_to_x(grid_offset);
+            int bridge_y = map_grid_offset_to_y(grid_offset);
+
+            map_building_tiles_remove(building_id,bridge_x, bridge_y);
         }
     }
+    game_undo_disable();
 }
 
 int map_bridge_count_figures(int grid_offset)
