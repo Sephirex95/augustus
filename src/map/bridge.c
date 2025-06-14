@@ -15,6 +15,7 @@
 #include "map/building.h"
 #include "game/undo.h"
 #include "map/building_tiles.h"
+#include "map/tiles.h"
 
 #define MAX_DISTANCE_BETWEEN_PILLARS 12
 #define MINIMUM_DISTANCE_FOR_PILLARS 9
@@ -312,7 +313,8 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
     while (map_is_bridge(grid_offset - offset_up)) {
         grid_offset -= offset_up;
     }
-
+    int bridge_x_start = map_grid_offset_to_x(grid_offset);
+    int bridge_y_start = map_grid_offset_to_y(grid_offset);
     if (mark_deleted) {
         map_property_mark_deleted(grid_offset);
     } else {
@@ -337,7 +339,10 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
             map_building_set(grid_offset,0);
         }
     }
+    int bridge_x_end = map_grid_offset_to_x(grid_offset -offset_up);
+    int bridge_y_end = map_grid_offset_to_y(grid_offset -offset_up);
     game_undo_disable();
+    map_tiles_update_region_water(bridge_x_start,bridge_y_start,bridge_x_end, bridge_y_end);
 }
 
 int map_bridge_count_figures(int grid_offset)
