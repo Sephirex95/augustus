@@ -878,6 +878,12 @@ static void draw_foreground(void)
         }
     } else if (context.type == BUILDING_INFO_LEGION) {
         window_building_draw_legion_info_foreground(&context);
+    } else if (context.terrain_type == TERRAIN_INFO_BRIDGE){
+            if (context.show_special_orders) {
+                window_building_draw_roadblock_orders_foreground(&context);
+            } else {
+                window_building_draw_roadblock_button(&context);
+            }
     }
 
     // general buttons
@@ -927,7 +933,8 @@ static int handle_specific_building_info_mouse(const mouse *m)
         return window_building_handle_mouse_legion_info(m, &context);
     } else if (context.figure.drawn) {
         return window_building_handle_mouse_figure_list(m, &context);
-    } else if (context.type == BUILDING_INFO_BUILDING) {
+
+    } else if (context.type == BUILDING_INFO_BUILDING){
         int btype = building_get(context.building_id)->type;
 
         if (building_has_supplier_inventory(btype)) {

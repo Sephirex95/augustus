@@ -71,5 +71,14 @@ void window_building_draw_terrain(building_info_context *c)
         window_building_draw_figure_list(c);
         // add roadblock buttons and roadblock functionality here - can also add to stairs later
 
+        if (c->help_id == 58){ //bridge
+            int bridge_building_id = c->building_id;
+            if(c->show_special_orders) {
+                window_building_draw_roadblock_orders(c);
+                //window_building_draw_roadblock_orders_foreground(c);           
+            } else
+                window_building_draw_roadblock_button(c);
+        }
+		
     }
 }
