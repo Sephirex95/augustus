@@ -49,6 +49,8 @@
 #include "window/building/terrain.h"
 #include "window/building/utility.h"
 
+#include "map/bridge.h"
+
 #define OFFSET(x,y) (x + GRID_SIZE * y)
 
 static void button_help(int param1, int param2);
@@ -288,7 +290,7 @@ static void init(int grid_offset)
     city_resource_determine_available(1);
     context.type = BUILDING_INFO_TERRAIN;
     context.figure.drawn = 0;
-    if (map_sprite_bridge_at(grid_offset) > 0) { //change this to is_bridge later after testing
+    if (map_is_bridge(grid_offset)) { //change this to is_bridge later after testing
         if (map_terrain_is(grid_offset, TERRAIN_WATER)) {
             context.terrain_type = TERRAIN_INFO_BRIDGE;
         } else {
