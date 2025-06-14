@@ -259,7 +259,7 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
 
 int map_is_bridge(int grid_offset)
 {
-    return map_terrain_is(grid_offset, TERRAIN_WATER) && map_sprite_bridge_at(grid_offset);
+    return map_terrain_is(grid_offset, TERRAIN_WATER) && map_terrain_is(grid_offset, TERRAIN_ROAD) && map_terrain_is(grid_offset, TERRAIN_BUILDING);
 }
 
 static int get_y_bridge_tiles(int grid_offset)
