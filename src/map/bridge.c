@@ -10,6 +10,9 @@
 #include "map/sprite.h"
 #include "map/terrain.h"
 
+#include "building/building.h"
+#include "map/building.h"
+
 #define MAX_DISTANCE_BETWEEN_PILLARS 12
 #define MINIMUM_DISTANCE_FOR_PILLARS 9
 
@@ -223,12 +226,34 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     }
 
     int grid_offset = map_grid_offset(x, y);
+    int bridge_type = !is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE;
+
+
+    int prev_part = 0;
     for (int i = 0; i < bridge.length; i++) {
+        int new_x = map_grid_offset_to_x(grid_offset);
+        int new_y = map_grid_offset_to_y(grid_offset);
+
+        building *b = building_create(bridge_type, new_x, new_y);  // create new segment
+        b->prev_part_building_id = prev_part;                      // link to previous
+
+        // If this is not the first piece, link previous to this one
+        if (i != 0) {
+            building *prev_b = building_get(prev_part);
+            if (prev_b) {
+                prev_b->next_part_building_id = b->id;
+            }
+        }
+        prev_part = b->id;  // store current ID for next loop
+
         map_terrain_add(grid_offset, TERRAIN_ROAD);
+        map_terrain_add(grid_offset, TERRAIN_BUILDING);
         int value = map_bridge_get_sprite_id(i, bridge.length, bridge.direction, is_ship_bridge);
         map_sprite_bridge_set(grid_offset, value);
+
         grid_offset += bridge.direction_grid_delta;
     }
+
 
     map_routing_update_land();
     map_routing_update_water();

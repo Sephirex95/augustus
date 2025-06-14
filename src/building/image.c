@@ -16,6 +16,9 @@
 #include "map/random.h"
 #include "scenario/property.h"
 
+#include "map/sprite.h"
+#include "map/grid.h"
+
 static const struct {
     int group;
     int offset;
@@ -32,6 +35,10 @@ static const struct {
     {GROUP_BUILDING_HOUSE_PALACE_1, 0, 1}, {GROUP_BUILDING_HOUSE_PALACE_1, 1, 1},
     {GROUP_BUILDING_HOUSE_PALACE_2, 0, 1}, {GROUP_BUILDING_HOUSE_PALACE_2, 1, 1},
 };
+int building_image_get_bridge(building *b){
+    int grid_offset = map_grid_offset(b->x,b->y);
+    return map_sprite_bridge_at(grid_offset);
+}
 
 int building_image_get_base_farm_crop(building_type type)
 {
@@ -410,6 +417,9 @@ int building_image_get(const building *b)
         case BUILDING_ROADBLOCK:
         case BUILDING_DECORATIVE_COLUMN:
             return building_variant_get_image_id_with_rotation(b->type, b->variant);
+        case BUILDING_LOW_BRIDGE:
+        case BUILDING_SHIP_BRIDGE:
+            return building_image_get_bridge(b);
         case BUILDING_SHIPYARD:
             return image_group(GROUP_BUILDING_SHIPYARD) +
                 ((4 + b->data.industry.orientation - city_view_orientation() / 2) % 4);
