@@ -322,6 +322,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
     } else {
         map_sprite_clear_tile(grid_offset);
         map_terrain_remove(grid_offset, TERRAIN_ROAD);
+        map_terrain_remove(grid_offset, TERRAIN_BUILDING);
     }
     while (map_is_bridge(grid_offset + offset_up)) {
         grid_offset += offset_up;
@@ -330,6 +331,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         } else {
             map_sprite_clear_tile(grid_offset);
             map_terrain_remove(grid_offset, TERRAIN_ROAD);
+            map_terrain_remove(grid_offset, TERRAIN_BUILDING);
         }
     }
 }
