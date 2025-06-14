@@ -250,10 +250,12 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
 
         map_terrain_add(grid_offset, TERRAIN_ROAD);
         map_terrain_add(grid_offset, TERRAIN_BUILDING);
+        map_building_set(grid_offset, b->id);
         int value = map_bridge_get_sprite_id(i, bridge.length, bridge.direction, is_ship_bridge);
         map_sprite_bridge_set(grid_offset, value);
 
         grid_offset += bridge.direction_grid_delta;
+        b->next_part_building_id = 0;
     }
 
 
@@ -325,10 +327,8 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         map_sprite_clear_tile(grid_offset);
         //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
         int building_id = map_building_at(grid_offset);
-        int bridge_x = map_grid_offset_to_x(grid_offset);
-        int bridge_y = map_grid_offset_to_y(grid_offset);
-
-        map_building_tiles_remove(building_id,bridge_x, bridge_y);
+        building *b = building_get(building_id);
+        b->state = BUILDING_STATE_DELETED_BY_PLAYER;
     }
     while (map_is_bridge(grid_offset + offset_up)) {
         grid_offset += offset_up;
@@ -339,10 +339,8 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
             map_sprite_clear_tile(grid_offset);
             //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
             int building_id = map_building_at(grid_offset);
-            int bridge_x = map_grid_offset_to_x(grid_offset);
-            int bridge_y = map_grid_offset_to_y(grid_offset);
-
-            map_building_tiles_remove(building_id,bridge_x, bridge_y);
+            building *b = building_get(building_id);
+            b->state = BUILDING_STATE_DELETED_BY_PLAYER; //maybe deleted by game?
         }
     }
     game_undo_disable();

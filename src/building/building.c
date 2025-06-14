@@ -318,7 +318,7 @@ void building_update_state(void)
             continue;
         }
         if (b->state == BUILDING_STATE_UNDO || b->state == BUILDING_STATE_DELETED_BY_PLAYER) {
-            if (b->type == BUILDING_TOWER || b->type == BUILDING_GATEHOUSE) {
+            if (b->type == BUILDING_TOWER || b->type == BUILDING_GATEHOUSE || b->type == BUILDING_SHIP_BRIDGE || b->type == BUILDING_LOW_BRIDGE)  {
                 wall_recalc = 1;
                 road_recalc = 1;
             } else if (b->type == BUILDING_RESERVOIR) {
