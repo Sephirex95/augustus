@@ -1,7 +1,10 @@
 #ifndef MAP_BRIDGE_H
 #define MAP_BRIDGE_H
+#include "building/type.h"
 
 int map_bridge_building_length(void);
+
+int building_type_is_bridge(building_type type);
 
 void map_bridge_reset_building_length(void);
 

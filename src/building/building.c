@@ -33,6 +33,8 @@
 #include "map/terrain.h"
 #include "map/tiles.h"
 
+#include "map/bridge.h"
+
 #define BUILDING_ARRAY_SIZE_STEP 2000
 
 #define WATER_DESIRABILITY_RANGE 3
@@ -236,6 +238,9 @@ building *building_create(building_type type, int x, int y)
         b->type != BUILDING_PALISADE_GATE && config_get(CONFIG_GP_CH_GATES_DEFAULT_TO_PASS_ALL_WALKERS)) {
         b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
     }
+    if (building_type_is_bridge(b->type)){ //bridges always allow everyone by default
+        b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
+    }
 
     b->x = x;
     b->y = y;
@@ -330,8 +335,9 @@ void building_update_state(void)
                 road_recalc = 1;
             }
             map_building_tiles_remove(b->id, b->x, b->y);
-            if (building_type_is_roadblock(b->type) && b->size == 1) {
+            if (building_type_is_roadblock(b->type) && b->size == 1 && !building_type_is_bridge(b->type)) {
                 // Leave the road behind the deleted roadblock
+                // except for bridges - they are coded as size 1
                 map_terrain_add(b->grid_offset, TERRAIN_ROAD);
                 road_recalc = 1;
             }

@@ -417,9 +417,9 @@ int building_image_get(const building *b)
         case BUILDING_ROADBLOCK:
         case BUILDING_DECORATIVE_COLUMN:
             return building_variant_get_image_id_with_rotation(b->type, b->variant);
-        case BUILDING_LOW_BRIDGE:
-        case BUILDING_SHIP_BRIDGE:
-            return building_image_get_bridge(b);
+        // case BUILDING_LOW_BRIDGE:
+        // case BUILDING_SHIP_BRIDGE:
+        //     return building_image_get_bridge(b);
         case BUILDING_SHIPYARD:
             return image_group(GROUP_BUILDING_SHIPYARD) +
                 ((4 + b->data.industry.orientation - city_view_orientation() / 2) % 4);

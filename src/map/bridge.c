@@ -11,6 +11,7 @@
 #include "map/terrain.h"
 
 #include "building/building.h"
+#include "building/type.h"
 #include "map/building.h"
 #include "game/undo.h"
 #include "map/building_tiles.h"
@@ -28,6 +29,10 @@ static struct {
 int map_bridge_building_length(void)
 {
     return bridge.length;
+}
+
+int building_type_is_bridge(building_type type){
+    return type == BUILDING_LOW_BRIDGE || type== BUILDING_SHIP_BRIDGE;
 }
 
 void map_bridge_reset_building_length(void)
@@ -312,11 +317,13 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         map_property_mark_deleted(grid_offset);
     } else {
         map_sprite_clear_tile(grid_offset);
-        map_terrain_set(grid_offset, TERRAIN_WATER);
-        //map_terrain_remove(grid_offset, TERRAIN_ROAD); //wont be necessary since map_building_tiles_remove will set water here
+
         int building_id = map_building_at(grid_offset);
         building *b = building_get(building_id);
         b->state = BUILDING_STATE_DELETED_BY_PLAYER;
+        map_building_set(grid_offset,0);
+        map_terrain_remove(grid_offset, TERRAIN_ROAD);
+        map_terrain_remove(grid_offset, TERRAIN_BUILDING);
     }
     while (map_is_bridge(grid_offset + offset_up)) {
         grid_offset += offset_up;
@@ -325,10 +332,9 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
         } else {
 
             map_sprite_clear_tile(grid_offset);
-            map_terrain_set(grid_offset, TERRAIN_WATER); //wont be necessary since map_building_tiles_remove will set water here
-            int building_id = map_building_at(grid_offset);
-            building *b = building_get(building_id);
-            b->state = BUILDING_STATE_DELETED_BY_PLAYER; //maybe deleted by game?
+            map_terrain_remove(grid_offset, TERRAIN_ROAD);
+            map_terrain_remove(grid_offset, TERRAIN_BUILDING);
+            map_building_set(grid_offset,0);
         }
     }
     game_undo_disable();
