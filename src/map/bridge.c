@@ -238,9 +238,6 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     building *b = building_create(bridge_type, x, y); 
     //int prev_part = 0;
     for (int i = 0; i < bridge.length; i++) {
-        int new_x = map_grid_offset_to_x(grid_offset);
-        int new_y = map_grid_offset_to_y(grid_offset);
-
         map_terrain_add(grid_offset, TERRAIN_ROAD);
         map_terrain_add(grid_offset, TERRAIN_BUILDING);
         map_building_set(grid_offset, b->id);
