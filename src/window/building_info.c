@@ -186,6 +186,8 @@ static int get_height_id(void)
             case BUILDING_LARGE_MAUSOLEUM:
             case BUILDING_TRIUMPHAL_ARCH:
             case BUILDING_LATRINES:
+            case BUILDING_SHIP_BRIDGE:
+            case BUILDING_LOW_BRIDGE:
                 return 5;
                 
             case BUILDING_DOCK:
@@ -286,7 +288,7 @@ static void init(int grid_offset)
     city_resource_determine_available(1);
     context.type = BUILDING_INFO_TERRAIN;
     context.figure.drawn = 0;
-    if (!context.building_id && map_sprite_bridge_at(grid_offset) > 0) {
+    if (map_sprite_bridge_at(grid_offset) > 0) { //change this to is_bridge later after testing
         if (map_terrain_is(grid_offset, TERRAIN_WATER)) {
             context.terrain_type = TERRAIN_INFO_BRIDGE;
         } else {
