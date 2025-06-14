@@ -243,6 +243,9 @@ building *building_create(building_type type, int x, int y)
     if (building_type_is_bridge(b->type)){ //bridges always allow everyone by default
         b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
     }
+    if (building_type_is_bridge(b->type)){ //bridges always allow everyone by default
+        b->data.roadblock.exceptions = ROADBLOCK_PERMISSION_ALL;
+    }
 
     b->x = x;
     b->y = y;
