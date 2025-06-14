@@ -35,7 +35,7 @@ static const struct {
     {GROUP_BUILDING_HOUSE_PALACE_1, 0, 1}, {GROUP_BUILDING_HOUSE_PALACE_1, 1, 1},
     {GROUP_BUILDING_HOUSE_PALACE_2, 0, 1}, {GROUP_BUILDING_HOUSE_PALACE_2, 1, 1},
 };
-int building_image_get_bridge(building *b){
+int building_image_get_bridge(const building *b){
     int grid_offset = map_grid_offset(b->x,b->y);
     return map_sprite_bridge_at(grid_offset);
 }
