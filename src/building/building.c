@@ -24,6 +24,7 @@
 #include "game/difficulty.h"
 #include "game/save_version.h"
 #include "game/undo.h"
+#include "map/bridge.h"
 #include "map/building_tiles.h"
 #include "map/desirability.h"
 #include "map/elevation.h"
@@ -32,8 +33,6 @@
 #include "map/routing_terrain.h"
 #include "map/terrain.h"
 #include "map/tiles.h"
-
-#include "map/bridge.h"
 
 #define BUILDING_ARRAY_SIZE_STEP 2000
 
