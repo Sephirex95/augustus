@@ -74,7 +74,7 @@ int map_bridge_calculate_length_direction(int x, int y, int *length, int *direct
     }
     *direction = bridge.direction;
     bridge.length = 1;
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 64; i++) { //longer bridges
         grid_offset += bridge.direction_grid_delta;
         bridge.length++;
         int next_offset = grid_offset + bridge.direction_grid_delta;
