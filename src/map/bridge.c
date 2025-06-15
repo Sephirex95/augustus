@@ -250,7 +250,7 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
 
     map_routing_update_land();
     map_routing_update_water();
-
+    game_undo_disable();
     return bridge.length;
 }
 
