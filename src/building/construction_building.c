@@ -33,6 +33,7 @@
 #include "map/water.h"
 #include "scenario/property.h"
 
+
 static void add_fort(int type, building *fort)
 {
     fort->prev_part_building_id = 0;
@@ -321,13 +322,25 @@ static void add_to_map(int type, building *b, int size, int orientation, int wat
     map_routing_update_walls();
 }
 
+int is_granary_cross_tile(int tile_no) {
+    return  tile_no == 1 ||
+            tile_no == 2 ||
+            tile_no == 3 ||
+            tile_no == 6 ||
+            tile_no == 7;
+}
+
+
 int building_construction_place_building(building_type type, int x, int y)
 {
     int terrain_mask = TERRAIN_ALL;
-    if (building_type_is_roadblock(type)) {
-        terrain_mask = ~TERRAIN_ROAD & ~TERRAIN_HIGHWAY;
+    if (building_type_is_roadblock(type)){
+        terrain_mask = type == BUILDING_GATEHOUSE ? ~TERRAIN_WALL & ~TERRAIN_ROAD : ~TERRAIN_ROAD & ~TERRAIN_HIGHWAY; 
+        //allow building gatehouses over walls and roads, other non-bridge roadblocks over roads and highways
     } else if (type == BUILDING_TOWER) {
         terrain_mask = ~TERRAIN_WALL;
+    } else if (type == BUILDING_GRANARY){
+        terrain_mask = ~TERRAIN_ROAD; //allow building granary over all road, BUT, the building ghost is set up to SUGGEST placing it over crossroads only
     }
     int size = building_properties_for_type(type)->size;
     if (type == BUILDING_WAREHOUSE) {
@@ -375,6 +388,7 @@ int building_construction_place_building(building_type type, int x, int y)
         }
     }
     int waterside_orientation_abs = 0, waterside_orientation_rel = 0;
+
     if (type == BUILDING_SHIPYARD || type == BUILDING_WHARF || type == BUILDING_DOCK) {
         if (map_water_determine_orientation(x, y, building_properties_for_type(type)->size, 0,
                 &waterside_orientation_abs, &waterside_orientation_rel, 1, 0)) {

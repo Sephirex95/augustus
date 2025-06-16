@@ -3,6 +3,7 @@
 #include "assets/assets.h"
 #include "building/connectable.h"
 #include "building/construction.h"
+#include "building/construction_building.h"
 #include "building/count.h"
 #include "building/image.h"
 #include "building/industry.h"
@@ -488,10 +489,18 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
             }
             if (type == BUILDING_GATEHOUSE) {
                 forbidden_terrain &= ~TERRAIN_HIGHWAY;
+                forbidden_terrain &= ~TERRAIN_WALL;
+                forbidden_terrain &= ~TERRAIN_ROAD;
             }
             if (type == BUILDING_TOWER) {
                 forbidden_terrain &= ~TERRAIN_WALL;
             }
+            if (type == BUILDING_GRANARY) { // Allow roads under granary's cross shape
+                if (is_granary_cross_tile(i)) {
+                    forbidden_terrain &= ~TERRAIN_ROAD;
+                }
+            }
+
         }
 
         if (fully_blocked || forbidden_terrain) {
