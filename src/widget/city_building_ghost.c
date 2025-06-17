@@ -165,7 +165,7 @@ static int is_blocked_for_building(int grid_offset, int building_size, int *bloc
 static int has_blocked_tiles(int num_tiles, int *blocked_tiles)
 {
     for (int i = 0; i < num_tiles; i++) {
-        if (blocked_tiles[i]) {
+        if (blocked_tiles[i] == 1) { //-1 shouldnt trigger this
             return 1;
         }
     }
@@ -177,7 +177,7 @@ static void draw_building_tiles(int x, int y, int num_tiles, int *blocked_tiles)
     for (int i = 0; i < num_tiles; i++) {
         int x_offset = x + view_offset_x(i);
         int y_offset = y + view_offset_y(i);
-        if (blocked_tiles[i]) {
+        if (blocked_tiles[i] == 1 || blocked_tiles[i] == -1 ){ //1 means real problem, -1 means suggested problem, like a road that will disappear.
             image_blend_footprint_color(x_offset, y_offset, COLOR_MASK_RED, data.scale);
         } else {
             image_draw_isometric_footprint(image_group(GROUP_TERRAIN_FLAT_TILE),
@@ -483,6 +483,9 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
     for (int i = 0; i < num_tiles; i++) {
         int tile_offset = grid_offset + tile_grid_offset(orientation_index, i);
         int forbidden_terrain = map_terrain_get(tile_offset) & TERRAIN_NOT_CLEAR;
+        int discouraged_terrain = map_terrain_get(tile_offset) & TERRAIN_NOT_CLEAR;
+        // forbidden terrain cannot be built on
+        // discouraged terrain can be built on, but is still highlighted red, to suggest e.g. that it will become unusable/be overwritten
         if (!fully_blocked) {
             if (type == BUILDING_PLAZA || building_type_is_roadblock(type)) {
                 forbidden_terrain &= ~TERRAIN_ROAD;
@@ -496,20 +499,24 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
                 forbidden_terrain &= ~TERRAIN_WALL;
             }
             if (type == BUILDING_GRANARY) { // Allow roads under granary's cross shape
+                forbidden_terrain &= ~TERRAIN_ROAD;
                 if (is_granary_cross_tile(i)) {
-                    forbidden_terrain &= ~TERRAIN_ROAD;
+                    discouraged_terrain &= ~TERRAIN_ROAD; 
                 }
             }
-
         }
-
         if (fully_blocked || forbidden_terrain) {
             blocked_tiles[i] = 1;
         } else if (check_figure && map_has_figure_at(tile_offset)) {
             blocked_tiles[i] = 1;
             figure_animal_try_nudge_at(grid_offset, tile_offset, building_size);
         } else {
-            blocked_tiles[i] = 0;
+            if (discouraged_terrain){ //allow some leeway
+                blocked_tiles[i] = -1;
+            } else{
+                blocked_tiles[i] = 0;
+            }
+
         }
     }
     if (type >= BUILDING_ROADBLOCK || type == BUILDING_LIBRARY || type == BUILDING_SMALL_STATUE || type == BUILDING_MEDIUM_STATUE) {
