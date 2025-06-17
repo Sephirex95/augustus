@@ -329,6 +329,19 @@ int is_granary_cross_tile(int tile_no) {
             tile_no == 6 ||
             tile_no == 7;
 }
+int is_warehouse_corner(int tile_no){
+    int corner = building_rotation_get_corner(2 * building_rotation_get_rotation());
+    for (int i = 0; i < 9; i++) {
+        if (i == corner) {
+            if (tile_no == corner){
+                return 1;
+            }
+
+        }
+    }
+}
+
+
 
 
 int building_construction_place_building(building_type type, int x, int y)
@@ -341,6 +354,8 @@ int building_construction_place_building(building_type type, int x, int y)
         terrain_mask = ~TERRAIN_WALL;
     } else if (type == BUILDING_GRANARY){
         terrain_mask = ~TERRAIN_ROAD; //allow building granary over all road, BUT, the building ghost is set up to SUGGEST placing it over crossroads only
+    } else if (type == BUILDING_WAREHOUSE){
+        terrain_mask = ~TERRAIN_ROAD;
     }
     int size = building_properties_for_type(type)->size;
     if (type == BUILDING_WAREHOUSE) {

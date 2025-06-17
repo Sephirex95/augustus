@@ -459,7 +459,7 @@ static void draw_mausoleum_desirability_range(const map_tile *tile, building_typ
 static void draw_default(const map_tile *tile, int x_view, int y_view, building_type type)
 {
     const building_properties *props = building_properties_for_type(type);
-    int building_size = type == BUILDING_WAREHOUSE ? 3 : props->size;
+    int building_size = type == BUILDING_WAREHOUSE ? 3 : props->size; //what?
     int image_id = 0;
 
     // check if we can place building
@@ -497,6 +497,13 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
             }
             if (type == BUILDING_TOWER) {
                 forbidden_terrain &= ~TERRAIN_WALL;
+            }
+            if (BUILDING_WAREHOUSE){ 
+                int corner = building_rotation_get_corner(2 * building_rotation_get_rotation()); // corner tile of a warehouse - the exchange platz
+                forbidden_terrain &= ~TERRAIN_ROAD; //every tile is allowed over roads
+                if (i == corner){
+                    discouraged_terrain &= ~TERRAIN_ROAD; //corner tile isnt even discouraged over roads
+                }
             }
             if (type == BUILDING_GRANARY) { // Allow roads under granary's cross shape
                 forbidden_terrain &= ~TERRAIN_ROAD;
@@ -586,7 +593,7 @@ static void draw_second_reservoir_range(int x, int y, int grid_offset)
     image_draw(image_group(GROUP_TERRAIN_FLAT_TILE), x, y, color_mask, data.scale);
 }
 
-static void draw_draggable_reservoir(const map_tile *tile, int x, int y)
+static void draw_draggable_reservoir(const map_tile *tile, int x, int y) //what on earth is a draggable reservoir
 {
     int map_x = tile->x - 1;
     int map_y = tile->y - 1;
