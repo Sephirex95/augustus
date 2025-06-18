@@ -28,7 +28,7 @@ void map_bridge_remove(int grid_offset, int mark_deleted);
 
 int is_bridge_ramp_sprite(int sprite);
 
-int map_bridge_find_start_and_direction(int grid_offset, int *axis);
+int map_bridge_find_start_and_direction(int grid_offset, int *axis, int *axis_direction);
 
 void map_bridge_update_after_rotate(int counter_clockwise);
 

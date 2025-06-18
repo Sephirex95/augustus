@@ -1046,7 +1046,7 @@ static void set_water_image(int x, int y, int grid_offset)
 
 static void update_water_tile(int x, int y, int grid_offset)
 {
-    if (map_terrain_is(grid_offset, TERRAIN_WATER) && !map_terrain_is(grid_offset, TERRAIN_BUILDING)) {
+    if (map_terrain_is(grid_offset, TERRAIN_WATER) && (!map_terrain_is(grid_offset, TERRAIN_BUILDING)|| map_is_bridge(grid_offset))) {
         foreach_region_tile(x - 1, y - 1, x + 1, y + 1, set_water_image);
     }
 }

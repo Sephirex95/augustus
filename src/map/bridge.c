@@ -304,51 +304,40 @@ static int legacy_map_is_bridge(int grid_offset){
     //checking just for sprites is misleading, as on land buildings also have sprites - it's their animation frame
     return (map_sprite_bridge_at(grid_offset)) && map_terrain_is(grid_offset, TERRAIN_WATER);
 }
-
-int map_bridge_find_start_and_direction(int grid_offset, int *axis)
+int map_bridge_find_start_and_direction(int grid_offset, int *axis, int *axis_direction)
 {
-    int sprite = map_sprite_bridge_at(grid_offset);
-    if ((!map_is_bridge(grid_offset)&& !legacy_map_is_bridge(grid_offset)) || sprite == 0)
+    if (!map_is_bridge(grid_offset)) {
         return -1;
-
-    int dx = 0, dy = 0;
-
-    if (sprite == 5 || sprite == 11 || sprite == 13 || sprite == 14) {
-        dy = -1;
-        *axis = 1;  // vertical (y)
-    } else if (sprite == 6 || sprite == 12 || sprite == 15) {
-        dx = -1;
-        *axis = 0;  // horizontal (x)
-    } else if (is_bridge_ramp_sprite(sprite)) {
-        // ramps encode direction directly
-        // (this is optional; you can just treat ramps as a stop point)
-        switch (sprite) {
-            case 1: case 3: case 7: case 9:
-                *axis = 1; break;  // vertical
-            case 2: case 4: case 8: case 10:
-                *axis = 0; break;  // horizontal
-            default:
-                *axis = -1;
-        }
-        return grid_offset;
-    } else {
-        // fallback
-        dy = -1;
-        *axis = -1;
     }
 
-    int delta = map_grid_delta(dx, dy);
-    int current = grid_offset;
+    building *b = building_get(map_building_at(grid_offset));
+    if (!b) return -1;
 
-    while (map_is_bridge(current)) {
-        int current_sprite = map_sprite_bridge_at(current);
-        if (is_bridge_ramp_sprite(current_sprite)) {
-            return current; // found the start
+    int start = map_grid_offset(b->x, b->y);
+    int building_id = b->id;
+
+    static const int dirs[4][2] = {
+        {  0, -1 }, // north
+        { +1,  0 }, // east
+        {  0, +1 }, // south
+        { -1,  0 }  // west
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int dx = dirs[i][0];
+        int dy = dirs[i][1];
+        int neighbor = start + map_grid_delta(dx, dy);
+        if (map_building_at(neighbor) == building_id) {
+            *axis = (dx != 0) ? 0 : 1;
+            *axis_direction = (dx + dy > 0) ? +1 : -1;
+            return start;
         }
-        current -= delta;
     }
 
-    return -1;
+    // If no direction found, default to +1 vertical (shouldn't happen)
+    *axis = 1;
+    *axis_direction = 1;
+    return start;
 }
 
 
@@ -358,73 +347,68 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
     if (!map_is_bridge(grid_offset)) {
         return;
     }
-    int axis;
-    int start_offset = map_bridge_find_start_and_direction(grid_offset, &axis);
-    if (start_offset < 0) {
-        return; //-1 means invalid tile, return 
+
+    int axis, dir;
+    int start = map_bridge_find_start_and_direction(grid_offset, &axis, &dir);
+    if (start < 0) {
+        return;
     }
 
-    int offset_up =  !axis ? map_grid_delta(1, 0) : map_grid_delta(0, 1); //if axis 1, then going in y, if axis 0 then going in x
-    //if it works then fix the above statement to be clearer before PR
-    // find lower end of the bridge
-    while (map_is_bridge(grid_offset - offset_up)) {
-        grid_offset -= offset_up;
-    }
-    int bridge_x_start = map_grid_offset_to_x(grid_offset);
-    int bridge_y_start = map_grid_offset_to_y(grid_offset);
-    if (mark_deleted) {
-        map_property_mark_deleted(grid_offset);
-    } else {
-        map_sprite_clear_tile(grid_offset);
+    int delta = (axis == 0)
+        ? map_grid_delta(dir, 0)  // horizontal
+        : map_grid_delta(0, dir); // vertical
 
-        int building_id = map_building_at(grid_offset);
-        building *b = building_get(building_id);
-        b->state = BUILDING_STATE_DELETED_BY_PLAYER;
-        map_building_set(grid_offset,0);
-        map_terrain_remove(grid_offset, TERRAIN_ROAD);
-        map_terrain_remove(grid_offset, TERRAIN_BUILDING);
-    }
-    while (map_is_bridge(grid_offset + offset_up)) {
-        grid_offset += offset_up;
+    int building_id = map_building_at(start);
+    int current = start;
+
+    int bridge_x_start = map_grid_offset_to_x(start);
+    int bridge_y_start = map_grid_offset_to_y(start);
+
+    while (map_is_bridge(current) && map_building_at(current) == building_id) {
         if (mark_deleted) {
-            map_property_mark_deleted(grid_offset);
+            map_property_mark_deleted(current);
         } else {
-
-            map_sprite_clear_tile(grid_offset);
-            map_terrain_remove(grid_offset, TERRAIN_ROAD);
-            map_terrain_remove(grid_offset, TERRAIN_BUILDING);
-            map_building_set(grid_offset,0);
+            map_sprite_clear_tile(current);
+            map_terrain_remove(current, TERRAIN_ROAD);
+            map_terrain_remove(current, TERRAIN_BUILDING);
+            map_building_set(current, 0);
         }
+        current += delta;
     }
-    int bridge_x_end = map_grid_offset_to_x(grid_offset -offset_up);
-    int bridge_y_end = map_grid_offset_to_y(grid_offset -offset_up);
+
+    int bridge_x_end = map_grid_offset_to_x(current - delta);
+    int bridge_y_end = map_grid_offset_to_y(current - delta);
+
     game_undo_disable();
-    map_tiles_update_region_water(bridge_x_start,bridge_y_start,bridge_x_end, bridge_y_end);
+    map_tiles_update_region_water(bridge_x_start, bridge_y_start, bridge_x_end, bridge_y_end);
 }
+
 
 int map_bridge_count_figures(int grid_offset)
 {
     if (!map_is_bridge(grid_offset)) {
-        return 0;
-    }
-    int tiles_x = get_x_bridge_tiles(grid_offset);
-    int tiles_y = get_y_bridge_tiles(grid_offset);
-
-    int offset_up = tiles_x > tiles_y ? map_grid_delta(1, 0) : map_grid_delta(0, 1);
-    // find lower end of the bridge
-    while (map_is_bridge(grid_offset - offset_up)) {
-        grid_offset -= offset_up;
+        return;
     }
 
+    int axis, dir;
+    int start = map_bridge_find_start_and_direction(grid_offset, &axis, &dir);
+    if (start < 0) {
+        return;
+    }
+
+    int delta = (axis == 0)
+        ? map_grid_delta(dir, 0)  // horizontal
+        : map_grid_delta(0, dir); // vertical
+
+    int building_id = map_building_at(start);
+    int current = start;
     int figures = 0;
-    if (map_has_figure_at(grid_offset)) {
-        figures = 1;
-    }
-    while (map_is_bridge(grid_offset + offset_up)) {
-        grid_offset += offset_up;
+    // find lower end of the bridge
+    while (map_is_bridge(current) && map_building_at(current) == building_id) {
         if (map_has_figure_at(grid_offset)) {
             figures++;
         }
+        current += delta;
     }
     return figures;
 }
