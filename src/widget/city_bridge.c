@@ -41,7 +41,7 @@ void city_draw_bridge_tile(int x, int y, float scale, int bridge_sprite_id, colo
             image_draw(image_id + 2, x + 7, y - 20, color_mask, scale);
             break;
         case 5:
-            image_draw(image_id + 4, x , y - 21, color_mask, scale);
+            image_draw(image_id + 4, x, y - 21, color_mask, scale);
             break;
         case 6:
             image_draw(image_id + 1, x + 5, y - 21, color_mask, scale);

@@ -31,8 +31,9 @@ int map_bridge_building_length(void)
     return bridge.length;
 }
 
-int building_type_is_bridge(building_type type){
-    return type == BUILDING_LOW_BRIDGE || type== BUILDING_SHIP_BRIDGE;
+int building_type_is_bridge(building_type type)
+{
+    return type == BUILDING_LOW_BRIDGE || type == BUILDING_SHIP_BRIDGE;
 }
 
 void map_bridge_reset_building_length(void)
@@ -235,7 +236,7 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     int grid_offset = map_grid_offset(x, y);
     int bridge_type = !is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE;
 
-    building *b = building_create(bridge_type, x, y); 
+    building *b = building_create(bridge_type, x, y);
     for (int i = 0; i < bridge.length; i++) {
         map_terrain_add(grid_offset, TERRAIN_ROAD);
         map_terrain_add(grid_offset, TERRAIN_BUILDING);
@@ -258,11 +259,13 @@ int map_is_bridge(int grid_offset)
     return map_terrain_is(grid_offset, TERRAIN_WATER) && map_terrain_is(grid_offset, TERRAIN_ROAD) && map_terrain_is(grid_offset, TERRAIN_BUILDING);
 }
 
-int is_bridge_ramp_sprite(int sprite) {
+int is_bridge_ramp_sprite(int sprite)
+{
     return (sprite >= 1 && sprite <= 4) || (sprite >= 7 && sprite <= 10);
 }
 
-static int legacy_map_is_bridge(int grid_offset){ 
+static int legacy_map_is_bridge(int grid_offset)
+{
     //old way for checking for bridges - check if it's sprite, and check if it's on water
     //checking just for sprites is misleading, as on land buildings also have sprites - it's their animation frame
     //this function is not currently used in this module, but leaving it here as a precaution
