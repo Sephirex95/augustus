@@ -479,6 +479,50 @@ static int legacy_map_is_bridge(int grid_offset){
     return (map_sprite_bridge_at(grid_offset)) && map_terrain_is(grid_offset, TERRAIN_WATER);
 }
 
+int map_bridge_find_start_and_direction_legacy(int grid_offset, int *axis, int *axis_direction)
+{
+    if (!legacy_map_is_bridge(grid_offset))
+        return -1;
+
+    static const int dirs[4][2] = {
+        {  0, -1 }, // north
+        { +1,  0 }, // east
+        {  0, +1 }, // south
+        { -1,  0 }  // west
+    };
+
+    // Scan in all 4 directions until we find a ramp
+    for (int test_axis = 0; test_axis < 2; ++test_axis) {
+        for (int dir = -1; dir <= 1; dir += 2) {
+            int dx = (test_axis == 0) ? dir : 0;
+            int dy = (test_axis == 1) ? dir : 0;
+            int delta = map_grid_delta(dx, dy);
+
+            int current = grid_offset;
+            while (legacy_map_is_bridge(current)) {
+                int sprite = map_sprite_bridge_at(current);
+                if (is_bridge_ramp_sprite(sprite)) {
+                    int next = current + delta;
+                    int next_sprite = map_sprite_bridge_at(next);
+
+                    // Don't treat it as a bridge start if another ramp follows (likely wrong end)
+                    if (is_bridge_ramp_sprite(next_sprite)) break;
+
+                    // Check for mid-bridge sprite next (sprite 5–6, 11–12, 13–15)
+                    if (next_sprite >= 5 && next_sprite <= 15 && !is_bridge_ramp_sprite(next_sprite)) {
+                        *axis = test_axis;
+                        *axis_direction = dir;
+                        return current;
+                    }
+                }
+                current -= delta;
+            }
+        }
+    }
+
+    return -1; // No valid bridge start found
+}
+
 void map_terrain_migrate_old_bridges(void)
 {
     for (int y = 0; y < GRID_SIZE; y++) {
@@ -489,7 +533,7 @@ void map_terrain_migrate_old_bridges(void)
                 // Find true start of the old bridge
                 // Only process tiles that are part of a legacy bridge and haven't been upgraded yet 
                 int axis, dir;
-                int start = map_bridge_find_start_and_direction(grid_offset, &axis, &dir);
+                int start = map_bridge_find_start_and_direction_legacy(grid_offset, &axis, &dir);
                 if (start < 0) {
                     continue;
                 }

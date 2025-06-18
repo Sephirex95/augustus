@@ -250,49 +250,13 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
 
     map_routing_update_land();
     map_routing_update_water();
-
+    map_tiles_update_region_water(x, y, map_grid_offset_to_x(grid_offset), map_grid_offset_to_y(grid_offset));
     return bridge.length;
 }
 
 int map_is_bridge(int grid_offset)
 {
     return map_terrain_is(grid_offset, TERRAIN_WATER) && map_terrain_is(grid_offset, TERRAIN_ROAD) && map_terrain_is(grid_offset, TERRAIN_BUILDING);
-}
-
-int get_y_bridge_tiles(int grid_offset)
-{
-    int tiles = 0;
-    if (map_is_bridge(grid_offset + map_grid_delta(0, -1))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(0, -2))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(0, 1))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(0, 2))) {
-        tiles++;
-    }
-    return tiles;
-}
-
-int get_x_bridge_tiles(int grid_offset)
-{
-    int tiles = 0;
-    if (map_is_bridge(grid_offset + map_grid_delta(-1, 0))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(-2, 0))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(1, 0))) {
-        tiles++;
-    }
-    if (map_is_bridge(grid_offset + map_grid_delta(2, 0))) {
-        tiles++;
-    }
-    return tiles;
 }
 
 int is_bridge_ramp_sprite(int sprite) {
@@ -304,6 +268,7 @@ static int legacy_map_is_bridge(int grid_offset){
     //checking just for sprites is misleading, as on land buildings also have sprites - it's their animation frame
     return (map_sprite_bridge_at(grid_offset)) && map_terrain_is(grid_offset, TERRAIN_WATER);
 }
+
 int map_bridge_find_start_and_direction(int grid_offset, int *axis, int *axis_direction)
 {
     if (!map_is_bridge(grid_offset)) {
@@ -381,19 +346,20 @@ void map_bridge_remove(int grid_offset, int mark_deleted)
 
     game_undo_disable();
     map_tiles_update_region_water(bridge_x_start, bridge_y_start, bridge_x_end, bridge_y_end);
+    map_tiles_update_region_empty_land(bridge_x_start, bridge_y_start, bridge_x_end, bridge_y_end);
 }
 
 
 int map_bridge_count_figures(int grid_offset)
 {
     if (!map_is_bridge(grid_offset)) {
-        return;
+        return 0;
     }
 
     int axis, dir;
     int start = map_bridge_find_start_and_direction(grid_offset, &axis, &dir);
     if (start < 0) {
-        return;
+        return 0;
     }
 
     int delta = (axis == 0)
