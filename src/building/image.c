@@ -13,9 +13,9 @@
 #include "core/image_group.h"
 #include "core/random.h"
 #include "game/resource.h"
+#include "map/grid.h"
 #include "map/random.h"
 #include "map/sprite.h"
-#include "map/grid.h"
 #include "scenario/property.h"
 
 static const struct {

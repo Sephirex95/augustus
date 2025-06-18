@@ -29,8 +29,8 @@
 #include "graphics/window.h"
 #include "input/input.h"
 #include "map/aqueduct.h"
-#include "map/building.h"
 #include "map/bridge.h"
+#include "map/building.h"
 #include "map/figure.h"
 #include "map/grid.h"
 #include "map/image.h"
@@ -291,7 +291,7 @@ static void init(int grid_offset)
     city_resource_determine_available(1);
     context.type = BUILDING_INFO_TERRAIN;
     context.figure.drawn = 0;
-    if (map_is_bridge(grid_offset)) { //change this to is_bridge later after testing
+    if (map_is_bridge(grid_offset)) {
         if (map_terrain_is(grid_offset, TERRAIN_WATER)) {
             context.terrain_type = TERRAIN_INFO_BRIDGE;
         } else {
@@ -936,7 +936,6 @@ static int handle_specific_building_info_mouse(const mouse *m)
         return window_building_handle_mouse_legion_info(m, &context);
     } else if (context.figure.drawn) {
         return window_building_handle_mouse_figure_list(m, &context);
-
     } else if (context.type == BUILDING_INFO_BUILDING){
         int btype = building_get(context.building_id)->type;
 
