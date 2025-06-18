@@ -115,7 +115,7 @@ static inline void draw_fullscreen_background(int image_id, int x, int y, color_
     if (alpha != ALPHA_OPAQUE) {
         color_mask &= (alpha << COLOR_BITSHIFT_ALPHA) | 0xffffff;
     }
-    
+
     if (scale >= SCALE_NONE) {
         image_draw(image_id, (s_width - img->width) / 2, (s_height - img->height) / 2, color_mask, SCALE_NONE);
     } else {

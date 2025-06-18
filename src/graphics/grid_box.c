@@ -31,7 +31,8 @@ void grid_box_init(grid_box_type *grid_box, unsigned int total_items)
     grid_box->focused_item.index = NO_POSITION;
     scrollbar_init(&grid_box->scrollbar, 0, calculate_scrollable_items(grid_box));
 }
-void grid_box_set_offset_scrollbar(grid_box_type *grid_box, int offset_scrollbar_x, int offset_scrollbar_y){
+void grid_box_set_offset_scrollbar(grid_box_type *grid_box, int offset_scrollbar_x, int offset_scrollbar_y)
+{
     grid_box->offset_scrollbar_x = offset_scrollbar_x;
     grid_box->offset_scrollbar_y = offset_scrollbar_y;
 }
@@ -82,7 +83,7 @@ int grid_box_has_scrollbar(const grid_box_type *grid_box)
 static void draw_scrollbar(grid_box_type *grid_box)
 {
     scrollbar_type *scrollbar = &grid_box->scrollbar;
-    scrollbar->x = grid_box->x + grid_box->width + 4- 2 * BLOCK_SIZE + grid_box->offset_scrollbar_x;
+    scrollbar->x = grid_box->x + grid_box->width + 4 - 2 * BLOCK_SIZE + grid_box->offset_scrollbar_x;
     scrollbar->y = grid_box->y;
     scrollbar->on_scroll_callback = window_request_refresh;
     scrollbar->has_y_margin = 1;
@@ -165,15 +166,14 @@ void grid_box_draw(grid_box_type *grid_box)
 void grid_box_set_bounds(grid_box_type *grid_box, int new_x, int new_y, int new_width, int new_height)
 {
     //Compare against the existing values, if no change, do nothing
-    if (   new_x     != grid_box->x
-        || new_y     != grid_box->y
+    if (new_x != grid_box->x
+        || new_y != grid_box->y
         || new_width != grid_box->width
-        || new_height!= grid_box->height)
-    {
+        || new_height != grid_box->height) {
         // Overwrite with the new dims
-        grid_box->x      = new_x;
-        grid_box->y      = new_y;
-        grid_box->width  = new_width;
+        grid_box->x = new_x;
+        grid_box->y = new_y;
+        grid_box->width = new_width;
         grid_box->height = new_height;
         scrollbar_update_total_elements(
             &grid_box->scrollbar,
@@ -266,7 +266,7 @@ static int determine_focus(grid_box_type *grid_box, int x, int y)
 int grid_box_handle_input(grid_box_type *grid_box, const mouse *m, int in_dialog)
 {
     scrollbar_type *scrollbar = &grid_box->scrollbar;
-    
+
     if (scrollbar_handle_mouse(scrollbar, m, in_dialog)) {
         grid_box_request_refresh(grid_box);
         return 1;
