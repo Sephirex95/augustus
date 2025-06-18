@@ -26,6 +26,10 @@ int get_x_bridge_tiles(int grid_offset);
 
 void map_bridge_remove(int grid_offset, int mark_deleted);
 
+int is_bridge_ramp_sprite(int sprite);
+
+int map_bridge_find_start_and_direction(int grid_offset, int *axis);
+
 void map_bridge_update_after_rotate(int counter_clockwise);
 
 int map_bridge_count_figures(int grid_offset);

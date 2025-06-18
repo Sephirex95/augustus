@@ -485,10 +485,13 @@ void map_terrain_migrate_old_bridges(void){
             int grid_offset = map_grid_offset(x,y);
             if (legacy_map_is_bridge(grid_offset) && !map_is_bridge(grid_offset)){ //old bridge but not new bridge
                 //convert to new bridge
-                int tiles_x = get_x_bridge_tiles(grid_offset);
-                int tiles_y = get_y_bridge_tiles(grid_offset);
+                int axis;
+                int start_offset = map_bridge_find_start_and_direction(grid_offset, &axis);
+                if (start_offset < 0) {
+                    return; //-1 means invalid tile, return 
+                }
 
-                int offset_up = tiles_x > tiles_y ? map_grid_delta(1, 0) : map_grid_delta(0, 1);
+                int offset_up =  !axis ? map_grid_delta(1, 0) : map_grid_delta(0, 1); //if axis 1, then going in y, if axis 0 then going in x
                 // find lower end of the bridge
                 while (legacy_map_is_bridge(grid_offset - offset_up)) {
                     grid_offset -= offset_up;

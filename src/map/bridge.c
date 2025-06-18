@@ -295,16 +295,77 @@ int get_x_bridge_tiles(int grid_offset)
     return tiles;
 }
 
+int is_bridge_ramp_sprite(int sprite) {
+    return (sprite >= 1 && sprite <= 4) || (sprite >= 7 && sprite <= 10);
+}
+
+static int legacy_map_is_bridge(int grid_offset){ 
+    //old way for checking for bridges - check if it's sprite, and check if it's on water
+    //checking just for sprites is misleading, as on land buildings also have sprites - it's their animation frame
+    return (map_sprite_bridge_at(grid_offset)) && map_terrain_is(grid_offset, TERRAIN_WATER);
+}
+
+int map_bridge_find_start_and_direction(int grid_offset, int *axis)
+{
+    int sprite = map_sprite_bridge_at(grid_offset);
+    if ((!map_is_bridge(grid_offset)&& !legacy_map_is_bridge(grid_offset)) || sprite == 0)
+        return -1;
+
+    int dx = 0, dy = 0;
+
+    if (sprite == 5 || sprite == 11 || sprite == 13 || sprite == 14) {
+        dy = -1;
+        *axis = 1;  // vertical (y)
+    } else if (sprite == 6 || sprite == 12 || sprite == 15) {
+        dx = -1;
+        *axis = 0;  // horizontal (x)
+    } else if (is_bridge_ramp_sprite(sprite)) {
+        // ramps encode direction directly
+        // (this is optional; you can just treat ramps as a stop point)
+        switch (sprite) {
+            case 1: case 3: case 7: case 9:
+                *axis = 1; break;  // vertical
+            case 2: case 4: case 8: case 10:
+                *axis = 0; break;  // horizontal
+            default:
+                *axis = -1;
+        }
+        return grid_offset;
+    } else {
+        // fallback
+        dy = -1;
+        *axis = -1;
+    }
+
+    int delta = map_grid_delta(dx, dy);
+    int current = grid_offset;
+
+    while (map_is_bridge(current)) {
+        int current_sprite = map_sprite_bridge_at(current);
+        if (is_bridge_ramp_sprite(current_sprite)) {
+            return current; // found the start
+        }
+        current -= delta;
+    }
+
+    return -1;
+}
+
+
+
 void map_bridge_remove(int grid_offset, int mark_deleted)
 {
     if (!map_is_bridge(grid_offset)) {
         return;
     }
+    int axis;
+    int start_offset = map_bridge_find_start_and_direction(grid_offset, &axis);
+    if (start_offset < 0) {
+        return; //-1 means invalid tile, return 
+    }
 
-    int tiles_x = get_x_bridge_tiles(grid_offset);
-    int tiles_y = get_y_bridge_tiles(grid_offset);
-
-    int offset_up = tiles_x > tiles_y ? map_grid_delta(1, 0) : map_grid_delta(0, 1);
+    int offset_up =  !axis ? map_grid_delta(1, 0) : map_grid_delta(0, 1); //if axis 1, then going in y, if axis 0 then going in x
+    //if it works then fix the above statement to be clearer before PR
     // find lower end of the bridge
     while (map_is_bridge(grid_offset - offset_up)) {
         grid_offset -= offset_up;
