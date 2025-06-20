@@ -30,7 +30,7 @@
 #include "translation/translation.h"
 #include "widget/city.h"
 #include "window/city.h"
-#include "utility.h"
+#include "window/building/utility.h"
 
 #define CAMEL_PORTRAIT 59
 
