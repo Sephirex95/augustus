@@ -30,6 +30,7 @@
 #include "translation/translation.h"
 #include "widget/city.h"
 #include "window/city.h"
+#include "utility.h"
 
 #define CAMEL_PORTRAIT 59
 
@@ -727,6 +728,14 @@ int window_building_handle_mouse_figure_list(const mouse *m, building_info_conte
         generic_buttons_handle_mouse(m, c->x_offset, c->y_offset, depot_figure_buttons, 1, &data.depot_focus_button_id);
         if (focus_id != data.depot_focus_button_id) {
             window_request_refresh();
+        }
+    }
+
+    if (c->terrain_type == TERRAIN_INFO_BRIDGE) {
+        if (c->show_special_orders) {
+            return window_building_handle_mouse_roadblock_orders(m, c);
+        } else {
+            return window_building_handle_mouse_roadblock_button(m, c);
         }
     }
     return handled;

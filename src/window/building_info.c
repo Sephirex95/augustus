@@ -29,6 +29,7 @@
 #include "graphics/window.h"
 #include "input/input.h"
 #include "map/aqueduct.h"
+#include "map/bridge.h"
 #include "map/building.h"
 #include "map/figure.h"
 #include "map/grid.h"
@@ -48,6 +49,8 @@
 #include "window/building/military.h"
 #include "window/building/terrain.h"
 #include "window/building/utility.h"
+
+
 
 #define OFFSET(x,y) (x + GRID_SIZE * y)
 
@@ -186,8 +189,10 @@ static int get_height_id(void)
             case BUILDING_LARGE_MAUSOLEUM:
             case BUILDING_TRIUMPHAL_ARCH:
             case BUILDING_LATRINES:
+            case BUILDING_SHIP_BRIDGE:
+            case BUILDING_LOW_BRIDGE:
                 return 5;
-                
+
             case BUILDING_DOCK:
             case BUILDING_LIGHTHOUSE:
             case BUILDING_CARAVANSERAI:
@@ -286,7 +291,7 @@ static void init(int grid_offset)
     city_resource_determine_available(1);
     context.type = BUILDING_INFO_TERRAIN;
     context.figure.drawn = 0;
-    if (!context.building_id && map_sprite_bridge_at(grid_offset) > 0) {
+    if (map_is_bridge(grid_offset)) {
         if (map_terrain_is(grid_offset, TERRAIN_WATER)) {
             context.terrain_type = TERRAIN_INFO_BRIDGE;
         } else {
@@ -419,7 +424,7 @@ static void init(int grid_offset)
                     case FIGURE_FRIENDLY_ARROW:
                     case FIGURE_WATCHTOWER_ARCHER:
                         break;
-                    // intentional fallthrough
+                        // intentional fallthrough
                     default:
                         context.figure.figure_ids[context.figure.count++] = figure_id;
                         figure_phrase_determine(f);
@@ -708,7 +713,7 @@ static void draw_background(void)
         } else if (btype == BUILDING_OBELISK) {
             window_building_draw_obelisk(&context);
         } else if (building_type_is_roadblock(btype) && context.show_special_orders) {
-            window_building_draw_roadblock_orders(&context);            
+            window_building_draw_roadblock_orders(&context);
         } else if (btype == BUILDING_ROADBLOCK) {
             window_building_draw_roadblock(&context);
         } else if (btype == BUILDING_TRIUMPHAL_ARCH) {
@@ -761,7 +766,7 @@ static void draw_background(void)
             window_building_draw_shrine_venus(&context);
         } else if (btype == BUILDING_ARMOURY) {
             window_building_draw_armoury(&context);
-        }  else if (btype == BUILDING_LATRINES) {
+        } else if (btype == BUILDING_LATRINES) {
             window_building_draw_latrines(&context);
         }
     } else if (context.type == BUILDING_INFO_LEGION) {
@@ -876,6 +881,12 @@ static void draw_foreground(void)
         }
     } else if (context.type == BUILDING_INFO_LEGION) {
         window_building_draw_legion_info_foreground(&context);
+    } else if (context.terrain_type == TERRAIN_INFO_BRIDGE) {
+        if (context.show_special_orders) {
+            window_building_draw_roadblock_orders_foreground(&context);
+        } else {
+            window_building_draw_roadblock_button(&context);
+        }
     }
 
     // general buttons
@@ -900,7 +911,7 @@ static void draw_foreground(void)
         !context.depot_selection.resource &&
         !building_monument_is_unfinished_monument(b) &&
         has_mothball_button()) {
-            draw_mothball_button(context.x_offset, context.y_offset + BLOCK_SIZE * context.height_blocks - 40);
+        draw_mothball_button(context.x_offset, context.y_offset + BLOCK_SIZE * context.height_blocks - 40);
     }
     if (!context.show_special_orders &&
         !context.depot_selection.source &&
@@ -1083,7 +1094,7 @@ static void get_tooltip(tooltip_context *c)
     } else if (btype == BUILDING_WAREHOUSE) {
         window_building_warehouse_get_tooltip_distribution_permissions(&translation);
     } else if (btype == BUILDING_DOCK) {
-        precomposed_text = window_building_dock_get_tooltip(&context);        
+        precomposed_text = window_building_dock_get_tooltip(&context);
     } else if (context.type == BUILDING_INFO_BUILDING && btype == BUILDING_DEPOT) {
         if (context.depot_selection.source || context.depot_selection.destination) {
             window_building_depot_get_tooltip_source_destination(&translation);
@@ -1212,7 +1223,7 @@ void window_building_info_depot_toggle_condition_type(void)
 
 void window_building_info_depot_toggle_condition_threshold(void)
 {
-    building* b = building_get(context.building_id);
+    building *b = building_get(context.building_id);
     b->data.depot.current_order.condition.threshold = (b->data.depot.current_order.condition.threshold + 4) % 36;
     window_invalidate();
 }
