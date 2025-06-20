@@ -5,7 +5,7 @@
 #include "trader.h"
 #include <string.h>
 
-#define MAX_TRADERS 100
+#define MAX_TRADERS 1000
 
 struct trader {
     int32_t bought_amount;
