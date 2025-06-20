@@ -35,10 +35,12 @@ static const struct {
     {GROUP_BUILDING_HOUSE_PALACE_2, 0, 1}, {GROUP_BUILDING_HOUSE_PALACE_2, 1, 1},
 };
 
-int building_image_get_bridge(const building *b){
+int building_image_get_bridge(const building *b)
+{
     int grid_offset = map_grid_offset(b->x,b->y);
     int bridge_sprite_id = map_sprite_bridge_at(grid_offset);
     int base_id = image_group(GROUP_BUILDING_BRIDGE);
+
     switch (bridge_sprite_id) {
         case 1:  return base_id + 5;
         case 2:  return base_id + 0;
@@ -54,9 +56,8 @@ int building_image_get_bridge(const building *b){
         case 12: return base_id + 7;
         case 14: return base_id + 13;
         case 15: return base_id + 12;
-        default: return -1;  // invalid or unsupported sprite ID
+        default: return 0;
     }
-
 }
 
 
