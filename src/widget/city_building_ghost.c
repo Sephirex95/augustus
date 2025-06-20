@@ -498,7 +498,7 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
             if (type == BUILDING_TOWER) {
                 forbidden_terrain &= ~TERRAIN_WALL;
             }
-            if (BUILDING_WAREHOUSE) {
+            if (type == BUILDING_WAREHOUSE) {
                 int corner = building_rotation_get_corner(2 * building_rotation_get_rotation()); // corner tile of a warehouse - the exchange platz
                 forbidden_terrain &= ~TERRAIN_ROAD; //every tile is allowed over roads
                 if (i == corner) {
