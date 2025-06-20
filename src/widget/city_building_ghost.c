@@ -1,4 +1,3 @@
-@ -1,1520 +1,1509 @@
 #include "city_building_ghost.h"
 
 #include "assets/assets.h"
@@ -535,8 +534,7 @@ static void draw_single_reservoir(int grid_offset, int x, int y, color_t color, 
             image_blend_footprint_color(x + view_offset_x(i), y + view_offset_y(i), COLOR_MASK_RED, data.scale);
         }
     }
-    if (grid_offset)
-    {
+    if (grid_offset) {
         int num_tiles = 9;
         int orientation_index = city_view_orientation() / 2;
 
@@ -1439,7 +1437,7 @@ void city_building_ghost_draw(const map_tile *tile)
 
     const building_properties *props = building_properties_for_type(type);
     if ((config_get(CONFIG_UI_SHOW_DESIRABILITY_RANGE_ALL) &&
-            type >= BUILDING_ANY && type <= BUILDING_TYPE_MAX) ||
+        type >= BUILDING_ANY && type <= BUILDING_TYPE_MAX) ||
         (config_get(CONFIG_UI_SHOW_DESIRABILITY_RANGE) &&
             building_properties_for_type(type)->draw_desirability_range)) {
         int building_size = (type == BUILDING_WAREHOUSE) ? 3 : props->size;
