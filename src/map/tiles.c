@@ -254,7 +254,7 @@ static void set_garden_image(int x, int y, int grid_offset)
         garden_image_ids[0][1] = image_group(GROUP_TERRAIN_GARDEN) + 1;
         garden_image_ids[0][2] = garden_image_ids[0][1] + 1;
         garden_image_ids[0][3] = garden_image_ids[0][0] + 1;
-        
+
         garden_image_ids[1][0] = assets_get_image_id("Aesthetics", "Overgrown_Garden_01");
         garden_image_ids[1][1] = garden_image_ids[1][0] + 1;
         garden_image_ids[1][2] = garden_image_ids[1][0] + 2;
@@ -1014,12 +1014,12 @@ void map_tiles_update_region_meadow(int x_min, int y_min, int x_max, int y_max)
 
 static void set_water_image(int x, int y, int grid_offset)
 {
-    if (((map_terrain_get(grid_offset) & (TERRAIN_WATER | TERRAIN_BUILDING)) == TERRAIN_WATER) || map_is_bridge(grid_offset))   {
+    if (((map_terrain_get(grid_offset) & (TERRAIN_WATER | TERRAIN_BUILDING)) == TERRAIN_WATER) || map_is_bridge(grid_offset)) {
         const terrain_image *img = map_image_context_get_shore(grid_offset);
         int image_id = image_group(GROUP_TERRAIN_WATER) + img->group_offset + img->item_offset;
         if (map_terrain_exists_tile_in_radius_with_type(x, y, 1, 2, TERRAIN_BUILDING)) {
             // fortified shore
-            if (!map_is_bridge(grid_offset)){ //no fortification right under the bridge
+            if (!map_is_bridge(grid_offset)) { //no fortification right under the bridge
                 int base = image_group(GROUP_TERRAIN_WATER_SHORE);
                 switch (img->group_offset) {
                     case 8: image_id = base + 10; break;
@@ -1046,7 +1046,7 @@ static void set_water_image(int x, int y, int grid_offset)
 
 static void update_water_tile(int x, int y, int grid_offset)
 {
-    if (map_terrain_is(grid_offset, TERRAIN_WATER) && !map_terrain_is(grid_offset, TERRAIN_BUILDING)) {
+    if (map_terrain_is(grid_offset, TERRAIN_WATER) && (!map_terrain_is(grid_offset, TERRAIN_BUILDING) || map_is_bridge(grid_offset))) {
         foreach_region_tile(x - 1, y - 1, x + 1, y + 1, set_water_image);
     }
 }
@@ -1364,7 +1364,7 @@ void map_tiles_add_entry_exit_flags(void)
     }
     if (exit_orientation >= 0) {
 
-        int grid_offset_flag = map_grid_offset(city_map_exit_flag()->x, city_map_exit_flag()->y) ;
+        int grid_offset_flag = map_grid_offset(city_map_exit_flag()->x, city_map_exit_flag()->y);
         int flag_is_set = city_map_exit_flag()->x || city_map_exit_flag()->y || city_map_exit_flag()->grid_offset;
 
 

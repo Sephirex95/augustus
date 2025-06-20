@@ -479,36 +479,86 @@ static int legacy_map_is_bridge(int grid_offset){
     return (map_sprite_bridge_at(grid_offset)) && map_terrain_is(grid_offset, TERRAIN_WATER);
 }
 
-void map_terrain_migrate_old_bridges(void){
+int map_bridge_find_start_and_direction_legacy(int grid_offset, int *axis, int *axis_direction)
+{
+    if (!legacy_map_is_bridge(grid_offset))
+        return -1;
+
+    static const int dirs[4][2] = {
+        {  0, -1 }, // north
+        { +1,  0 }, // east
+        {  0, +1 }, // south
+        { -1,  0 }  // west
+    };
+
+    // Scan in all 4 directions until we find a ramp
+    for (int test_axis = 0; test_axis < 2; ++test_axis) {
+        for (int dir = -1; dir <= 1; dir += 2) {
+            int dx = (test_axis == 0) ? dir : 0;
+            int dy = (test_axis == 1) ? dir : 0;
+            int delta = map_grid_delta(dx, dy);
+
+            int current = grid_offset;
+            while (legacy_map_is_bridge(current)) {
+                int sprite = map_sprite_bridge_at(current);
+                if (is_bridge_ramp_sprite(sprite)) {
+                    int next = current + delta;
+                    int next_sprite = map_sprite_bridge_at(next);
+
+                    // Don't treat it as a bridge start if another ramp follows (likely wrong end)
+                    if (is_bridge_ramp_sprite(next_sprite)) break;
+
+                    // Check for mid-bridge sprite next (sprite 5–6, 11–12, 13–15)
+                    if (next_sprite >= 5 && next_sprite <= 15 && !is_bridge_ramp_sprite(next_sprite)) {
+                        *axis = test_axis;
+                        *axis_direction = dir;
+                        return current;
+                    }
+                }
+                current -= delta;
+            }
+        }
+    }
+
+    return -1; // No valid bridge start found
+}
+
+void map_terrain_migrate_old_bridges(void)
+{
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            int grid_offset = map_grid_offset(x,y);
-            if (legacy_map_is_bridge(grid_offset) && !map_is_bridge(grid_offset)){ //old bridge but not new bridge
-                //convert to new bridge
-                int tiles_x = get_x_bridge_tiles(grid_offset);
-                int tiles_y = get_y_bridge_tiles(grid_offset);
+            int grid_offset = map_grid_offset(x, y);
 
-                int offset_up = tiles_x > tiles_y ? map_grid_delta(1, 0) : map_grid_delta(0, 1);
-                // find lower end of the bridge
-                while (legacy_map_is_bridge(grid_offset - offset_up)) {
-                    grid_offset -= offset_up;
+            if (legacy_map_is_bridge(grid_offset) && !map_is_bridge(grid_offset)) {
+                // Find true start of the old bridge
+                // Only process tiles that are part of a legacy bridge and haven't been upgraded yet 
+                int axis, dir;
+                int start = map_bridge_find_start_and_direction_legacy(grid_offset, &axis, &dir);
+                if (start < 0) {
+                    continue;
                 }
-                int is_ship_bridge = map_sprite_bridge_at(grid_offset) > 6 ? 1 : 0;
-                // 6 and less is low bridge
-                int bridge_type = !is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE;
-                building *b = building_create(bridge_type, x, y);
-                map_terrain_add(grid_offset, TERRAIN_BUILDING);
-                map_building_set(grid_offset,b->id);
+                int delta = (axis == 0)
+                    ? map_grid_delta(dir, 0)
+                    : map_grid_delta(0, dir);
 
-                while (legacy_map_is_bridge(grid_offset + offset_up)) {
-                    grid_offset += offset_up;
-                    map_terrain_add(grid_offset, TERRAIN_BUILDING);
-                    map_building_set(grid_offset,b->id);
+                int is_ship_bridge = map_sprite_bridge_at(start) > 6 ? 1 : 0;
+                int bridge_type = is_ship_bridge ? BUILDING_SHIP_BRIDGE : BUILDING_LOW_BRIDGE;
+
+                int start_x = map_grid_offset_to_x(start);
+                int start_y = map_grid_offset_to_y(start);
+                building *b = building_create(bridge_type, start_x, start_y);
+
+                int current = start;
+                while (legacy_map_is_bridge(current)) {
+                    map_terrain_add(current, TERRAIN_BUILDING);
+                    map_building_set(current, b->id);
+                    current += delta;
                 }
             }
         }
     }
 }
+
 
 
 void map_terrain_load_state(buffer *buf, int expanded_terrain_data, buffer *images, int legacy_image_buffer)

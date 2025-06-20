@@ -162,12 +162,12 @@ static int affect_all_button_state(void)
 
 static void draw_roadblock_orders_buttons(int x, int y, int focused)
 {
-   if (affect_all_button_state() == ACCEPT_ALL) {
-       image_draw(assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK), x + 29, y + 4, COLOR_MASK_NONE, SCALE_NONE);
-   } else {
-       image_draw(assets_get_image_id("UI", "Denied_Walker_Checkmark"), x + 29, y + 4, COLOR_MASK_NONE, SCALE_NONE);
-   }
-    button_border_draw(x+25, y, 20, 20, data.orders_focus_button_id == 1);
+    if (affect_all_button_state() == ACCEPT_ALL) {
+        image_draw(assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK), x + 29, y + 4, COLOR_MASK_NONE, SCALE_NONE);
+    } else {
+        image_draw(assets_get_image_id("UI", "Denied_Walker_Checkmark"), x + 29, y + 4, COLOR_MASK_NONE, SCALE_NONE);
+    }
+    button_border_draw(x + 25, y, 20, 20, data.orders_focus_button_id == 1);
 }
 
 
@@ -393,22 +393,22 @@ void window_building_draw_latrines(building_info_context *c)
     outer_panel_draw(c->x_offset, c->y_offset, c->width_blocks, c->height_blocks);
     lang_text_draw_centered(CUSTOM_TRANSLATION, TR_BUILDING_LATRINES, c->x_offset, c->y_offset + 10,
         BLOCK_SIZE * c->width_blocks, FONT_LARGE_BLACK);
-    
+
     int latrines_necessity = map_water_supply_is_building_unnecessary(c->building_id, 3);
     building *b = building_get(c->building_id);
     if (b->num_workers <= 0) {
-        window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_NO_WORKERS); 
+        window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_NO_WORKERS);
     } else if (latrines_necessity == BUILDING_NECESSARY) { // latrines cover at least one house with well access
         window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_DESC_1);
     } else if (latrines_necessity == BUILDING_UNNECESSARY_FOUNTAIN) { // latrines cover houses having all fountain access
         window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_UNNECESSARY);
     } else if (latrines_necessity == BUILDING_UNNECESSARY_NO_HOUSES) { // no houses around
-        window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_NO_HOUSES);   
-    }  
+        window_building_draw_description(c, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_NO_HOUSES);
+    }
     inner_panel_draw(c->x_offset + 16, c->y_offset + 136, c->width_blocks - 2, 4);
     window_building_draw_employment_without_house_cover(c, 142);
-    window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);     
-    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 136, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_DESC_2); 
+    window_building_draw_risks(c, c->x_offset + c->width_blocks * BLOCK_SIZE - 76, c->y_offset + 144);
+    window_building_draw_description_at(c, BLOCK_SIZE * c->height_blocks - 136, CUSTOM_TRANSLATION, TR_BUILDING_LATRINES_DESC_2);
 }
 
 void window_building_draw_mission_post(building_info_context *c)
