@@ -233,7 +233,7 @@ int map_bridge_add(int x, int y, int is_ship_bridge)
     }
 
     int grid_offset = map_grid_offset(x, y);
-    int bridge_type = !is_ship_bridge ? BUILDING_LOW_BRIDGE : BUILDING_SHIP_BRIDGE;
+    int bridge_type = is_ship_bridge ? BUILDING_SHIP_BRIDGE : BUILDING_LOW_BRIDGE;
 
     building *b = building_create(bridge_type, x, y); 
     //int prev_part = 0;
