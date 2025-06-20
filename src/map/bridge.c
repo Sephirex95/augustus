@@ -31,7 +31,8 @@ int map_bridge_building_length(void)
     return bridge.length;
 }
 
-int building_type_is_bridge(building_type type){
+int building_type_is_bridge(building_type type)
+{
     return type == BUILDING_LOW_BRIDGE || type== BUILDING_SHIP_BRIDGE;
 }
 
