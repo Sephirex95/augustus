@@ -55,11 +55,14 @@
 #define VERTICAL_TILE_WIDTH 40 //dimensions the vertical background tile in px, informative only
 #define VERTICAL_TILE_HEIGHT 72
 
+#define HOVER_ICON_SCALE 120 //scale of the icon when hovered, in percent
+#define SELECT_ICON_SCALE 132 //scale of the icon when selected, in percent. Avoiding 130 since 
+
 #define TRADE_DOT_SPACING 10 //spacing between dots in trade route line
 #define MAX_SIDEBAR_CITIES 256 
 #define MAX_RESOURCE_BUTTONS 256
 #define MAX_TRADE_OPEN_BUTTONS 64
-#define MAX_SIDERBAR_BUTTONS 3
+#define MAX_SIDERBAR_BUTTONS 3 // sorting and filtering buttons + 1 space for future additions. 
 
 #define FONT_SPACE_WIDTH font_definition_for(FONT_NORMAL_GREEN)->space_width
 #define NO_POSITION ((unsigned int) -1) //used as an alterntive to 0 for some of new pointers, to avoid confusion with when relying on external indexing, which can be 0-based
@@ -596,7 +599,7 @@ static void setup_sidebar(void)
 
     data.sidebar.margin_left = 3; //margins betwene sidebar and gridbox
     data.sidebar.margin_right = 3;
-    data.sidebar.margin_top = 40;
+    data.sidebar.margin_top = 3;
     data.sidebar.margin_bottom = 6;
 
     int usable_map_width = map_draw_x_max - map_draw_x_min;
@@ -961,8 +964,11 @@ static void draw_simple_button(int x, int y, int width, int height, int is_focus
     int label_style = is_focused ? 1 : 2;
 
     // Draw background
-    label_draw(x, y, width / BLOCK_SIZE, label_style);
-
+    //label_draw(x, y, width / BLOCK_SIZE, label_style);
+    graphics_set_clip_rectangle(x, y, width, height);
+    unbordered_panel_draw(x, y, width / BLOCK_SIZE + 1, height / BLOCK_SIZE + 1);
+    graphics_reset_clip_rectangle();
+    button_border_draw(x, y, width, height, is_focused);
     // Draw placeholder image (fixed position)
     int image_id = -1; // Replace this with actual logic if needed
     if (image_id > 0) {
@@ -1239,7 +1245,7 @@ static void setup_sidebar_gridbox(void)
     if (sidebar_width_percent < 0.01f) { //dont set up sidebar gridbox
         return;
     }
-    int y = data.sidebar.y_min;
+    int y = data.sidebar.y_min + 150;
     sidebar_city_count = 0;
     for (int i = 1; i < empire_city_get_array_size(); i++) { //needs to start at 1 to skip the "no city" entry
         empire_city *city = empire_city_get(i);
@@ -1252,7 +1258,7 @@ static void setup_sidebar_gridbox(void)
         entry->city_id = i; //store city id, which is the index in the empire city array
         entry->empire_object_id = city->empire_object_id; //store the empire object id, which is the index in the empire object array
         entry->x = data.sidebar.x_min + data.sidebar.margin_left;
-        entry->y = y;
+        entry->y = y; //leave 32 pixels for the top buttons
         y += SIDEBAR_ENTRY_HEIGHT;
         sidebar_city_count++;
     }
@@ -1632,20 +1638,20 @@ static void draw_empire_object(const empire_object *obj)
                     data.x_draw_offset + x + dx,
                     data.y_draw_offset + y + dy,
                     COLOR_MASK_ORANGE_GOLD, // any mask will work
-                    130);
+                    SELECT_ICON_SCALE);
             }
 
-            image_draw_scaled_centered(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, 130);
+            image_draw_scaled_centered(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SELECT_ICON_SCALE);
 
             int new_animation = empire_object_update_animation(obj, image_id);
-            animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, 130);
+            animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SELECT_ICON_SCALE);
 
         } else {
-            image_draw_scaled_centered(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, 120);
+            image_draw_scaled_centered(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, HOVER_ICON_SCALE);
 
             if (img->animation && img->animation->speed_id) {
                 int new_animation = empire_object_update_animation(obj, image_id);
-                animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, 120);
+                animation_draw_scaled(img, image_id, new_animation, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, HOVER_ICON_SCALE);
             }
         }
 
@@ -1707,6 +1713,19 @@ static void draw_invasion_warning(int x, int y, int image_id)
     image_draw(image_id, data.x_draw_offset + x, data.y_draw_offset + y, COLOR_MASK_NONE, SCALE_NONE);
 }
 
+static void draw_non_cities(const empire_object *obj)
+{
+    if (obj->type != EMPIRE_OBJECT_CITY) {
+        draw_empire_object(obj);
+    }
+}
+
+static void draw_cities(const empire_object *obj)
+{
+    if (obj->type == EMPIRE_OBJECT_CITY) {
+        draw_empire_object(obj);
+    }
+}
 static void draw_map(void)
 {
     // Recalculate inner bounds (same as draw_background)
@@ -1731,7 +1750,10 @@ static void draw_map(void)
     if (data.trade_route_anim_start == 0) {
         data.trade_route_anim_start = time_get_millis();
     }
-    empire_object_foreach(draw_empire_object);
+    // Call both in order
+    empire_object_foreach(draw_non_cities);
+    empire_object_foreach(draw_cities);
+
     scenario_invasion_foreach_warning(draw_invasion_warning);
 
     graphics_reset_clip_rectangle();
