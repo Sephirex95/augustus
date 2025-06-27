@@ -27,6 +27,7 @@
 #include "input/scroll.h"
 #include "scenario/empire.h"
 #include "scenario/invasion.h"
+#include "translation/translation.h"
 #include "window/advisors.h"
 #include "window/city.h"
 #include "window/message_dialog.h"
@@ -35,13 +36,18 @@
 #include "window/trade_opened.h"
 #include "window/trade_prices.h"
 
+
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>  
+#include <string.h>  
+
 
 #define WIDTH_BORDER 16 //dimensions the border image in px, informative only
 #define HEIGHT_BORDER 136 
 #define SIDEBAR_ENTRY_HEIGHT 120 
 #define BOTTOM_PANEL_HEIGHT 120
+
 
 #define RESOURCE_ICON_WIDTH 26 //dimensions the resource icon in px, informative only
 #define RESOURCE_ICON_HEIGHT 26
@@ -53,6 +59,7 @@
 #define MAX_SIDEBAR_CITIES 256 
 #define MAX_RESOURCE_BUTTONS 256
 #define MAX_TRADE_OPEN_BUTTONS 64
+#define MAX_SIDERBAR_BUTTONS 3
 
 #define FONT_SPACE_WIDTH font_definition_for(FONT_NORMAL_GREEN)->space_width
 #define NO_POSITION ((unsigned int) -1) //used as an alterntive to 0 for some of new pointers, to avoid confusion with when relying on external indexing, which can be 0-based
@@ -77,6 +84,18 @@ typedef enum {
     TRADE_STYLE_MAIN_BAR,
     TRADE_STYLE_SIDEBAR
 } trade_style_variant;
+
+typedef enum {
+    SORT_BY_NAME,
+    SORT_BY_QUOTA_FILL_EXPORT,
+    SORT_BY_QUOTA_FILL_IMPORT,
+    SORT_BY_COST,
+} sidebar_sort_type;
+
+typedef struct {
+    sidebar_sort_type type;
+    int reverse;
+} sidebar_sort_settings;
 
 typedef struct {
     int x;
@@ -114,7 +133,7 @@ typedef struct {
 typedef struct {
     // Region bounds
     int button_x_min;               // Starting x-coordinate of the button
-    int button_y_min;               // Starting y-coordinate of the tbutton
+    int button_y_min;               // Starting y-coordinate of the button
     int button_width;               // Total width of the row (x_max = x_min + width)
     int button_height;              // Total height of the row (optional: for future clipping)
     // Layout adjustments
@@ -161,6 +180,7 @@ static void button_advisor(int advisor, int param2);
 static void button_show_prices(int param1, int param2);
 static void button_show_resource_window(int resource_button_index);
 static void button_open_trade_by_route(int route_id);
+static void draw_simple_button(int x, int y, int width, int height, int is_focused, int group, int number);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -184,6 +204,8 @@ static trade_open_button trade_open_buttons[MAX_TRADE_OPEN_BUTTONS];
 static int trade_open_button_count = 0;
 static resource_button resource_buttons[MAX_RESOURCE_BUTTONS];
 static int resource_button_count = 0;
+static generic_button sidebar_filter_sort_buttons[MAX_SIDERBAR_BUTTONS];
+static int sidebar_filter_sort_button_count = 0;
 
 //sidebar-related arrays and variables
 static scrollbar_type sidebar_scrollbar;
@@ -245,9 +267,138 @@ static struct {
         int scroll;
         int scroll_max;
         int initialised;
+        int expanded_button;
+        int hovered_main;
+        int hovered_sub;
+        struct {
+            sidebar_sort_type type;
+            int reverse;
+        } sort;
     } sidebar;
     int trade_route_anim_start;
 } data = { 0, 1 , 0 };
+
+
+static void draw_expanding_buttons(void)
+{
+    const int button_width = data.sidebar.width / 2 - 20;
+    const int button_height = 32;
+    const int button_v_spacing = 24;
+    const int button_h_spacing = 20;
+    const int base_y = data.sidebar.y_min + 10;
+
+    // Main button positions
+    const int x_sort = data.sidebar.x_min + 10;
+    const int x_filter = data.sidebar.x_min + button_width + button_h_spacing + 10;
+
+    // Draw Sort button
+    int is_sort_focused = (data.sidebar.hovered_main == 0);
+    draw_simple_button(x_sort, base_y, button_width, button_height, is_sort_focused, CUSTOM_TRANSLATION, TR_SORT_BUTTON_TRADE_SIDEBAR);
+
+    // Draw Filter button
+    int is_filter_focused = (data.sidebar.hovered_main == 1);
+    draw_simple_button(x_filter, base_y, button_width, button_height, is_filter_focused, CUSTOM_TRANSLATION, TR_FILTER_BUTTON_TRADE_SIDEBAR);
+
+    // Draw expanded sub-buttons
+    if (data.sidebar.expanded_button == 0) {
+        for (int j = TR_SORT_BUTTON_TRADE_SIDEBAR + 1; j < TR_FILTER_BUTTON_TRADE_SIDEBAR; j++) {
+            int y = base_y + (j - TR_SORT_BUTTON_TRADE_SIDEBAR) * button_v_spacing;
+            draw_simple_button(x_sort, y, button_width, button_height,
+                data.sidebar.hovered_sub == (j - (TR_SORT_BUTTON_TRADE_SIDEBAR + 1)), CUSTOM_TRANSLATION, j);
+        }
+    } else if (data.sidebar.expanded_button == 1) {
+        for (int j = TR_FILTER_BUTTON_TRADE_SIDEBAR + 1; j <= TR_FILTER_BUTTON_TRADE_SIDEBAR_FILTER_BY_RESOURCE; j++) {
+            int y = base_y + (j - TR_FILTER_BUTTON_TRADE_SIDEBAR) * button_v_spacing;
+            draw_simple_button(x_filter, y, button_width, button_height,
+                data.sidebar.hovered_sub == (j - (TR_FILTER_BUTTON_TRADE_SIDEBAR + 1)), CUSTOM_TRANSLATION, j);
+        }
+    }
+}
+
+static int handle_expanding_button_input(const mouse *m)
+{
+    const int button_width = data.sidebar.width / 2 - 20;
+    const int button_height = 32;
+    const int button_v_spacing = 24;
+    const int button_h_spacing = 20;
+    const int base_y = data.sidebar.y_min + 10;
+
+    // Main button positions
+    const int x_sort = data.sidebar.x_min + 10;
+    const int x_filter = data.sidebar.x_min + button_width + button_h_spacing + 10;
+
+    data.sidebar.hovered_main = NO_POSITION;
+    data.sidebar.hovered_sub = NO_POSITION;
+
+    int expanded = data.sidebar.expanded_button;
+
+    if (expanded == NO_POSITION) {
+        for (int i = 0; i < 2; i++) {
+            int x = (i == 0) ? x_sort : x_filter;
+            int y = base_y;
+
+            if (m->x >= x && m->x <= x + button_width &&
+                m->y >= y && m->y <= y + button_height) {
+                data.sidebar.hovered_main = i;
+                if (m->left.went_up) {
+                    data.sidebar.expanded_button = i;
+                    return 1;
+                }
+                return 1; // Hovered, no click
+            }
+        }
+        return 0; // Not related to this UI
+    } else {
+        int x = (expanded == 0) ? x_sort : x_filter;
+        int start = (expanded == 0) ? TR_SORT_BUTTON_TRADE_SIDEBAR + 1 : TR_FILTER_BUTTON_TRADE_SIDEBAR + 1;
+        int end = (expanded == 0) ? TR_FILTER_BUTTON_TRADE_SIDEBAR : TR_FILTER_BUTTON_TRADE_SIDEBAR_FILTER_BY_RESOURCE;
+        int sub_count = end - start + 1;
+
+        int top = base_y;
+        int bottom = base_y + (1 + sub_count) * button_v_spacing;
+        int right = x + button_width;
+
+        if (m->x >= x && m->x <= right && m->y >= top && m->y <= bottom) {
+            if (m->right.went_up) {
+                data.sidebar.expanded_button = NO_POSITION;
+                return 1;
+            }
+
+            if (m->y >= base_y && m->y <= base_y + button_height) {
+                data.sidebar.hovered_main = expanded;
+                if (m->left.went_up) {
+                    data.sidebar.expanded_button = NO_POSITION;
+                }
+                return 1;
+            }
+
+            for (int i = 0; i < sub_count; i++) {
+                int sy = base_y + (i + 1) * button_v_spacing;
+                if (m->y >= sy && m->y <= sy + button_height) {
+                    data.sidebar.hovered_sub = i;
+                    if (m->left.went_up) {
+                        data.sidebar.expanded_button = NO_POSITION;
+                        data.sidebar.sort.type = i;
+                        return 1;
+                    }
+                    return 1;
+                }
+            }
+
+            return 1;
+        }
+
+        if (m->left.went_up || m->right.went_up) {
+            data.sidebar.expanded_button = NO_POSITION;
+            return 1;
+        }
+
+        return 1; // Expanded — swallow all input
+    }
+}
+
+
+
 
 // -------------------------------------------------------------------------------------------------------
 //                                              INIT + DATA
@@ -257,11 +408,78 @@ static void init(void)
 {
     data.sidebar.initialised = NO_POSITION;
     data.selected_button = NO_POSITION; // no button selected
+    data.sidebar.expanded_button = NO_POSITION;
+    data.sidebar.hovered_sub = NO_POSITION;
+    data.sidebar.hovered_main = NO_POSITION;
+    data.sidebar.sort.type = SORT_BY_NAME;
+    data.sidebar.sort.reverse = 0;
     data.trade_route_anim_start = 0;
     process_selection();
     data.focus_button_id = 0;
 
 }
+
+static int get_city_trade_quota_fill(const empire_city *city, int is_sell)
+{
+    int total_now = 0;
+    int total_max = 0;
+
+    for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
+        if (!resource_is_storable(r)) continue;
+
+        if ((is_sell && !city->sells_resource[r]) || (!is_sell && !city->buys_resource[r])) continue;
+
+        int max = trade_route_limit(city->route_id, r);
+        int now = trade_route_traded(city->route_id, r);
+
+        total_max += max;
+        total_now += now;
+    }
+
+    if (total_max == 0) return 0;
+    return (100 * total_now) / total_max;
+}
+
+
+static int sidebar_city_sorter(const void *a, const void *b)
+{
+    const sidebar_city_entry *entry_a = (const sidebar_city_entry *) a;
+    const sidebar_city_entry *entry_b = (const sidebar_city_entry *) b;
+
+    const empire_city *city_a = empire_city_get(entry_a->city_id);
+    const empire_city *city_b = empire_city_get(entry_b->city_id);
+
+    int result = 0;
+
+    switch (data.sidebar.sort.type) {
+        case SORT_BY_NAME:
+        {
+            const char *name_a = (const char *) empire_city_get_name(city_a);
+            const char *name_b = (const char *) empire_city_get_name(city_b);
+            result = strcmp(name_a, name_b);
+            break;
+        }
+
+        case SORT_BY_QUOTA_FILL_EXPORT:
+        case SORT_BY_QUOTA_FILL_IMPORT:
+        {
+            int is_sell = (data.sidebar.sort.type == SORT_BY_QUOTA_FILL_EXPORT);
+            int quota_a = get_city_trade_quota_fill(city_a, is_sell);
+            int quota_b = get_city_trade_quota_fill(city_b, is_sell);
+            result = (quota_a > quota_b) - (quota_a < quota_b);
+            break;
+        }
+
+        // add more cases here
+    }
+
+    if (data.sidebar.sort.reverse)
+        result = -result;
+
+    return result;
+}
+
+
 
 static int is_sidebar(const mouse *m)
 {
@@ -378,7 +596,7 @@ static void setup_sidebar(void)
 
     data.sidebar.margin_left = 3; //margins betwene sidebar and gridbox
     data.sidebar.margin_right = 3;
-    data.sidebar.margin_top = 6;
+    data.sidebar.margin_top = 40;
     data.sidebar.margin_bottom = 6;
 
     int usable_map_width = map_draw_x_max - map_draw_x_min;
@@ -392,7 +610,6 @@ static void setup_sidebar(void)
     data.sidebar.y_min = map_draw_y_min;
     data.sidebar.y_max = map_draw_y_max;
     // Setup grid box
-
 }
 
 // -------------------------------------------------------------------------------------------------------
@@ -672,7 +889,7 @@ static int open_trade_button_icon_fits(const empire_city *city, const open_trade
 }
 
 
-void draw_open_trade_button(const empire_city *city, const open_trade_button_style *style, trade_icon_type icon_type)
+static void draw_open_trade_button(const empire_city *city, const open_trade_button_style *style, trade_icon_type icon_type)
 {
     int cost = city->cost_to_open;
     int x = style->button_x_min;
@@ -739,6 +956,22 @@ void draw_open_trade_button(const empire_city *city, const open_trade_button_sty
     }
 }
 
+static void draw_simple_button(int x, int y, int width, int height, int is_focused, int group, int number)
+{
+    int label_style = is_focused ? 1 : 2;
+
+    // Draw background
+    label_draw(x, y, width / BLOCK_SIZE, label_style);
+
+    // Draw placeholder image (fixed position)
+    int image_id = -1; // Replace this with actual logic if needed
+    if (image_id > 0) {
+        image_draw(image_id, x + 4, y + 4, COLOR_MASK_NONE, SCALE_NONE);
+    }
+
+    // Draw centered text with default font
+    lang_text_draw_centered(group, number, x, y + 4, width, FONT_NORMAL_GREEN);
+}
 
 static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, const trade_row_style *style)
 {
@@ -1023,6 +1256,9 @@ static void setup_sidebar_gridbox(void)
         y += SIDEBAR_ENTRY_HEIGHT;
         sidebar_city_count++;
     }
+    // Sort sidebar cities alphabetically by name
+    qsort(sidebar_cities, sidebar_city_count, sizeof(sidebar_city_entry), sidebar_city_sorter);
+
     sidebar_grid_box.x = data.sidebar.x_min + data.sidebar.margin_left;
     sidebar_grid_box.y = data.sidebar.y_min + data.sidebar.margin_top;
     sidebar_grid_box.width = data.sidebar.width - data.sidebar.margin_right - data.sidebar.margin_left;
@@ -1526,7 +1762,6 @@ static void draw_panel_buttons(void)
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 44, image_button_return_to_city, 1);
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 100, image_button_advisor, 1);
     image_buttons_draw(data.panel.x_min + 24, data.y_max - 100, image_button_show_prices, 1);
-    //image_buttons_draw(data.sidebar.x_min-32,data.y_min + 100, button_toggle_sidebar_width, 1);
     if (data.selected_button != NO_POSITION) {
         const trade_open_button *btn = &trade_open_buttons[data.selected_button];
         button_border_draw(btn->x - 1, btn->y - 1, btn->width + 2, btn->height + 2, 1);
@@ -1535,6 +1770,7 @@ static void draw_panel_buttons(void)
 
 static void draw_sidebar_grid_box(void)
 {
+
     graphics_set_clip_rectangle(
         data.sidebar.x_min,
         data.sidebar.y_min,
@@ -1542,7 +1778,9 @@ static void draw_sidebar_grid_box(void)
         data.sidebar.height
     );
     grid_box_draw(&sidebar_grid_box);
+
     graphics_reset_clip_rectangle();
+    draw_expanding_buttons();
 }
 
 static void draw_trade_button_highlights(void)
@@ -1650,7 +1888,11 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!sidebar_border_btn.is_collapsed) {
+        if (handle_expanding_button_input(m)) {
+            return; // if the expanding button was clicked, we do not want to process any other input
+        };
         grid_box_handle_input(&sidebar_grid_box, m, 1);
+
     }
 
     if (m->is_touch) {
@@ -1686,7 +1928,6 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (button_id) {
         data.focus_button_id = 4;
     }
-
 
     button_id = 0;
     determine_selected_object(m);
@@ -1875,6 +2116,24 @@ void register_open_trade_button(int x, int y, int width, int height, int route_i
 {
     if (trade_open_button_count >= MAX_TRADE_OPEN_BUTTONS) return;
     trade_open_buttons[trade_open_button_count++] = (trade_open_button) { x, y, width, height, route_id, highlight };
+}
+void register_generic_button(int x, int y, int width, int height,
+                              void (*left_click)(const generic_button *),
+                              void (*right_click)(const generic_button *),
+                              int param1, int param2)
+{
+    if (sidebar_filter_sort_button_count >= MAX_SIDERBAR_BUTTONS) return;
+
+    sidebar_filter_sort_buttons[sidebar_filter_sort_button_count++] = (generic_button) {
+        .x = x,
+        .y = y,
+        .width = width,
+        .height = height,
+        .left_click_handler = left_click,
+        .right_click_handler = right_click,
+        .parameter1 = param1,
+        .parameter2 = param2
+    };
 }
 
 // -------------------------------------------------------------------------------------------------------

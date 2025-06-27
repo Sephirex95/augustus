@@ -1610,6 +1610,12 @@ static translation_string all_strings[] = {
     {TR_BUILDING_LATRINES_UNNECESSARY, "These latrines have no purpose here, as there are no houses in range needing them."},
     {TR_BUILDING_LATRINES_NO_HOUSES, "These latrines are unnecessary at the moment, as there are no houses within its service range."},
     {TR_CONFIG_DRAW_ASCLEPIUS, "Draw Rod of Asclepius for health menu"},
+    {TR_SORT_BUTTON_TRADE_SIDEBAR, "Sort by:"},
+    {TR_FILTER_BUTTON_TRADE_SIDEBAR, "Filter:"},
+    {TR_SORTING_BUTTON_TRADE_SIDEBAR_SORT_BY_NAME, "Name"},
+    {TR_SORTING_BUTTON_TRADE_SIDEBAR_SORT_BY_PRICE, "Price"},
+    {TR_FILTER_BUTTON_TRADE_SIDEBAR_FILTER_BY_OPEN, "Open routes"},
+    {TR_FILTER_BUTTON_TRADE_SIDEBAR_FILTER_BY_RESOURCE, "Resource"},
 };
 
 void translation_english(const translation_string **strings, int *num_strings)
