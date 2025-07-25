@@ -32,7 +32,7 @@ static const char *key_display_names[KEY_TYPE_MAX_ITEMS] = {
     "Keypad 1", "Keypad 2", "Keypad 3", "Keypad 4", "Keypad 5",
     "Keypad 6", "Keypad 7", "Keypad 8", "Keypad 9", "Keypad 0",
     "Keypad .", "Keypad +", "Keypad -", "Keypad *", "Keypad /", "NonUS",
-    "Middle mouse button", "Mouse scroll up", "Mouse scroll down"
+    "Middle mouse button", "Mouse scroll up", "Mouse scroll down", "Mouse scroll left", "Mouse scroll right"
 };
 
 typedef struct {

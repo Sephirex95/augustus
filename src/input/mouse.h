@@ -22,7 +22,9 @@ typedef struct {
 typedef enum {
     SCROLL_NONE = 0,
     SCROLL_UP = -1,
-    SCROLL_DOWN = 1
+    SCROLL_DOWN = 1,
+    SCROLL_LEFT = 2,
+    SCROLL_RIGHT = 3
 } scroll_state;
 
 /**
@@ -31,7 +33,7 @@ typedef enum {
 typedef struct {
     int x; /**< Global position X */
     int y; /**< Global position Y */
-    scroll_state scrolled; /**< Scroll state (up/down/none) */
+    scroll_state scrolled; /**< Scroll state (up/down/left/right/none) */
     mouse_button left; /**< Left mouse button */
     mouse_button middle; /**< Middle mouse button */
     mouse_button right; /**< Right mouse button */

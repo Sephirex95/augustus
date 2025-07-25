@@ -19,10 +19,12 @@ typedef enum {
 static struct {
     touch finger[MAX_ACTIVE_TOUCHES + 1];
     touch old_touch;
-    int last_scroll_position;
+    int last_scroll_position_x;
+    int last_scroll_position_y;
     touch_mode mode;
     emulated_mouse_click touchpad_mode_click_type;
 } data;
+
 
 static int start_delayed(const touch *t)
 {
@@ -107,23 +109,38 @@ int touch_get_scroll(void)
 {
     const touch *first = touch_get_earliest();
     const touch *last = touch_get_latest();
+
     if (!touch_is_scroll() || !first->has_moved || !last->has_moved) {
         return SCROLL_NONE;
     }
-    if (!data.last_scroll_position) {
-        data.last_scroll_position = first->start_point.y;
+
+    if (!data.last_scroll_position_x && !data.last_scroll_position_y) {
+        data.last_scroll_position_x = first->start_point.x;
+        data.last_scroll_position_y = first->start_point.y;
     }
+
     int delta_x = abs((first->current_point.x - first->start_point.x) - (last->current_point.x - last->start_point.x));
     int delta_y = abs((first->current_point.y - first->start_point.y) - (last->current_point.y - last->start_point.y));
+
+    // If fingers are not roughly moving together
     if (delta_x > SCROLL_FINGER_RADIUS || delta_y > SCROLL_FINGER_RADIUS) {
         return SCROLL_NONE;
     }
-    int delta = first->current_point.y - data.last_scroll_position;
-    if (abs(delta) < NOT_MOVING_RANGE * 2) {
+
+    int move_x = first->current_point.x - data.last_scroll_position_x;
+    int move_y = first->current_point.y - data.last_scroll_position_y;
+
+    if (abs(move_x) < NOT_MOVING_RANGE * 2 && abs(move_y) < NOT_MOVING_RANGE * 2) {
         return SCROLL_NONE;
     }
-    data.last_scroll_position = first->current_point.y;
-    return (delta > 0) ? SCROLL_UP : SCROLL_DOWN;
+
+    if (abs(move_y) > abs(move_x)) {
+        data.last_scroll_position_y = first->current_point.y;
+        return (move_y > 0) ? SCROLL_UP : SCROLL_DOWN;
+    } else {
+        data.last_scroll_position_x = first->current_point.x;
+        return (move_x > 0) ? SCROLL_RIGHT : SCROLL_LEFT;
+    }
 }
 
 static int get_unused_touch_index(void)
@@ -207,7 +224,7 @@ void reset_touches(int reset_old_touch)
             t->has_started = 0;
             t->has_moved = 0;
             t->has_ended = 0;
-            data.last_scroll_position = 0;
+            data.last_scroll_position_x = 0;
         } else {
             t->frame_movement.x = t->current_point.x - t->previous_frame_point.x;
             t->frame_movement.y = t->current_point.y - t->previous_frame_point.y;
