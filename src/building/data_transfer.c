@@ -89,7 +89,6 @@ int building_data_transfer_paste(building *b)
         return 0;
     }
 
-    building_mothball_set(b, data.mothball);
     switch (data_type) {
         case DATA_TYPE_ROADBLOCK:
             b->data.roadblock.exceptions = data.i16;
@@ -116,6 +115,7 @@ int building_data_transfer_paste(building *b)
         default:
             return 0;
     }
+    building_mothball_set(b, data.mothball);
     city_warning_show(WARNING_DATA_PASTE_SUCCESS, NEW_WARNING_SLOT);
     return 1;
 
