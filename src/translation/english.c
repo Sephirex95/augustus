@@ -1714,6 +1714,10 @@ static translation_string all_strings[] = {
     {TR_TOOLTIP_NONE, "None"},
     {TR_TOOLTIP_MINIMAL, "Minimal"},
     {TR_TOOLTIP_FULL, "Full"},
+    {TR_BUILDING_INFO_REPAIR_BUILDING, "Repair building" },
+    {TR_WARNING_REPAIR_IMPOSSIBLE, "Can't' repair this building" },
+    {TR_WARNING_REPAIR_BURNING, "Can't repair while the building is on fire" },
+    {TR_BUILDING_INFO_BUILDING_BURNING, "Building is on fire" },
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

@@ -3,7 +3,11 @@
 
 #include "core/buffer.h"
 
+#define TERRAIN_LAST_FLAG TERRAIN_HIGHWAY_BOTTOM_RIGHT
+#define TERRAIN_NUM_FLAGS  (21)  // bits
+
 enum {
+    TERRAIN_CLEAR = 0,
     TERRAIN_TREE = 1 << 0,
     TERRAIN_ROCK = 1 << 1,
     TERRAIN_WATER = 1 << 2,
@@ -60,6 +64,12 @@ enum {
 
     TERRAIN_MAP_EDGE = TERRAIN_TREE | TERRAIN_WATER,
 };
+
+typedef struct {
+    uint8_t bits[TERRAIN_NUM_FLAGS];
+} terrain_flags_array;
+
+terrain_flags_array terrain_to_array(int grid_offset);
 
 int map_terrain_is(int grid_offset, int terrain);
 
@@ -131,7 +141,6 @@ int map_terrain_is_adjacent_to_open_water(int x, int y, int size);
 int map_terrain_get_adjacent_road_or_clear_land(int x, int y, int size, int *x_tile, int *y_tile);
 
 void map_terrain_add_roadblock_road(int x, int y);
-void map_terrain_add_warehouse_road(int x, int y);
 void map_terrain_add_gatehouse_roads(int x, int y, int orientation);
 void map_terrain_add_triumphal_arch_roads(int x, int y, int orientation);
 

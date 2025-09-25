@@ -38,7 +38,7 @@ typedef struct building {
     unsigned char size;
     unsigned char house_is_merged;
     unsigned char house_size;
-    unsigned char x;
+    unsigned char x; //these are not grid coordinates but image coordinates
     unsigned char y;
     short grid_offset;
     building_type type;
@@ -151,7 +151,10 @@ typedef struct building {
             unsigned char evolve_text_id;
         } house;
         struct {
-            unsigned char was_tent;
+            unsigned short og_type;
+            unsigned short og_grid_offset;
+            unsigned char og_size;
+            unsigned char og_orientation;
         } rubble;
         struct {
             unsigned short exceptions;
@@ -213,6 +216,8 @@ int building_count(void);
 
 int building_find(building_type type);
 
+int building_can_repair(building_type type);
+
 building *building_first_of_type(building_type type);
 
 void building_change_type(building *b, building_type type);
@@ -222,6 +227,15 @@ building *building_main(building *b);
 building *building_next(building *b);
 
 building *building_create(building_type type, int x, int y);
+
+/** Tent types are 'flattened' to 1 when rubbled. If not tent, og_type is building_type
+ * @return 1 if was tent, 0 if not
+*/
+int building_was_tent(building *b);
+
+int building_repair(building *b);
+
+int building_is_still_burning(building *b);
 
 void building_clear_related_data(building *b);
 

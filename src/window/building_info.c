@@ -357,7 +357,7 @@ static void init(int grid_offset)
     context.depot_selection = 0;
     context.advisor_button = ADVISOR_NONE;
     context.building_id = map_building_at(grid_offset);
-    context.rubble_building_type = map_rubble_building_type(grid_offset);
+    context.rubble_building_id = map_building_rubble_building_id(grid_offset);
     context.has_reservoir_pipes = map_terrain_is(grid_offset, TERRAIN_RESERVOIR_RANGE);
     context.aqueduct_has_water = map_aqueduct_has_water_access_at(grid_offset);
 
@@ -552,7 +552,7 @@ static void init(int grid_offset)
         default: context.height_blocks = 22; break;
     }
     adjust_height_for_storage_buildings(&context);
-    if (screen_height() <= 600) {
+    if (screen_height() <= 800) { // longest window is mars grand temple at 736px height
         context.height_blocks = calc_bound(context.height_blocks, 0, 26);
     }
     // dialog placement
@@ -1081,6 +1081,9 @@ static void handle_input(const mouse *m, const hotkeys *h)
 {
     int handled = 0;
     // general buttons
+    if (context.terrain_type == TERRAIN_INFO_RUBBLE && context.rubble_building_id) {
+        handled |= window_building_handle_rubble_button(m, &context);
+    }
     if (context.show_special_orders ||
         context.depot_selection != 0) {
         handled |= image_buttons_handle_mouse(m, 0, 0,
