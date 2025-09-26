@@ -103,6 +103,7 @@ static const char *ini_keys[] = {
     [CONFIG_UI_MOVE_LEGION_SOUND_SWAP] = "ui_move_legion_sound_swap",
     [CONFIG_GP_CH_CART_DEPOT_ADVANCED] = "gameplay_change_cart_depot_advanced_settings",
     [CONFIG_UI_CART_DEPOT_TOOLTIP_STYLE] = "ui_cart_depot_tooltip_style",
+    [CONFIG_DEBUG_START_WITH_TOOLTIP] = "debug_start_with_tooltip",
 };
 
 static const char *ini_string_keys[] = {
@@ -154,6 +155,7 @@ static int default_values[CONFIG_MAX_ENTRIES] = {
     [CONFIG_UI_MOVE_LEGION_SOUND_SWAP] = 0,
     [CONFIG_GP_CH_CART_DEPOT_ADVANCED] = 1,
     [CONFIG_UI_CART_DEPOT_TOOLTIP_STYLE] = 1,
+    [CONFIG_DEBUG_START_WITH_TOOLTIP] = 0,
 };
 
 static const char default_string_values[CONFIG_STRING_MAX_ENTRIES][CONFIG_STRING_VALUE_MAX] = { 0 };
