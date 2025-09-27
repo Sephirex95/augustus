@@ -416,7 +416,7 @@ int building_construction_place_building(building_type type, int x, int y)
             ~TERRAIN_HIGHWAY : ~TERRAIN_ROAD & ~TERRAIN_HIGHWAY;
         //allow building gatehouses over walls and roads, other non-bridge roadblocks over roads and highways
     } else if (type == BUILDING_TOWER) {
-        terrain_mask = ~TERRAIN_WALL;
+        terrain_mask = ~TERRAIN_WALL & ~TERRAIN_BUILDING;
     } else if (type == BUILDING_RESERVOIR || type == BUILDING_DRAGGABLE_RESERVOIR) {
         terrain_mask = ~TERRAIN_AQUEDUCT;
     }
@@ -443,6 +443,19 @@ int building_construction_place_building(building_type type, int x, int y)
     }
     building_construction_offset_start_from_orientation(&x, &y, size);
     // extra checks
+    if (type == BUILDING_TOWER) {
+
+        if (map_terrain_all_tiles_in_radius_are(x, y, size, 0, terrain_mask)) {
+            city_warning_show(WARNING_CLEAR_LAND_NEEDED, NEW_WARNING_SLOT);
+            return 0;
+        }
+        if (!building_orientation) {
+            building_orientation = building_rotation_get_rotation() + 1;
+            if (building_orientation > 4) {
+                building_orientation = 1;
+            }
+        }
+    }
     if (type == BUILDING_GATEHOUSE) {
         if (!map_tiles_are_clear(x, y, size, terrain_mask, check_figure)) {
             city_warning_show(WARNING_CLEAR_LAND_NEEDED, NEW_WARNING_SLOT);
