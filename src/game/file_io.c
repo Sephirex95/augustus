@@ -507,6 +507,7 @@ static void get_version_data(savegame_version_data *version_data, savegame_versi
     version_data->features.visited_buildings = version > SAVE_GAME_LAST_GLOBAL_BUILDING_INFO;
     version_data->features.custom_campaigns = version > SAVE_GAME_LAST_NO_CUSTOM_CAMPAIGNS;
     version_data->features.dynamic_scenario_objects = version > SAVE_GAME_LAST_STATIC_SCENARIO_ORIGINAL_DATA;
+    version_data->features.rubble_grid = version > SAVE_GAME_LAST_U16_GRIDS;
 }
 
 static void init_savegame_data(savegame_version_t version)
@@ -881,6 +882,9 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
     }
     if (version <= SAVE_GAME_LAST_SPRITE_BRIDGES_MIGRATION_FIX) {
         map_terrain_migrate_old_bridges();
+    }
+    if (version <= SAVE_GAME_LAST_U16_GRIDS) {
+        map_terrain_migrate_old_walls();
     }
 
 }

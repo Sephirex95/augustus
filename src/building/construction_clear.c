@@ -173,6 +173,11 @@ static int clear_land_confirmed(int measure_only, int x_start, int y_start, int 
                 if (map_terrain_is(grid_offset, TERRAIN_ROAD | TERRAIN_GARDEN)) {
                     map_property_clear_plaza_earthquake_or_overgrown_garden(grid_offset);
                 }
+                if (map_terrain_is(grid_offset, TERRAIN_RUBBLE) && !measure_only) {
+                    if (map_building_rubble_building_id(grid_offset)) {
+                        map_building_set_rubble_grid_building_id(grid_offset, 0, 1); // remove rubble marker
+                    }
+                }
                 map_terrain_remove(grid_offset, TERRAIN_CLEARABLE);
                 items_placed++;
             }
@@ -350,7 +355,7 @@ static int repair_land_confirmed(int measure_only, int x_start, int y_start, int
                     if (measure_only) {
                         repair_cost += building_repair_cost(b);
                     } else {
-                        building_repair(b);// Actually perform the repair
+                        repair_cost += building_repair(b);// Actually perform the repair
                     }
                     confirm.repairable_buildings[repairable_buildings] = b->id;
                     repairable_buildings++;
@@ -361,7 +366,7 @@ static int repair_land_confirmed(int measure_only, int x_start, int y_start, int
     if (buildings_count) {
         *buildings_count = repairable_buildings;
     }
-    return measure_only ? repair_cost : repairable_buildings;
+    return repair_cost;
 }
 
 int building_construction_repair_land(int measure_only, int x_start, int y_start, int x_end, int y_end, int *buildings_count)
@@ -382,7 +387,8 @@ int building_construction_repair_land(int measure_only, int x_start, int y_start
         confirm.y_end = y_end;
         confirm.repair_cost = repair_cost;
 
-        static uint8_t big_buffer[120] = { 0 };
+        static uint8_t big_buffer[120];
+        memset(big_buffer, 0, sizeof(big_buffer)); // Clear buffer
         const uint8_t *custom_text = translation_for(TR_CONFIRM_REPAIR_BUILDINGS_TITLE);
 
         int offset = 0;
@@ -403,8 +409,8 @@ int building_construction_repair_land(int measure_only, int x_start, int y_start
         const uint8_t *pointer = big_buffer;
 
         window_popup_dialog_show_confirmation(custom_text, pointer, 0, confirm_repair_buildings);
-        return -1; // Indicates confirmation dialog shown
+        return repair_cost;
     } else {
-        return repair_land_confirmed(measure_only, x_start, y_start, x_end, y_end, buildings_count);
+        return 0;// No buildings to repair, return 0 cost
     }
 }

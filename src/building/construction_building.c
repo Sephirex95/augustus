@@ -387,7 +387,6 @@ int building_construction_is_warehouse_corner(int tile_no)
 int building_construction_fill_vacant_lots(grid_slice *area)
 {
     int items_placed = 0;
-    game_undo_restore_building_state();
     for (int i = 0; i < area->size; i++) {
         int grid_offset = area->grid_offsets[i];
         int x = map_grid_offset_to_x(grid_offset);
@@ -410,7 +409,7 @@ int building_construction_fill_vacant_lots(grid_slice *area)
 
 int building_construction_place_building(building_type type, int x, int y)
 {
-    int terrain_mask = TERRAIN_ALL;
+    unsigned int terrain_mask = TERRAIN_ALL;
     if (building_type_is_roadblock(type)) {
         terrain_mask = type == BUILDING_GATEHOUSE ? ~TERRAIN_WALL & ~TERRAIN_ROAD &
             ~TERRAIN_HIGHWAY : ~TERRAIN_ROAD & ~TERRAIN_HIGHWAY;
@@ -467,6 +466,13 @@ int building_construction_place_building(building_type type, int x, int y)
             } else {
                 building_orientation = 2;
             }
+        }
+    }
+    if (type == BUILDING_TOWER) {
+        int tower_terrain_mask = TERRAIN_WALL;
+        if (!map_terrain_all_tiles_in_radius_are(x, y, 2, 0, tower_terrain_mask)) {
+            city_warning_show(WARNING_WALL_NEEDED, NEW_WARNING_SLOT);
+            return 0;
         }
     }
     if (type == BUILDING_ROADBLOCK) {

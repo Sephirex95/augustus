@@ -1,10 +1,11 @@
 #include "building.h"
 
 #include "building/clone.h"
+#include "building/construction.h"
 #include "building/construction_building.h"
 #include "building/construction_clear.h"
-#include "building/distribution.h"
 #include "building/data_transfer.h"
+#include "building/distribution.h"
 #include "building/industry.h"
 #include "building/granary.h"
 #include "building/menu.h"
@@ -15,6 +16,7 @@
 #include "building/state.h"
 #include "building/storage.h"
 #include "building/variant.h"
+#include "building/type.h"
 #include "city/buildings.h"
 #include "city/finance.h"
 #include "city/population.h"
@@ -40,7 +42,6 @@
 #include "map/routing_terrain.h"
 #include "map/terrain.h"
 #include "map/tiles.h"
-
 
 
 #define BUILDING_ARRAY_SIZE_STEP 2000
@@ -155,8 +156,7 @@ static void fill_adjacent_types(building *b)
         int id = b->id - 1;
         while (id) {
             building *prev = building_get(id);
-            if (prev->state != BUILDING_STATE_UNUSED &&
-                prev->type == b->type) {
+            if (prev->state != BUILDING_STATE_UNUSED && prev->type == b->type) {
                 b->prev_of_type = prev;
                 b->next_of_type = prev->next_of_type;
                 b->next_of_type->prev_of_type = b;
@@ -334,6 +334,11 @@ int building_was_tent(building *b)
     return b->data.rubble.og_type == BUILDING_HOUSE_LARGE_TENT || b->data.rubble.og_type == BUILDING_HOUSE_SMALL_TENT;
 }
 
+int building_is_storage(building_type b_type)
+{
+    return b_type == BUILDING_GRANARY || b_type == BUILDING_WAREHOUSE;
+}
+
 int building_is_still_burning(building *b)
 {
     int hot = (b->type == BUILDING_BURNING_RUIN);
@@ -376,17 +381,27 @@ int building_can_repair(building *b)
             return building_can_repair_type(b->type);
         }
     }
-    return building_can_repair_type(b->type);
 }
 
 int building_repair_cost(building *b)
 {
+    int og_grid_offset = 0, og_size = 0, og_type = 0;
     if (!b || !building_can_repair(b)) {
         return 0;
     }
-    grid_slice *grid_slice = map_grid_get_grid_slice_square(b->grid_offset, b->size); // wont work correctly for hippo
+    int is_ruin = b->type == BUILDING_BURNING_RUIN;
+    og_grid_offset = is_ruin ? b->data.rubble.og_grid_offset : b->grid_offset;
+    og_size = is_ruin ? b->data.rubble.og_size : b->size;
+    og_type = is_ruin ? b->data.rubble.og_type : b->type;
+
+    if (building_is_house(og_type)) {
+        grid_slice *house_slice = map_grid_get_grid_slice_house(b->id, 1);
+        int clear_cost = house_slice->size * (11 + 3); // 10.5 per new house tile + 3 per rubble tile to clear
+        return clear_cost;
+    }
+    grid_slice *grid_slice = map_grid_get_grid_slice_square(og_grid_offset, og_size); // wont work correctly for hippo
     int clear_cost = building_construction_prepare_terrain(grid_slice, CLEAR_MODE_RUBBLE, COST_MEASURE);
-    int placement_cost = model_get_building(b->type)->cost;
+    int placement_cost = model_get_building(og_type)->cost;
     return clear_cost + placement_cost + placement_cost / 20; // +5% fee on a building price
 }
 
@@ -415,20 +430,11 @@ int building_repair(building *b)
         og_orientation = b->data.rubble.og_orientation;
         og_type = b->data.rubble.og_type;
         if (og_type) {  // exceptions should be checked and handled here
-            if (building_is_house(og_type) || og_type == 1) {
-                is_house_lot = 1;
-                b->type = BUILDING_HOUSE_VACANT_LOT;
-            }
-            switch (og_type) {
-                case BUILDING_GRANARY:
-                case BUILDING_WAREHOUSE:
-                    const building_storage *src = building_storage_get(b->storage_id);
-                    tmp = *src;
-                    has_tmp = 1;
-                    building_storage_delete(b->storage_id);
-                    break;
-                default:
-                    b->type = og_type;
+            if (building_is_storage(b->type)) {
+                const building_storage *src = building_storage_get(b->storage_id);
+                tmp = *src;
+                has_tmp = 1;
+                building_storage_delete(b->storage_id);
             }
         }
     }
@@ -438,8 +444,12 @@ int building_repair(building *b)
     int grid_offset = og_grid_offset ? og_grid_offset : b->grid_offset;
     int x = map_grid_offset_to_x(grid_offset);
     int y = map_grid_offset_to_y(grid_offset);
-
+    if (building_is_house(og_type) || og_type == 1) {
+        is_house_lot = 1;
+        b->type = BUILDING_HOUSE_VACANT_LOT;
+    }
     int size = og_size ? og_size : b->size;
+    int type = og_type ? og_type : b->type;
     size = (og_type == BUILDING_WAREHOUSE) ? 3 : size;
     building_type type_to_place = og_type ? og_type : b->type;
     // --- Clear terrain & place building ---
@@ -447,6 +457,14 @@ int building_repair(building *b)
     int cleared = building_construction_prepare_terrain(grid_slice, CLEAR_MODE_RUBBLE, COST_PROCESS);
     if (is_house_lot) {
         success = building_construction_fill_vacant_lots(grid_slice);
+    } else if (type == BUILDING_WALL || type == BUILDING_TOWER) {
+        for (int i = 0; i < grid_slice->size; i++) {
+            success = building_construction_place_wall(grid_slice->grid_offsets[i]);
+        }
+        if (type == BUILDING_TOWER) {
+            map_tiles_update_all_walls(); // towers affect wall connections
+            success = building_construction_place_building(type_to_place, x, y);
+        }
     } else {
         success = building_construction_place_building(type_to_place, x, y);
     }
@@ -455,20 +473,23 @@ int building_repair(building *b)
         return 0;
     }
     int placement_cost = model_get_building(type_to_place)->cost * success;
-    city_finance_process_construction(placement_cost + placement_cost / 20); // +5%
+    int full_cost = (placement_cost + placement_cost / 20);// +5%
+    city_finance_process_construction(full_cost);
     building *new_building = building_get(map_building_at(map_grid_offset(x, y)));
-    map_building_set_rubble_grid_building_id(grid_offset, 0, og_size); // remove rubble marker
-
+    map_building_set_rubble_grid_building_id(grid_offset, 0, size); // remove rubble marker
     building_data_transfer_paste(new_building, 1);
+    if (new_building->state == BUILDING_STATE_RUBBLE) {
+        new_building->state = BUILDING_STATE_CREATED;
+    }
     if (has_tmp) {
         building_storage_set_data(new_building->storage_id, tmp);
     }
 
     building_data_transfer_restore_and_clear_backup();
     figure_create_explosion_cloud(new_building->x, new_building->y, og_size, 1);
-    return 1;
+    game_undo_disable(); // not accounting for undoing repairs
+    return full_cost;
 }
-
 
 void building_update_state(void)
 {
@@ -510,7 +531,6 @@ void building_update_state(void)
             if (b->house_size) {
                 city_population_remove_home_removed(b->house_population);
                 b->house_population = 0;
-                b->house_size = 0;
             }
             // building_delete(b); // keep the rubbled building as a reference for reconstruction
         } else if (b->state == BUILDING_STATE_DELETED_BY_GAME) {

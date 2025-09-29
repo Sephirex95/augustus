@@ -31,6 +31,7 @@
 #include "map/bridge.h"
 #include "map/building.h"
 #include "map/building_tiles.h"
+#include "map/data.h"
 #include "map/figure.h"
 #include "map/grid.h"
 #include "map/image_context.h"
@@ -519,8 +520,8 @@ static void draw_default(const map_tile *tile, int x_view, int y_view, building_
                 discouraged_terrain &= ~(TERRAIN_HIGHWAY | TERRAIN_WALL | TERRAIN_ROAD);
             }
             if (type == BUILDING_TOWER) {
-                forbidden_terrain &= ~TERRAIN_WALL;
-                discouraged_terrain &= ~TERRAIN_WALL;
+                forbidden_terrain &= ~TERRAIN_WALL & ~TERRAIN_BUILDING;
+                discouraged_terrain &= ~TERRAIN_WALL & ~TERRAIN_BUILDING;
             }
             if (config_get(CONFIG_GP_CH_WAREHOUSES_GRANARIES_OVER_ROAD_PLACEMENT)) {
                 if (type == BUILDING_WAREHOUSE) {
@@ -1262,7 +1263,7 @@ static void draw_market(const map_tile *tile, int x, int y)
     } else {
         blocked = is_blocked_for_building(grid_offset, building_size, blocked_tiles, 1);
     }
-    if (config_get(CONFIG_UI_SHOW_MARKET_RANGE)) {
+    if (config_get(CONFIG_UI_SHOW_MARKET_RANGE) && config_get(CONFIG_GP_CH_MARKET_RANGE)) {
         city_view_foreach_tile_in_range(tile->grid_offset, 2, MARKET_MAX_DISTANCE, draw_market_range);
     }
     int image_id = image_group(building_properties_for_type(BUILDING_MARKET)->image_group);
