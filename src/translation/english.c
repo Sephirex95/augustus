@@ -1663,6 +1663,8 @@ static translation_string all_strings[] = {
     {TR_CHEAT_DISABLE_LEGIONS_CONSUMPTION, "Disable soldier food consumption"},
     {TR_TOOLTIP_BUTTON_ACCEPT_NATIVES, "Allow native traders to get from here"},
     {TR_TOOLTIP_BUTTON_REJECT_NATIVES, "Don't allow native traders to get from here"},
+    {TR_TOOLTIP_BUTTON_ACCEPT_CAESAR, "Allow Caesar's requests to get from here"},
+    {TR_TOOLTIP_BUTTON_REJECT_CAESAR, "Don't allow Caesar's requests to get from here"},
     {TR_TOOLTIP_BUTTON_ACCEPT_ALL, "Allow everyone to get from here"},
     {TR_TOOLTIP_BUTTON_REJECT_ALL, "Don't allow anyone to get from here"},
     {TR_TOOLTIP_OVERLAY_PROBLEMS_NO_ROAD_ACCESS, "No road access"},
@@ -1724,6 +1726,8 @@ static translation_string all_strings[] = {
     {TR_CONFIRM_REPAIR_BUILDINGS, "Repair all buildings in the area for "},
     {TR_CONFIRM_REPAIR_BUILDINGS_TITLE, "Repair buildings"},
     {TR_BUILDING_LAND_CLEAR, "Clear area"},
+    {TR_CONFIG_CLEAR_WARNINGS_RIGHTCLICK,"Right click to clear warnings in city view"},
+    {TR_CONFIG_GP_CH_STORAGE_REQUESTS_RESPECT_MAINTAIN, "Caesar's requests respect 'Maintaining'"},
     {TR_CONFIG_ENABLE_MARKET_RANGE, "Enable market range"}
 };
 
