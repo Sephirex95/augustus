@@ -244,6 +244,8 @@ static void calculate_available_storages(int building_id)
 
     data.available_storages = 0;
     data.secondary_storages = 0;
+    int has_valid_src = 0;
+    int has_valid_dst = 0;
     int storage_array_size = building_storage_get_array_size();
     for (int i = 0; i < storage_array_size; i++) {
 
@@ -261,31 +263,24 @@ static void calculate_available_storages(int building_id)
                 data.secondary_storages++;  // advanced orders: allow inactive/non-used storages
             }
         }
-    }
-}
-
-static void validate_depot_storage_assignments(int building_id)
-{
-    building *b = building_get(building_id);
-    if (!b) {
-        return;
-    }
-
-    // Validate source storage
-    if (b->data.depot.current_order.src_storage_id) {
-        building *src_building = building_get(b->data.depot.current_order.src_storage_id);
-        if (!src_building || src_building->state != BUILDING_STATE_IN_USE || !src_building->storage_id) {
-            b->data.depot.current_order.src_storage_id = 0;
+        if ((unsigned) b->data.depot.current_order.src_storage_id == store->id) {
+            building_storage_state src_state = building_storage_get_state(
+                building_get(b->data.depot.current_order.src_storage_id), b->data.depot.current_order.resource_type, 0);
+            has_valid_src = src_state != BUILDING_STORAGE_STATE_NOT_ACCEPTING ? 1 : 0;
+        }
+        if ((unsigned) b->data.depot.current_order.dst_storage_id == store->id) {
+            building_storage_state dst_state = building_storage_get_state(
+                building_get(b->data.depot.current_order.dst_storage_id), b->data.depot.current_order.resource_type, 0);
+            has_valid_dst = dst_state != BUILDING_STORAGE_STATE_NOT_ACCEPTING ? 1 : 0;
         }
     }
-
-    // Validate destination storage
-    if (b->data.depot.current_order.dst_storage_id) {
-        building *dst_building = building_get(b->data.depot.current_order.dst_storage_id);
-        if (!dst_building || dst_building->state != BUILDING_STATE_IN_USE || !dst_building->storage_id) {
-            b->data.depot.current_order.dst_storage_id = 0;
-        }
+    if (!has_valid_src) {
+        b->data.depot.current_order.src_storage_id = 0;
     }
+    if (!has_valid_dst) {
+        b->data.depot.current_order.dst_storage_id = 0;
+    }
+
 }
 
 void window_building_depot_init_main(int building_id)
@@ -293,7 +288,6 @@ void window_building_depot_init_main(int building_id)
     city_resource_determine_available(1);
     data.advanced_mode = config_get(CONFIG_GP_CH_CART_DEPOT_ADVANCED);
     calculate_available_storages(building_id);
-    validate_depot_storage_assignments(building_id);
 }
 
 void window_building_depot_init_resource_selection(void)
@@ -380,6 +374,7 @@ void window_building_draw_depot_foreground(building_info_context *c)
     building *src = building_get(b->data.depot.current_order.src_storage_id);
     building *dst = building_get(b->data.depot.current_order.dst_storage_id);
     setup_buttons_for_selected_depot();
+    calculate_available_storages(data.depot_building_id);
     if (!c->has_road_access) {
         window_building_draw_description(c, 69, 25);
     } else if (b->num_workers <= 0) {
@@ -747,7 +742,6 @@ static void paste_settings(const generic_button *button)
     building *b = building_get(data.depot_building_id);
     building_data_transfer_paste(b, 0);
     calculate_available_storages(data.depot_building_id);
-    validate_depot_storage_assignments(data.depot_building_id);  // Validate after pasting
     setup_buttons_for_selected_depot();
     window_invalidate();
 }
@@ -875,7 +869,6 @@ static void set_order_resource(const generic_button *button)
         building *b = building_get(depot_building_id);
         b->data.depot.current_order.resource_type = resource_id;
         calculate_available_storages(depot_building_id);
-        validate_depot_storage_assignments(depot_building_id);  // Validate when resource changes
         window_building_info_depot_return_to_main_window();
     }
 }
