@@ -29,17 +29,15 @@ int city_request_get_status(int index)
     const scenario_request *request = scenario_request_get_visible(index - num_requests);
     if (request) {
         if (request->resource == RESOURCE_DENARII) {
-            if (city_finance_treasury() <= request->amount.requested) {
+            if (city_finance_treasury() <= (int) request->amount.requested) {
+                //cast to int to ensure correct comparison even if treasury is negative
                 return CITY_REQUEST_STATUS_NOT_ENOUGH_RESOURCES;
             }
         } else {
-            int using_granaries;
-            int amount = city_resource_get_amount_including_granaries(request->resource,
-                request->amount.requested, &using_granaries, 1);
+            unsigned int amount = city_resource_get_amount_for_request(request->resource, request->amount.requested);
+            // resource can't have negative storage, unlike treasury
             if (amount < request->amount.requested) {
                 return CITY_REQUEST_STATUS_NOT_ENOUGH_RESOURCES;
-            } else if (using_granaries) {
-                return CITY_REQUEST_STATUS_RESOURCES_FROM_GRANARY | (request->id + CITY_REQUEST_STATUS_MAX);
             }
         }
         return request->id + CITY_REQUEST_STATUS_MAX;

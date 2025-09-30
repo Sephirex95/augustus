@@ -1731,6 +1731,7 @@ static translation_string all_strings[] = {
     {TR_CONFIG_ENABLE_MARKET_RANGE, "Enable market range"},
     {TR_WARNING_CANT_REPAIR_MONUMENTS, "Unique Monuments cannot be repaired" },
     {TR_WARNING_CANT_REPAIR_AQUEDUCTS, "Aqueducts cannot be repaired"},
+    {TR_BUTTON_INFO_RETURN_ALL_LEGIONS, "Recall all legions" },
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

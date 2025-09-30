@@ -343,11 +343,17 @@ static int update_extra_info(int is_background)
             }
             changed |= update_extra_info_value(r->months_to_comply, &slot->time);
             changed |= update_extra_info_value(r->amount.requested, &slot->amount);
+            int count_ignoring_permissions = city_resource_get_amount_including_granaries(r->resource,
+                r->amount.requested, 0, 1);
+            /*This is inconsistent counting method since it doesn't use 'city_resource_get_amount_for_request',
+            but this provides a good user experience as it shows the actual count, but still allows for the
+            request to be unfulfillable due to set storage building permissions.*/
+
             if (r->resource == RESOURCE_DENARII) {
                 changed |= update_extra_info_value(city_finance_treasury(), &slot->available);
             } else {
-                changed |= update_extra_info_value(city_resource_get_amount_including_granaries(r->resource,
-                    r->amount.requested, 0, 1), &slot->available);
+                changed |= update_extra_info_value(count_ignoring_permissions, &slot->available);
+
             }
 
             changed |= update_extra_info_value(is_stockpiled_changed(r->resource), &slot->stockpiled);

@@ -164,6 +164,16 @@ void formation_legion_move_to(formation *m, const map_tile *tile)
     }
 }
 
+void formation_legion_return_home_all(void)
+{
+    for (int i = 1; i < formation_count(); i++) {
+        formation *m = formation_get(i);
+        if (m->in_use && m->is_legion && !m->is_at_fort && !m->in_distant_battle) {
+            formation_legion_return_home(m);
+        }
+    }
+}
+
 void formation_legion_return_home(formation *m)
 {
     map_routing_calculate_distances(m->x_home, m->y_home);

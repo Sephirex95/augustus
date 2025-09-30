@@ -19,6 +19,8 @@ void formation_legion_restore_layout(formation *m);
 
 void formation_legion_move_to(formation *m, const map_tile *tile);
 
+void formation_legion_return_home_all(void);
+
 void formation_legion_return_home(formation *m);
 
 void formation_legions_dispatch_to_distant_battle(void);
