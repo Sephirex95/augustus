@@ -127,6 +127,16 @@ int building_storage_restore(int storage_id)
     return storage_id;
 }
 
+int building_storage_change_building(int storage_id, int building_id)
+{
+    if (storage_id < 0 || storage_id >= storages.size) {
+        return 0;
+    }
+    array_item(storages, storage_id)->building_id = building_id;
+    building_get(building_id)->storage_id = storage_id; // set for the main entry
+    return 1;
+}
+
 void building_storage_delete(int storage_id)
 {
     array_item(storages, storage_id)->in_use = 0;
