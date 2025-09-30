@@ -427,8 +427,8 @@ int building_repair(building *b)
         }
         return 0;
     }
-    int building_id = building_destruction_get_og_building(b);
-    b = building_get(building_id); //ensure we've got the right building in case given a burning ruin tile
+    //int building_id = building_destruction_get_og_building(b);
+    //b = building_get(building_id); //ensure we've got the right building in case given a burning ruin tile
     // flags and placeholders
     int og_size = 0, og_grid_offset = 0, og_orientation = 0, og_storage_id, wall = 0, is_house_lot = 0, success = 0;
     building_type og_type = BUILDING_NONE;
