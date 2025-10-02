@@ -46,7 +46,7 @@ static void tooltip_style_changed(dropdown_button *button);
 #define MAX_VISIBLE_ROWS 15
 #define MAX_RESOURCE_ROWS 24
 
-static struct {
+typedef struct {
     unsigned int focus_button_id;
     unsigned int orders_focus_button_id;
     unsigned int resource_focus_button_id;
@@ -60,8 +60,9 @@ static struct {
     unsigned int advanced_mode;
     resource_type target_resource_id;
     pixel_area window_area;
-} data;
+}depot_data;
 
+static depot_data data;
 static void on_scroll(void);
 static scrollbar_type scrollbar = { 0, 0, ROW_HEIGHT * MAX_VISIBLE_ROWS, 432, MAX_VISIBLE_ROWS, on_scroll, 0, 4 };
 
