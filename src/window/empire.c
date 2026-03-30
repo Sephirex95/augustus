@@ -39,6 +39,7 @@
 #include "window/message_dialog.h"
 #include "window/popup_dialog.h"
 #include "window/resource_settings.h"
+#include "window/trade_ledger.h"
 #include "window/trade_opened.h"
 #include "window/trade_prices.h"
 
@@ -207,6 +208,7 @@ static void button_advisor(int advisor, int param2);
 static void button_show_prices(int param1, int param2);
 static void button_show_resource_window(int resource_button_index);
 static void button_open_trade_by_route(int route_id);
+static void button_open_trade_ledger(int param1, int param2);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -241,6 +243,9 @@ static grid_box_type sidebar_grid_box;
 //original button properties
 static image_button image_button_help[] = {
     {0, 0, 27, 27, IB_NORMAL, GROUP_CONTEXT_ICONS, 0, button_help, button_none, 0, 0, 1}
+};
+static image_button image_button_ledger[] = {
+    {0, 0, 27, 27, IB_NORMAL, GROUP_CONTEXT_ICONS, 0, button_open_trade_ledger, button_none, 0, 0, 1}
 };
 static image_button image_button_return_to_city[] = {
     {0, 0, 24, 24, IB_NORMAL, GROUP_CONTEXT_ICONS, 4, button_return_to_city, button_none, 0, 0, 1}
@@ -478,7 +483,8 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
     trade_row_style style = {
         .x_offset_text = is_main_bar ? (city->is_open ? (is_sell ? 0 : 0) : 0)
         /*sidebar*/ : (10),
-        .y_offset_text = is_main_bar ? (city->is_open ? (is_sell ? 40 : 71) : 42) //open compact (sell) = 40 : open non-compact (buy) = 71 closed (both compact & non-compact) = 42
+        .y_offset_text = is_main_bar ? (city->is_open ? (is_sell ? 40 : 71) : 42)
+        //open compact (sell) = 40 : open non-compact (buy) = 71 closed (both compact & non-compact) = 42
         /*sidebar*/ : (6 /*26 icon height, 4 is shields, 2 is gap*/),
         .row_width = max_draw_width,
         .row_height = 0,
@@ -1614,8 +1620,8 @@ static void animation_draw_scaled(const image *img, int image_id, int new_animat
 
     // Apply animation sprite offset if present, to the already centered position
     if (img->animation) {
-         anim_x += img->animation->sprite_offset_x;
-         anim_y += img->animation->sprite_offset_y;
+        anim_x += img->animation->sprite_offset_x;
+        anim_y += img->animation->sprite_offset_y;
     }
 
     image_draw(image_id + new_animation, anim_x, anim_y, color, 100.0f / draw_scale_percent);
@@ -1704,6 +1710,7 @@ static void draw_panel_buttons(void)
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 44, image_button_return_to_city, 1);
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 100, image_button_advisor, 1);
     image_buttons_draw(data.panel.x_min + 24, data.y_max - 100, image_button_show_prices, 1);
+    image_buttons_draw(data.panel.x_min + 50, data.y_max - 44, image_button_ledger, 1);
     //image_buttons_draw(data.sidebar.x_min-32,data.y_min + 100, button_toggle_sidebar_width, 1);
     if (data.selected_button != NO_POSITION) {
         const trade_open_button *btn = &trade_open_buttons[data.selected_button];
@@ -2013,7 +2020,10 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (button_id) {
         data.focus_button_id = 4;
     }
-
+    image_buttons_handle_mouse(m, data.panel.x_min + 50, data.y_max - 44, image_button_ledger, 1, &button_id);
+    if (button_id) {
+        data.focus_button_id = 5;
+    }
 
     button_id = 0;
     determine_selected_object(m);
@@ -2162,6 +2172,11 @@ static void get_tooltip(tooltip_context *c)
 static void button_help(int param1, int param2)
 {
     window_message_dialog_show(MESSAGE_DIALOG_EMPIRE_MAP, 0);
+}
+
+static void button_open_trade_ledger(int param1, int param2)
+{
+    window_trade_ledger_show();
 }
 
 static void button_return_to_city(int param1, int param2)

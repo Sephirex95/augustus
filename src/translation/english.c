@@ -2044,7 +2044,10 @@ static translation_string all_strings[] = {
     {TR_CONFIG_WT_WEATHER_DURATION, "Weather duration"},
     {TR_CONFIG_WT_DURATION_SHORT, "Short"},
     {TR_CONFIG_WT_DURATION_REGULAR, "Regular"},
-    {TR_CONFIG_WT_DURATION_LONG, "Long"}
+    {TR_CONFIG_WT_DURATION_LONG, "Long" },
+    {TR_UI_TRADE_LEDGER_HEADER,          "Trade Ledger"},
+    {TR_UI_TRADE_LEDGER_TAB_TRADE,        "Trade"},
+    {TR_UI_TRADE_LEDGER_TAB_PRODUCTION,   "Production"},
 };
 
 void translation_english(const translation_string **strings, int *num_strings)
