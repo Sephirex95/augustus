@@ -581,6 +581,7 @@ set(GRAPHICS_FILES
     ${PROJECT_SOURCE_DIR}/src/graphics/screen.c
     ${PROJECT_SOURCE_DIR}/src/graphics/screenshot.c
     ${PROJECT_SOURCE_DIR}/src/graphics/scrollbar.c
+    ${PROJECT_SOURCE_DIR}/src/graphics/tab_view.c
     ${PROJECT_SOURCE_DIR}/src/graphics/text.c
     ${PROJECT_SOURCE_DIR}/src/graphics/tooltip.c
     ${PROJECT_SOURCE_DIR}/src/graphics/video.c
