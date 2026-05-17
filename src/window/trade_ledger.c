@@ -5,6 +5,7 @@
 #include "graphics/image_button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
+#include "graphics/tab_view.h"
 #include "graphics/window.h"
 #include "input/input.h"
 
@@ -12,13 +13,26 @@
 #define PANEL_H 600
 
 static void button_close(int param1, int param2);
+static void placeholder_content_draw(tab_view *view, tab *active_tab);
+
+static tab_view ledger_tabs;
+static int tabs_initialized = 0;
+
+static const lang_fragment tab_text_imports[] = {
+    {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Imports"},
+};
+
+static const lang_fragment tab_text_exports[] = {
+    {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Exports"},
+};
+
+static const lang_fragment tab_text_summary[] = {
+    {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Summary"},
+};
 
 static image_button image_buttons[] = {
     {744, 554, 24, 24, IB_NORMAL, GROUP_CONTEXT_ICONS, 4, button_close, button_none, 0, 0, 1},
 };
-// replace with generic_buttons or complex_buttons later
-
-//tab system to be implemented as a standalone component, utilising the complex buttons structure
 
 static void draw_background(void)
 {
@@ -32,8 +46,18 @@ static void draw_background(void)
 
 static void draw_foreground(void)
 {
+    if (!tabs_initialized) {
+        // Initialize tabs on first draw
+        tab_view_init_simple(&ledger_tabs, 24, 80, PANEL_W - 48, PANEL_H - 112, 3, TAB_VIEW_STYLE_DEFAULT);
+        tab_view_init_tab(&ledger_tabs, 0, placeholder_content_draw, tab_text_imports);
+        tab_view_init_tab(&ledger_tabs, 1, placeholder_content_draw, tab_text_exports);
+        tab_view_init_tab(&ledger_tabs, 2, placeholder_content_draw, tab_text_summary);
+        tabs_initialized = 1;
+    }
+
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
 
+    tab_view_draw(&ledger_tabs);
     image_buttons_draw(0, 0, image_buttons, 1);
 
     graphics_reset_dialog();
@@ -41,7 +65,12 @@ static void draw_foreground(void)
 
 static void handle_input(const mouse *m, const hotkeys *h)
 {
-    if (image_buttons_handle_mouse(mouse_in_dialog_with_size(m, PANEL_W, PANEL_H), 0, 0, image_buttons, 1, 0)) {
+    const mouse *m_dialog = mouse_in_dialog_with_size(m, PANEL_W, PANEL_H);
+
+    if (tab_view_handle_mouse(m_dialog, &ledger_tabs)) {
+        return;
+    }
+    if (image_buttons_handle_mouse(m_dialog, 0, 0, image_buttons, 1, 0)) {
         return;
     }
     if (input_go_back_requested(m, h)) {
@@ -52,6 +81,14 @@ static void handle_input(const mouse *m, const hotkeys *h)
 static void button_close(int param1, int param2)
 {
     window_go_back();
+}
+
+static void placeholder_content_draw(tab_view *view, tab *active_tab)
+{
+    (void) view;
+    (void) active_tab;
+    // Placeholder: in future, real content will be drawn here
+    // For now, just leave the content area empty (it's drawn with inner_panel_draw_colored)
 }
 
 void window_trade_ledger_show(void)
