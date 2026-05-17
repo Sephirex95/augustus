@@ -518,6 +518,8 @@ int figure_service_provide_coverage(figure *f)
     building *b;
     switch (f->type) {
         case FIGURE_PATRICIAN:
+        case FIGURE_PLEBIAN:
+        case FIGURE_DOG:
             return 0;
         case FIGURE_LABOR_SEEKER:
             houses_serviced = provide_culture(x, y, labor_seeker_coverage);
@@ -564,6 +566,7 @@ int figure_service_provide_coverage(figure *f)
         case FIGURE_DEPOT_CART_PUSHER:
         case FIGURE_NATIVE_TRADER:
         case FIGURE_LIGHTHOUSE_SUPPLIER:
+        case FIGURE_HIGHWAY_STATION_SUPPLIER:
             b = building_get(f->building_id);
             building *dest_b = building_get(f->destination_building_id);
 

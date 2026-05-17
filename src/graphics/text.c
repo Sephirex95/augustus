@@ -532,6 +532,13 @@ int text_draw_percentage(int value, int x_offset, int y_offset, font_t font)
     return text_draw(str, x_offset, y_offset, font, 0);
 }
 
+void text_draw_percentage_centered(int value, int x_offset, int y_offset, int box_width, font_t font)
+{
+    uint8_t str[NUMBER_BUFFER_LENGTH];
+    number_to_string(str, value, 0, "%");
+    text_draw_centered(str, x_offset, y_offset, box_width, font, 0);
+}
+
 int text_draw_label_and_number(const uint8_t *label, int value, const char *postfix, int x_offset, int y_offset, font_t font, color_t color)
 {
     uint8_t str[2 * NUMBER_BUFFER_LENGTH];
@@ -635,7 +642,9 @@ int text_draw_multiline(const uint8_t *str, int x_offset, int y_offset, int box_
 int text_measure_multiline(const uint8_t *str, int box_width, font_t font, int *largest_width)
 {
     // \n is not counted as a word and is only caught it directly after a word: "word \n" won't work correctly
-    *largest_width = 0;
+    if (largest_width) {
+        *largest_width = 0;
+    }
     int has_more_characters = 1;
     int guard = 0;
     int num_lines = 0;
@@ -669,7 +678,7 @@ int text_measure_multiline(const uint8_t *str, int box_width, font_t font, int *
                 }
             }
         }
-        if (current_width > *largest_width) {
+        if (largest_width && current_width > *largest_width) {
             *largest_width = current_width;
         }
         num_lines += 1;

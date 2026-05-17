@@ -1,6 +1,8 @@
 #include "input/mouse.h"
 
+#include "core/calc.h"
 #include "core/time.h"
+#include "game/system.h"
 #include "graphics/screen.h"
 #include "input/hotkey.h"
 
@@ -69,10 +71,18 @@ void mouse_set_position(int x, int y)
     if (x != data.x || y != data.y) {
         last_click = 0;
     }
-    data.x = x;
-    data.y = y;
+    data.x = calc_bound(x, 0, screen_width() - 1);
+    data.y = calc_bound(y, 0, screen_height() - 1);
     data.is_touch = 0;
     data.is_inside_window = 1;
+}
+
+void mouse_center_cursor(void)
+{
+    int x = screen_width() / 2;
+    int y = screen_height() / 2;
+    system_set_mouse_position(&x, &y);
+    mouse_set_position(x, y);
 }
 
 void mouse_set_left_down(int down)
@@ -80,6 +90,7 @@ void mouse_set_left_down(int down)
     data.left.system_change |= down ? SYSTEM_DOWN : SYSTEM_UP;
     data.is_touch = 0;
     data.is_inside_window = 1;
+    data.window_has_focus = 1;
     if (!down) {
         time_millis now = time_get_millis();
         int is_double_click = (last_click < now) && ((now - last_click) <= DOUBLE_CLICK_TIME);
@@ -106,6 +117,7 @@ void mouse_set_right_down(int down)
     data.right.system_change |= down ? SYSTEM_DOWN : SYSTEM_UP;
     data.is_touch = 0;
     data.is_inside_window = 1;
+    data.window_has_focus = 1;
     last_click = 0;
 }
 
@@ -113,6 +125,11 @@ void mouse_set_inside_window(int inside)
 {
     data.is_inside_window = inside;
     data.is_touch = 0;
+}
+
+void mouse_set_window_focus(int focus)
+{
+    data.window_has_focus = focus;
 }
 
 static void update_button_state(mouse_button *button)
@@ -170,6 +187,7 @@ const mouse *mouse_in_dialog(const mouse *m)
     dialog.right = m->right;
     dialog.scrolled = m->scrolled;
     dialog.is_inside_window = m->is_inside_window;
+    dialog.window_has_focus = m->window_has_focus;
     dialog.is_touch = m->is_touch;
 
     dialog.x = m->x - screen_dialog_offset_x();

@@ -6,6 +6,9 @@ set_property(CACHE TARGET_PLATFORM PROPERTY STRINGS default vita switch android 
 
 string(TOLOWER ${TARGET_PLATFORM} TARGET_PLATFORM)
 
+set(SDL_VERSION "2" CACHE STRING "SDL Version to use. Supported versions: 2, 3")
+set_property(CACHE SDL_VERSION PROPERTY STRINGS 2 3)
+    
 option(DRAW_FPS "Draw FPS on the top left corner of the window." OFF)
 option(DRAW_ROUTING "Draw routing debug information." OFF)
 option(DRAW_HIGHWAY_TERRAIN "Draw highway debug information." OFF)
@@ -40,19 +43,26 @@ if(${TARGET_PLATFORM} STREQUAL "ios")
 
     set(SYSTEM_LIBS OFF)
 
-    # Build SDL2 as static library
+    # Build SDL as static library
     set(SDL_SHARED_ENABLED_BY_DEFAULT OFF)
     set(SDL_SHARED OFF)
     set(SDL_STATIC ON)
 
-    # Build SDL2_mixer as static library
+    # Build SDL_mixer as static library
     set(BUILD_SHARED_LIBS OFF)
 
     # Disable stuff that breaks the build and we don't need.
-    set(SDL2MIXER_WAVPACK OFF) 
-    set(SDL2MIXER_OPUS OFF) 
-    set(SDL2MIXER_MIDI OFF) 
-    set(SDL2MIXER_MOD OFF) 
+    if (SDL_VERSION STREQUAL "2")
+        set(SDL2MIXER_WAVPACK OFF) 
+        set(SDL2MIXER_OPUS OFF) 
+        set(SDL2MIXER_MIDI OFF) 
+        set(SDL2MIXER_MOD OFF)
+    else()
+        set(SDLMIXER_WAVPACK OFF)
+        set(SDLMIXER_OPUS OFF)
+        set(SDLMIXER_MIDI OFF)
+        set(SDLMIXER_MOD OFF)
+    endif()
 
     # Explicitly set SDKROOT (called Base SDK in Xcode), otherwise it is set incorrectly.
     set(CMAKE_XCODE_ATTRIBUTE_SDKROOT iphoneos)
@@ -216,9 +226,11 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/res/packed_assets)
     set(ASSETS_DIR ${PROJECT_SOURCE_DIR}/res/packed_assets)
 endif()
 
-set(TINYFD_FILES
-    ${PROJECT_SOURCE_DIR}/ext/tinyfiledialogs/tinyfiledialogs.c
-)
+if (${SDL_VERSION} STREQUAL "2")
+    set(TINYFD_FILES
+        ${PROJECT_SOURCE_DIR}/ext/tinyfiledialogs/tinyfiledialogs.c
+    )
+endif()
 
 set(SPNG_FILES
     ${PROJECT_SOURCE_DIR}/ext/spng/spng.c
@@ -234,24 +246,25 @@ set(ZIP_FILES
 
 set(PLATFORM_FILES
     ${PROJECT_SOURCE_DIR}/src/platform/arguments.c
-    ${PROJECT_SOURCE_DIR}/src/platform/augustus.c
     ${PROJECT_SOURCE_DIR}/src/platform/crash_handler.c
-    ${PROJECT_SOURCE_DIR}/src/platform/cursor.c
     ${PROJECT_SOURCE_DIR}/src/platform/file_manager.c
     ${PROJECT_SOURCE_DIR}/src/platform/icon.c
-    ${PROJECT_SOURCE_DIR}/src/platform/joystick.c
-    ${PROJECT_SOURCE_DIR}/src/platform/keyboard_input.c
     ${PROJECT_SOURCE_DIR}/src/platform/log.c
-    ${PROJECT_SOURCE_DIR}/src/platform/mouse.c
-    ${PROJECT_SOURCE_DIR}/src/platform/platform.c
     ${PROJECT_SOURCE_DIR}/src/platform/prefs.c
-    ${PROJECT_SOURCE_DIR}/src/platform/renderer.c
-    ${PROJECT_SOURCE_DIR}/src/platform/screen.c
-    ${PROJECT_SOURCE_DIR}/src/platform/sound_device.c
-    ${PROJECT_SOURCE_DIR}/src/platform/touch.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/augustus.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/cursor.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/joystick.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/keyboard_input.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/log.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/mouse.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/platform.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/renderer.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/screen.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/sound_device.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/touch.c
+    ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/virtual_keyboard.c
     ${PROJECT_SOURCE_DIR}/src/platform/user_path.c
     ${PROJECT_SOURCE_DIR}/src/platform/version.c
-    ${PROJECT_SOURCE_DIR}/src/platform/virtual_keyboard.c
 )
 
 if (${TARGET_PLATFORM} STREQUAL "vita")
@@ -273,6 +286,7 @@ elseif (${TARGET_PLATFORM} STREQUAL "android")
         ${PROJECT_SOURCE_DIR}/src/platform/android/android.c
         ${PROJECT_SOURCE_DIR}/src/platform/android/asset_handler.c
         ${PROJECT_SOURCE_DIR}/src/platform/android/jni.c
+        ${PROJECT_SOURCE_DIR}/src/platform/SDL${SDL_VERSION}/android/android.c
     )
 elseif (${TARGET_PLATFORM} STREQUAL "ios")
     set(PLATFORM_FILES
@@ -335,6 +349,7 @@ set(BUILDING_FILES
     ${PROJECT_SOURCE_DIR}/src/building/figure.c
     ${PROJECT_SOURCE_DIR}/src/building/government.c
     ${PROJECT_SOURCE_DIR}/src/building/granary.c
+    ${PROJECT_SOURCE_DIR}/src/building/highway_station.c
     ${PROJECT_SOURCE_DIR}/src/building/house.c
     ${PROJECT_SOURCE_DIR}/src/building/house_evolution.c
     ${PROJECT_SOURCE_DIR}/src/building/house_population.c
@@ -596,35 +611,32 @@ set(SOUND_FILES
     ${PROJECT_SOURCE_DIR}/src/sound/system.c
 )
 set(WIDGET_FILES
-    ${PROJECT_SOURCE_DIR}/src/widget/city.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_bridge.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_building_ghost.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_figure.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_draw_highway.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_education.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_entertainment.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_health.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_housing.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_other.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_overlay_risks.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_pause_menu.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_water_ghost.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_with_overlay.c
-    ${PROJECT_SOURCE_DIR}/src/widget/city_without_overlay.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/city.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/bridge.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/building_ghost.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/draw.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/figure.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/highway.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/education.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/entertainment.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/health.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/housing.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/other.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/overlay.c
+    ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/risks.c
     ${PROJECT_SOURCE_DIR}/src/widget/dropdown_button.c
     ${PROJECT_SOURCE_DIR}/src/widget/input_box.c
     ${PROJECT_SOURCE_DIR}/src/widget/map_editor.c
     ${PROJECT_SOURCE_DIR}/src/widget/map_editor_tool.c
-    ${PROJECT_SOURCE_DIR}/src/widget/map_editor_pause_menu.c
     ${PROJECT_SOURCE_DIR}/src/widget/minimap.c
-    ${PROJECT_SOURCE_DIR}/src/widget/top_menu.c
-    ${PROJECT_SOURCE_DIR}/src/widget/top_menu_editor.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/city.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/common.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/editor.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/extra.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/military.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/slide.c
+    ${PROJECT_SOURCE_DIR}/src/widget/top_menu.c
+    ${PROJECT_SOURCE_DIR}/src/widget/top_menu_editor.c
 )
 set(WINDOW_FILES
     ${PROJECT_SOURCE_DIR}/src/window/advisors.c
@@ -650,6 +662,7 @@ set(WINDOW_FILES
     ${PROJECT_SOURCE_DIR}/src/window/building/depot.c
     ${PROJECT_SOURCE_DIR}/src/window/building/figures.c
     ${PROJECT_SOURCE_DIR}/src/window/building/government.c
+    ${PROJECT_SOURCE_DIR}/src/window/building/highway_station.c
     ${PROJECT_SOURCE_DIR}/src/window/building/house.c
     ${PROJECT_SOURCE_DIR}/src/window/building/industry.c
     ${PROJECT_SOURCE_DIR}/src/window/building/military.c
@@ -670,6 +683,7 @@ set(WINDOW_FILES
     ${PROJECT_SOURCE_DIR}/src/window/editor/invasions.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/map.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/model_data.c
+    ${PROJECT_SOURCE_DIR}/src/window/editor/pause_menu.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/price_changes.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/requests.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/scenario_events.c
@@ -686,6 +700,7 @@ set(WINDOW_FILES
     ${PROJECT_SOURCE_DIR}/src/window/editor/start_year.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/starting_conditions.c
     ${PROJECT_SOURCE_DIR}/src/window/editor/win_criteria.c
+    ${PROJECT_SOURCE_DIR}/src/window/epithets.c
     ${PROJECT_SOURCE_DIR}/src/window/cck_selection.c
     ${PROJECT_SOURCE_DIR}/src/window/city.c
     ${PROJECT_SOURCE_DIR}/src/window/config.c
@@ -714,6 +729,7 @@ set(WINDOW_FILES
     ${PROJECT_SOURCE_DIR}/src/window/numeric_input.c
     ${PROJECT_SOURCE_DIR}/src/window/option_popup.c
     ${PROJECT_SOURCE_DIR}/src/window/overlay_menu.c
+    ${PROJECT_SOURCE_DIR}/src/window/pause_menu.c
     ${PROJECT_SOURCE_DIR}/src/window/plain_message_dialog.c
     ${PROJECT_SOURCE_DIR}/src/window/popup_dialog.c
     ${PROJECT_SOURCE_DIR}/src/window/race_bet.c
@@ -829,14 +845,14 @@ function(GET_SDL_EXT_DIR result module)
     if(NOT module STREQUAL "")
         set(module "_${module}")
     endif()
-    set(SDL_LOCATION ${PROJECT_SOURCE_DIR}/ext/SDL2)
+    set(SDL_LOCATION ${PROJECT_SOURCE_DIR}/ext/SDL${SDL_VERSION})
     file(GLOB children
         RELATIVE ${SDL_LOCATION}
         CONFIGURE_DEPENDS
         ${SDL_LOCATION}/SDL${module}
-        ${SDL_LOCATION}/SDL2${module}
+        ${SDL_LOCATION}/SDL${SDL_VERSION}${module}
         ${SDL_LOCATION}/SDL${module}-*
-        ${SDL_LOCATION}/SDL2${module}-*
+        ${SDL_LOCATION}/SDL${SDL_VERSION}${module}-*
     )
     foreach(child ${children})
         if(IS_DIRECTORY "${SDL_LOCATION}/${child}")
@@ -847,10 +863,10 @@ function(GET_SDL_EXT_DIR result module)
 endfunction()
 
 if(${TARGET_PLATFORM} STREQUAL "emscripten")
-    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_MIXER=2 -s SDL2_MIXER_FORMATS=[\"mp3\"] -s USE_MPG123=1")
+    set(USE_FLAGS "-s USE_SDL=${SDL_VERSION} -s USE_SDL_MIXER=${SDL_VERSION} -s SDL${SDL_VERSION}_MIXER_FORMATS=[\"mp3,ogg\"] -s USE_MPG123=1")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
-elseif(${TARGET_PLATFORM} STREQUAL "android")
+elseif(${TARGET_PLATFORM} STREQUAL "android" AND ${SDL_VERSION} STREQUAL "2")
     find_package(SDL2 REQUIRED CONFIG)
     string(TOLOWER ${CMAKE_BUILD_TYPE} ANDROID_BUILD_DIR)
     set(SDL2_LIBRARY SDL2::SDL2)
@@ -858,20 +874,20 @@ elseif(${TARGET_PLATFORM} STREQUAL "android")
 elseif(${TARGET_PLATFORM} STREQUAL "ios")
     GET_SDL_EXT_DIR(SDL_EXT_DIR "")
     add_subdirectory(${SDL_EXT_DIR})
-    find_library(SDL2 NAMES SDL2-static SDL2main)
-    list(APPEND SDL2_LIBRARY
-        # We don't need to add SDL2-static here because SDL2_mixer will include it
-        SDL2main
+    find_library(SDL${SDL_VERSION} NAMES SDL${SDL_VERSION}-static SDL${SDL_VERSION}main)
+    list(APPEND SDL${SDL_VERSION}_LIBRARY
+        # We don't need to add SDL-static here because SDL_mixer will include it
+        SDL${SDL_VERSION}main
     )
     GET_SDL_EXT_DIR(SDL_MIXER_EXT_DIR "mixer")
     add_subdirectory(${SDL_MIXER_EXT_DIR})
-    find_library(SDL2_mixer NAMES SDL2_mixer-static)
-    list(APPEND SDL2_MIXER_LIBRARY
-        SDL2_mixer
+    find_library(SDL${SDL_VERSION}_mixer NAMES SDL${SDL_VERSION}_mixer-static)
+    list(APPEND SDL${SDL_VERSION}_MIXER_LIBRARY
+        SDL${SDL_VERSION}_mixer
     )
 else()
-    find_package(SDL2 REQUIRED)
-    find_package(SDL2_mixer REQUIRED)
+    find_package(SDL${SDL_VERSION} REQUIRED)
+    find_package(SDL${SDL_VERSION}_mixer REQUIRED)
 endif()
 
 if(${TARGET_PLATFORM} STREQUAL "android")
@@ -884,7 +900,13 @@ endif()
 
 if(${TARGET_PLATFORM} STREQUAL "emscripten")
     set(CMAKE_EXECUTABLE_SUFFIX .html)
-    set_target_properties(${SHORT_NAME} PROPERTIES LINK_FLAGS "-lidbfs.js -s SINGLE_FILE=1 -s DYNCALLS=1 --shell-file ${PROJECT_SOURCE_DIR}/res/shell.html --embed-file ${ASSETS_DIR}@/assets -s INITIAL_MEMORY=268435456 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0 -s SAFE_HEAP=1 -s INVOKE_RUN=0 -s EXPORTED_FUNCTIONS=[\"_main\"] -s EXPORTED_RUNTIME_METHODS=[\"callMain\",\"FS\"] -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=[\"$autoResumeAudioContext\"] --bind")
+    set(EMSCRIPTEN_LINK_FLAGS
+        "-lidbfs.js -s SINGLE_FILE=1 -s SINGLE_FILE_BINARY_ENCODE=0 --shell-file ${PROJECT_SOURCE_DIR}/res/shell.html --embed-file ${ASSETS_DIR}@/assets -s INITIAL_MEMORY=268435456 -s ALLOW_MEMORY_GROWTH=1 -s INVOKE_RUN=0 -s EXPORTED_FUNCTIONS=[\"_main\"] -s EXPORTED_RUNTIME_METHODS=[\"callMain\",\"FS\"] -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=[\"$autoResumeAudioContext\"] --bind"
+    )
+    if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+        set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -s ASSERTIONS=1")
+    endif()
+    set_target_properties(${SHORT_NAME} PROPERTIES LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS}")
 endif()
 
 if(MSVC)
@@ -992,11 +1014,11 @@ if(${TARGET_PLATFORM} STREQUAL "ios")
         MACOSX_PACKAGE_LOCATION Resources)
 endif()
 
-if(SDL2_INCLUDE_DIR)
-    include_directories(SYSTEM ${SDL2_INCLUDE_DIR})
+if(SDL${SDL_VERSION}_INCLUDE_DIR)
+    include_directories(SYSTEM ${SDL${SDL_VERSION}_INCLUDE_DIR})
 endif()
-if(SDL2_MIXER_INCLUDE_DIR)
-    include_directories(SYSTEM ${SDL2_MIXER_INCLUDE_DIR})
+if(SDL${SDL_VERSION}_MIXER_INCLUDE_DIR)
+    include_directories(SYSTEM ${SDL${SDL_VERSION}_MIXER_INCLUDE_DIR})
 endif()
 
 if(${TARGET_PLATFORM} STREQUAL "vita")
@@ -1017,9 +1039,13 @@ if (AV1_VIDEO_SUPPORT)
 endif()
 
 if(${TARGET_PLATFORM} STREQUAL "vita")
+    if(SDL_VERSION STREQUAL "3")
+        target_link_libraries(${SHORT_NAME} SDL3::SDL3 SDL3_mixer::SDL3_mixer)
+    else()
+        target_link_libraries(${SHORT_NAME} ${SDL2_MIXER_LIBRARY} ${SDL2_LIBRARY})
+    endif()
+
     target_link_libraries(${SHORT_NAME}
-        ${SDL2_MIXER_LIBRARY}
-        ${SDL2_LIBRARY}
         ${EASYAV1_LIBRARY}
         vorbisfile
         vorbis
@@ -1067,8 +1093,8 @@ if(${TARGET_PLATFORM} STREQUAL "vita")
     )
 elseif(NINTENDO_SWITCH)
 
-    pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2 SDL2_mixer)
-    target_link_libraries(${SHORT_NAME} PkgConfig::SDL2 ${EASYAV1_LIBRARY})
+    pkg_check_modules(SDL${SDL_VERSION} REQUIRED IMPORTED_TARGET sdl${SDL_VERSION} SDL${SDL_VERSION}_mixer)
+    target_link_libraries(${SHORT_NAME} PkgConfig::SDL${SDL_VERSION} ${EASYAV1_LIBRARY})
 
 nx_generate_nacp (${PROJECT_NAME}.nacp
     NAME   "Augustus"
@@ -1093,8 +1119,9 @@ else()
     endif()
 
     if(${TARGET_PLATFORM} STREQUAL "ios")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__IOS__")
         set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -DUSE_SDL_MAIN")
-        # Add SDL2 and SDL_Mixer headers, or they won't be found
+        # Add SDL and SDL_Mixer headers, or they won't be found
         target_include_directories(${SHORT_NAME} PRIVATE "${SDL_EXT_DIR}/include")
         target_include_directories(${SHORT_NAME} PRIVATE "${SDL_MIXER_EXT_DIR}/include")
 
@@ -1107,7 +1134,14 @@ else()
         )
     endif()
 
-    target_link_libraries(${SHORT_NAME} ${SDL2MAIN_LIBRARY} ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} ${EASYAV1_LIBRARY})
+    if(SDL_VERSION STREQUAL "2")
+        target_link_libraries(${SHORT_NAME} ${SDL2MAIN_LIBRARY} ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY})
+    else()
+        target_link_libraries(${SHORT_NAME} SDL3::SDL3 SDL3_mixer::SDL3_mixer)
+    endif()
+
+    target_link_libraries(${SHORT_NAME} ${EASYAV1_LIBRARY})
+
     if(NOT APPLE AND NOT ${TARGET_PLATFORM} STREQUAL "android")
         install(TARGETS ${SHORT_NAME} RUNTIME DESTINATION bin)
     endif()

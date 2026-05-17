@@ -124,7 +124,13 @@ static const char *ini_keys[] = {
     [CONFIG_UI_WT_PREVIEW_HEAVY_RAIN] = "ui_wt_preview_heavy_rain",
     [CONFIG_UI_WT_SANDSTORM_SIZE] = "ui_wt_sandstorm_size",
     [CONFIG_UI_WT_SNOWFLAKE_SIZE] = "ui_wt_snowflake_size",
-    [CONFIG_UI_WT_WEATHER_DURATION] = "ui_wt_weather_duration"
+    [CONFIG_UI_WT_WEATHER_DURATION] = "ui_wt_weather_duration",
+    [CONFIG_GP_CH_GRANARY_DEFAULT_TO_PASS_ALL_WALKERS] = "gameplay_change_granary_do_not_allow_walkers",
+    [CONFIG_GP_CH_WAREHOUSE_DEFAULT_TO_PASS_ALL_WALKERS] = "gameplay_change_warehouse_do_not_allow_walkers",
+    [CONFIG_GP_CH_HOUSING_DO_NOT_SPAWN_PLEBIANS] = "gameplay_change_houses_do_not_spawn_plebeians",
+    [CONFIG_GP_CH_HOUSING_DO_NOT_SPAWN_DOGS] = "gameplay_change_houses_do_not_spawn_dogs",
+    [CONFIG_UI_SHOW_SHORELINE_DESIRABILITY] = "ui_show_shoreline_desirability",
+    [CONFIG_UI_SHOW_ELEVATION_DESIRABILITY] = "ui_show_elevation_desirability",
 };
 
 static const char *ini_string_keys[] = {
@@ -160,9 +166,9 @@ static int default_values[CONFIG_MAX_ENTRIES] = {
     [CONFIG_GP_STORAGE_INCREMENT_4] = 0,
     [CONFIG_UI_MOVE_SAVINGS_TO_RIGHT] = 0,
     [CONFIG_GP_CH_PATRICIAN_DEVOLUTION_FIX] = 1,
-    [CONFIG_WT_SNOW_INTENSITY] = 30,
-    [CONFIG_WT_RAIN_INTENSITY] = 60,
-    [CONFIG_WT_SANDSTORM_INTENSITY] = 10,
+    [CONFIG_WT_SNOW_INTENSITY] = 100,
+    [CONFIG_WT_RAIN_INTENSITY] = 100,
+    [CONFIG_WT_SANDSTORM_INTENSITY] = 100,
     [CONFIG_WT_RAIN_SPEED] = 2,
     [CONFIG_WT_RAIN_LENGTH] = 2,
     [CONFIG_WT_SNOW_SPEED] = 1,

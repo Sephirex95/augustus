@@ -102,11 +102,6 @@ int trade_route_legacy_increase_limit(int route_id, resource_type resource, int 
 int trade_route_legacy_decrease_limit(int route_id, resource_type resource, int buying)
 {
     route_resource *route = get_route_resource(route_id, buying);
-    if (buying) {
-        route = &array_item(routes, route_id)->buys;
-    } else {
-        route = &array_item(routes, route_id)->sells;
-    }
     switch (route->limit[resource]) {
         case 40: route->limit[resource] = 25; break;
         case 25: route->limit[resource] = 15; break;
@@ -165,10 +160,10 @@ void trade_routes_load_state(buffer *trade_routes)
     }
     for (int i = 0; i < routes_to_load; i++) {
         trade_route *route = array_next(routes);
-        for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
             for (int r = 0; r < resource_total_mapped(); r++) {
                 resource_type remapped = resource_remap(r);
-                if (i) {
+                if (j) {
                     route->buys.limit[remapped] = buffer_read_i32(trade_routes);
                     route->buys.traded[remapped] = buffer_read_i32(trade_routes);
                 } else {

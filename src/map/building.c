@@ -26,10 +26,16 @@ building_type map_building_type_at(int grid_offset)
     return building_id ? building_get(building_id)->type : BUILDING_NONE;
 }
 
-unsigned int map_building_from_buffer(buffer *buildings, int grid_offset)
+unsigned int map_building_from_buffer_16(buffer *buildings, int grid_offset)
 {
     buffer_set(buildings, grid_offset * sizeof(uint16_t));
     return buffer_read_u16(buildings);
+}
+
+unsigned int map_building_from_buffer_32(buffer *buildings, int grid_offset)
+{
+    buffer_set(buildings, grid_offset * sizeof(uint32_t));
+    return buffer_read_u32(buildings);
 }
 
 void map_building_set(int grid_offset, unsigned int building_id)
@@ -54,12 +60,6 @@ unsigned int map_building_rubble_building_id(int grid_offset)
 
 void map_building_set_rubble_grid_building_id(int grid_offset, unsigned int building_id, int size)
 {
-    if (size == 1) {
-        if (!building_id || !map_terrain_is(grid_offset, TERRAIN_WATER)) {
-            rubble_info_grid.items[grid_offset] = building_id;
-        }
-        return;
-    }
     int x = map_grid_offset_to_x(grid_offset);
     int y = map_grid_offset_to_y(grid_offset);
     for (int i = 0; i < size; i++) {

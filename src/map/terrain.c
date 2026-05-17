@@ -133,9 +133,9 @@ void map_terrain_remove_all(int terrain)
     map_grid_and_u32(terrain_grid.items, ~terrain);
 }
 
-int map_terrain_count_directly_adjacent_with_type(int grid_offset, int terrain)
+unsigned int map_terrain_count_directly_adjacent_with_type(int grid_offset, int terrain)
 {
-    int count = 0;
+    unsigned int count = 0;
     if (map_terrain_is(grid_offset + map_grid_delta(0, -1), terrain)) {
         count++;
     }
@@ -151,9 +151,9 @@ int map_terrain_count_directly_adjacent_with_type(int grid_offset, int terrain)
     return count;
 }
 
-int map_terrain_count_directly_adjacent_with_types(int grid_offset, int terrain_sum)
+unsigned int map_terrain_count_directly_adjacent_with_types(int grid_offset, int terrain_sum)
 {
-    int count = 0;
+    unsigned int count = 0;
     if (map_terrain_is_superset(grid_offset + map_grid_delta(0, -1), terrain_sum)) {
         count++;
     }
@@ -170,9 +170,9 @@ int map_terrain_count_directly_adjacent_with_types(int grid_offset, int terrain_
 }
 
 
-int map_terrain_count_diagonally_adjacent_with_type(int grid_offset, int terrain)
+unsigned int map_terrain_count_diagonally_adjacent_with_type(int grid_offset, int terrain)
 {
-    int count = 0;
+    unsigned int count = 0;
     if (map_terrain_is(grid_offset + map_grid_delta(1, -1), terrain)) {
         count++;
     }
@@ -616,7 +616,7 @@ void map_terrain_migrate_old_bridges(void)
     }
 }
 
-void map_terrain_migrate_old_walls(void)
+void map_terrain_migrate_shared_buildings(void)
 {
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -624,23 +624,31 @@ void map_terrain_migrate_old_walls(void)
             if (!map_grid_is_valid_offset(grid_offset)) {
                 continue;
             }
+
+            building *shared_building = 0;
             if (map_terrain_is(grid_offset, TERRAIN_WALL)) {
-                if (!map_terrain_is(grid_offset, TERRAIN_BUILDING)) {
-                    // Create wall building for each wall tile
-                    building *wall = building_create(BUILDING_WALL, x, y);
-                    map_building_set(grid_offset, wall->id);
-                    map_terrain_add(grid_offset, TERRAIN_BUILDING);
-                } else {
-                    building *wall = building_get(map_building_at(grid_offset));
-                    // Recreate the wall if pointing to a wrong building
-                    if (!wall || wall->type != BUILDING_WALL) {
-                        wall = building_create(BUILDING_WALL, x, y);
-                        map_building_set(grid_offset, wall->id);
-                    }
-                }
+                shared_building = building_create(BUILDING_WALL, 0, 0);
+            } else if (map_terrain_is(grid_offset, TERRAIN_AQUEDUCT)) {
+                shared_building = building_create(BUILDING_AQUEDUCT, 0, 0);
+            }
+            if (shared_building) {
+                shared_building->subtype.instances++;
+                map_building_set(grid_offset, shared_building->id);
+                map_terrain_add(grid_offset, TERRAIN_BUILDING);
                 map_property_clear_multi_tile_xy(grid_offset);
             }
         }
+    }
+
+    building *wall = building_first_of_type(BUILDING_WALL);
+
+    // No walls found, nothing to migrate
+    if (!wall) {
+        return;
+    }
+
+    while (wall->next_of_type) {
+        building_delete(wall->next_of_type);
     }
 }
 

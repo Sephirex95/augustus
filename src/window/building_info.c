@@ -49,6 +49,7 @@
 #include "window/building/house.h"
 #include "window/building/military.h"
 #include "window/building/terrain.h"
+#include "window/building/highway_station.h"
 #include "window/building/utility.h"
 
 enum {
@@ -231,6 +232,7 @@ static int get_height_id(void)
             case BUILDING_TRIUMPHAL_ARCH:
             case BUILDING_SHIP_BRIDGE:
             case BUILDING_LOW_BRIDGE:
+            case BUILDING_DEPOT:
                 return HEIGHT_5_24_BLOCKS;
 
                 //608px
@@ -265,6 +267,7 @@ static int get_height_id(void)
             case BUILDING_GRANARY:
             case BUILDING_WAREHOUSE:
             case BUILDING_WAREHOUSE_SPACE:
+            case BUILDING_HIGHWAY_STATION:
                 return HEIGHT_11_28_BLOCKS;
 
                 //240px
@@ -336,6 +339,7 @@ static void init(int grid_offset)
     context.show_special_orders = 0;
     context.depot_selection = 0;
     context.advisor_button = ADVISOR_NONE;
+    context.grid_offset = grid_offset;
     context.building_id = map_building_at(grid_offset);
     context.rubble_building_id = map_building_rubble_building_id(grid_offset);
     context.has_reservoir_pipes = map_terrain_is(grid_offset, TERRAIN_RESERVOIR_RANGE);
@@ -725,6 +729,8 @@ static void draw_background(void)
             window_building_draw_pantheon(&context);
         } else if (btype == BUILDING_LIGHTHOUSE) {
             window_building_draw_lighthouse(&context);
+        } else if (btype == BUILDING_HIGHWAY_STATION) {
+            window_building_draw_highway_station(&context);
         } else if (btype == BUILDING_GOVERNORS_HOUSE || btype == BUILDING_GOVERNORS_VILLA ||
             btype == BUILDING_GOVERNORS_PALACE) {
             window_building_draw_governor_home(&context);
@@ -1138,6 +1144,7 @@ static void get_tooltip(tooltip_context *c)
     } else if ((context.type == BUILDING_INFO_BUILDING && context.show_special_orders) || building_type_is_bridge(btype)) {
         //bridges are technically terrain, but they have special orders
         if (btype == BUILDING_GRANARY || btype == BUILDING_WAREHOUSE) {
+            precomposed_text = window_building_storage_resource_hover_tooltip(&context);
             if (context.show_special_orders == SPECIAL_ORDERS_ROADBLOCK) {
                 window_building_roadblock_get_tooltip_walker_permissions(&translation);
             } else {

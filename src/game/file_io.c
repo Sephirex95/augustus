@@ -745,7 +745,6 @@ static void scenario_load_from_state(scenario_state *file, scenario_version_t ve
     }
     if (version > SCENARIO_LAST_STATIC_ORIGINAL_DATA) {
         scenario_invasion_load_state(file->invasions);
-        scenario_demand_change_load_state(file->demand_changes, version);
         scenario_price_change_load_state(file->price_changes);
         scenario_allowed_building_load_state(file->allowed_buildings);
         scenario_custom_variable_load_state(file->custom_variables, version);
@@ -756,9 +755,9 @@ static void scenario_load_from_state(scenario_state *file, scenario_version_t ve
     } else {
         scenario_events_clear();
     }
-    
+
     scenario_map_init();
-    
+
     if (version > SCENARIO_LAST_UNVERSIONED) {
         empire_object_load(file->empire, version);
         if (resource_mapping_get_version() < RESOURCE_SEPARATE_FISH_AND_MEAT_VERSION) {
@@ -769,6 +768,12 @@ static void scenario_load_from_state(scenario_state *file, scenario_version_t ve
     empire_reset_map();
     if (version > SCENARIO_LAST_NO_CUSTOM_EMPIRE_MAP_IMAGE) {
         empire_load_custom_map(file->empire_map);
+    }
+    // this needs to be behind empire loading for migration to work properly
+    if (version > SCENARIO_LAST_STATIC_ORIGINAL_DATA) {
+        scenario_demand_change_load_state(file->demand_changes, version);
+    } else {
+        scenario_demand_change_migrate_old_version();
     }
     model_reset();
     if (version > SCENARIO_LAST_NO_FORMULAS_AND_MODEL_DATA) {
@@ -857,7 +862,6 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
 
     if (scenario_version > SCENARIO_LAST_STATIC_ORIGINAL_DATA) {
         scenario_invasion_load_state(state->invasions);
-        scenario_demand_change_load_state(state->demand_changes, scenario_version);
         scenario_price_change_load_state(state->price_changes);
         scenario_allowed_building_load_state(state->allowed_buildings);
         scenario_custom_variable_load_state(state->custom_variables, scenario_version);
@@ -965,6 +969,12 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
         }
         empire_city_update_trading_data(scenario_empire_id());
     }
+    // this needs to be behind empire loading for migration to work properly
+    if (scenario_version > SCENARIO_LAST_STATIC_ORIGINAL_DATA) {
+        scenario_demand_change_load_state(state->demand_changes, scenario_version);
+    } else {
+        scenario_demand_change_migrate_old_version();
+    }
     if (version <= SAVE_GAME_LAST_GLOBAL_BUILDING_INFO) {
         figure_visited_buildings_migrate();
     } else {
@@ -974,7 +984,9 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
         map_terrain_migrate_old_bridges();
     }
 
-    map_terrain_migrate_old_walls();
+    if (version <= SAVE_GAME_LAST_NO_SHARED_BUILDINGS) {
+        map_terrain_migrate_shared_buildings();
+    }
 
     if (version <= SAVE_GAME_LAST_NO_FORMULAS_AND_MODEL_DATA) {
         scenario_events_migrate_to_formulas();
@@ -1334,7 +1346,11 @@ static int scenario_terrain_at(int grid_offset)
 
 static int scenario_tile_size_at(int grid_offset)
 {
-    return map_property_multi_tile_size_from_buffer(scenario_data.state.bitfields, grid_offset);
+    if (scenario_data.version <= SCENARIO_LAST_NO_FORMULAS_AND_MODEL_DATA) {
+        return map_property_multi_tile_size_from_buffer_8(scenario_data.state.bitfields, grid_offset);
+    } else {
+        return map_property_multi_tile_size_from_buffer_16(scenario_data.state.bitfields, grid_offset);
+    }
 }
 
 static int scenario_is_draw_tile_at(int grid_offset)
@@ -1674,7 +1690,11 @@ static int savegame_terrain_at(int grid_offset)
 
 static int savegame_tile_size_at(int grid_offset)
 {
-    return map_property_multi_tile_size_from_buffer(savegame_data.state.bitfields_grid, grid_offset);
+    if (minimap_data.version <= SAVE_GAME_LAST_NO_FORMULAS_AND_MODEL_DATA) {
+        return map_property_multi_tile_size_from_buffer_8(savegame_data.state.bitfields_grid, grid_offset);
+    } else {
+        return map_property_multi_tile_size_from_buffer_16(savegame_data.state.bitfields_grid, grid_offset);
+    }
 }
 
 static int savegame_is_draw_tile_at(int grid_offset)
@@ -1689,7 +1709,11 @@ static int savegame_random_at(int grid_offset)
 
 static unsigned int savegame_get_building_id(int grid_offset)
 {
-    return map_building_from_buffer(savegame_data.state.building_grid, grid_offset);
+    if (minimap_data.version <= SAVE_GAME_LAST_U16_GRIDS) {
+        return map_building_from_buffer_16(savegame_data.state.building_grid, grid_offset);
+    } else {
+        return map_building_from_buffer_32(savegame_data.state.building_grid, grid_offset);
+    }
 }
 
 static building *savegame_building(unsigned int id)
