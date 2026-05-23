@@ -38,7 +38,7 @@ typedef struct complex_button {
     short is_hidden;              // 1 = hidden, 0 = visible
     short is_disabled;            // 1 = disabled, 0 = enabled
     short state;                  // special parameter for custom behaviours
-    short is_ellipsized;         // 1 = text was ellipsized on last draw, 0 = full text shown
+    short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
     void (*left_click_handler)(const struct complex_button *button);
     void (*right_click_handler)(const struct complex_button *button);
     void (*hover_handler)(const struct complex_button *button);

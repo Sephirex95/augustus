@@ -20,11 +20,17 @@ typedef enum {
 } tab_view_style;
 
 typedef enum {
-    TAB_SPREAD_NONE, // tabs tightly together
-    TAB_SPREAD_SMALL,// tabs separated by small margin - 5% of the tab view width
-    TAB_SPREAD_WIDE, // tabs spread across the width of the tab view area
-    TAB_SPREAD_MAX,  // tabs spread across as much as possible - prioritised over the tab_position parameter
+    TAB_SPREAD_NONE = 0, // tabs tightly together
+    TAB_SPREAD_SMALL = 2,// tabs separated by small margin - 5% of the tab view width
+    TAB_SPREAD_WIDE = 8, // tabs spread across the width of the tab view area
+    TAB_SPREAD_MAX = -1,  // tabs spread across as much as possible - prioritised over the tab_position parameter
 } tab_spread;
+
+typedef enum {
+    TAB_WIDTH_EQUAL, // all tabs same width, matching longest tab text, or maximum possible width if not enough space
+    TAB_WIDTH_TO_CONTENT, // each tab width matches its content text width + padding
+    TAB_WIDTH_CUSTOM // use *user_data to store custom widths for each tab. 
+} tab_width_mode;
 
 typedef enum {
     TAB_POS_LEFT,
@@ -37,6 +43,7 @@ struct content_area {
     int y;
     int width;
     int height;
+    int auto_indent; // default style-coherent indentation for content zone. If 0, no border/indent is applied
     content_draw_callback draw_callback;
 };
 
@@ -45,6 +52,7 @@ struct tab {
     int visible;
     int enabled; //to do: disabled but visible - greyed out and unclickable
     content_draw_callback draw_callback;
+    int initialised; // flag to indicate whether this tab has been setup with text and draw callback
     void *user_data; // optional extensibility
 };
 
@@ -58,11 +66,16 @@ struct tab_view {
     int tab_height;  // height of tab buttons
 
     struct {
+        int active_tab;
+    } state;
+
+    struct {
         tab_view_style style;
         tab_position position;
         tab_spread spread;
+        tab_width_mode width_mode;
         int count;
-        int active_tab;
+        font_t tab_font; // default font for tab titles
     } view_properties;
 
     content_area content;
@@ -70,17 +83,30 @@ struct tab_view {
 
 };
 
+typedef enum
+{
+    TAB_LAYOUT_OK = 1,
+
+    TAB_ERR_NULL_VIEW = -1,
+    TAB_ERR_UNINITIALISED_TAB = -2,
+    TAB_ERR_INSUFFICIENT_WIDTH = -3,
+    TAB_ERR_CUSTOM_WIDTHS = -4
+
+} tab_layout_result;
+
 /* Public API */
 void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, int tab_count, tab_view_style style);
 void tab_view_destroy(tab_view *view);
 
 /* Layout and rendering */
-void tab_view_layout(tab_view *view);
+int tab_view_layout(tab_view *view); //returns TAB_LAYOUT_OK for successful layout
 void tab_view_draw(tab_view *view);
 int tab_view_handle_mouse(const mouse *m, tab_view *view);
 
 /* Tab configuration */
 void tab_view_init_tab(tab_view *view, int tab_index, content_draw_callback callback, const lang_fragment *frag);
+/*when using the below functions, you have to initialise the tab yourself afterwards. Otherwise the layout()
+  will see them as uninitialised and throw an error. If you don't want to do that, use the init_tab()*/
 void tab_view_set_tab_text(tab_view *view, int tab_index, const lang_fragment *frag);
 void tab_view_set_tab_draw_callback(tab_view *view, int tab_index, content_draw_callback callback);
 

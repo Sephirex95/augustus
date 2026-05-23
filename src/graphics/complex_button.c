@@ -257,6 +257,7 @@ int complex_button_array_handle_mouse(const mouse *m, complex_button *buttons, u
     return handled;
 }
 
+//TO SOLVE: manually set tooltips will be overwritten if the button is ellipsized. 
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
 {
     if (button->is_focused) {

@@ -51,6 +51,9 @@ Next iteration - FINISH tab_view as a structure!!
 */
 
 #define TAB_VIEW_MIN_TAB_WIDTH 50
+#define TAB_VIEW_MIN_WIDTH 200 
+#define TAB_VIEW_MIN_HEIGHT 200 
+// arbitrary minimum sizes to prevent weird displays
 
 static complex_button_style button_style_for_tab_style(tab_view_style style)
 {
@@ -93,19 +96,6 @@ static color_t color_for_active_tab(tab_view_style style, int is_active)
     return COLOR_MASK_NONE;
 }
 
-static int tab_spread_gap(tab_spread spread)
-{
-    switch (spread) {
-        case TAB_SPREAD_SMALL:
-            return 2;
-        case TAB_SPREAD_WIDE:
-            return 8;
-        case TAB_SPREAD_MAX:
-        case TAB_SPREAD_NONE:
-        default:
-            return 0;
-    }
-}
 
 static void tab_click_handler(const complex_button *btn)
 {
@@ -117,8 +107,8 @@ static void tab_click_handler(const complex_button *btn)
     // Find which tab was clicked
     for (int i = 0; i < view->view_properties.count; i++) {
         if (&view->tabs[i].button == btn) {
-            if (view->view_properties.active_tab != i) {
-                view->view_properties.active_tab = i;
+            if (view->state.active_tab != i) {
+                view->state.active_tab = i;
                 window_request_refresh();
             }
             return;
@@ -136,15 +126,15 @@ void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, i
 
     view->x = x;
     view->y = y;
-    view->width = width > 0 ? width : 100;
-    view->height = height > 0 ? height : 100;
+    view->width = width > TAB_VIEW_MIN_WIDTH ? width : TAB_VIEW_MIN_WIDTH;
+    view->height = height > TAB_VIEW_MIN_HEIGHT ? height : TAB_VIEW_MIN_HEIGHT;
     view->tab_height = style == TAB_VIEW_STYLE_DEFAULT_SMALL ? 20 : 26;
 
     view->view_properties.style = style;
     view->view_properties.position = TAB_POS_CENTER; // default position
     view->view_properties.count = tab_count;
     view->view_properties.spread = TAB_SPREAD_SMALL; // default spread
-    view->view_properties.active_tab = 0;
+    view->state.active_tab = 0;
 
     view->tabs = calloc(tab_count, sizeof(tab)); // allocate memory for tabs
 
@@ -179,113 +169,160 @@ void tab_view_destroy(tab_view *view)
     memset(view, 0, sizeof(*view)); // clear all fields
 }
 
-void tab_view_layout(tab_view *view)
+int tab_view_layout(tab_view *view)
 {
-    /**
-     * Layout Algorithm Overview:
-     *
-     * This function positions all tab buttons and calculates the content area geometry.
-     * The layout respects spread and position properties to achieve flexible tab positioning.
-     *
-     * Steps:
-     * 1. Calculate tab_width based on available space and spread mode
-     * 2. Determine starting X position based on tab_position (LEFT/CENTER/RIGHT)
-     * 3. Position each tab button sequentially with appropriate gaps
-     * 4. Apply TAB_SPREAD_MAX remainder distribution if needed
-     * 5. Calculate content area as an inset rectangle below/inside the tab_view
-     * 6. Update active tab visual state (is_active flag and color_mask)
-     */
-
     if (!view || !view->tabs || view->view_properties.count <= 0) {
-        return;
+        return TAB_ERR_NULL_VIEW;
     }
-
     int tab_count = view->view_properties.count;
-    int tab_y = view->y - view->tab_height;  // Tabs positioned ABOVE the content area
-
-    // === Step 1: Calculate total gap space between tabs based on spread mode ===
-    int gap = tab_spread_gap(view->view_properties.spread);
-    int total_gap = gap * (tab_count - 1);  // gaps only exist between tabs (count-1 gaps)
-    int available_for_tabs = view->width - total_gap;  // width available after accounting for gaps
-
-    // TAB_SPREAD_MAX ignores gaps and distributes tabs evenly across full width
-    if (view->view_properties.spread == TAB_SPREAD_MAX) {
-        gap = 0;
-        total_gap = 0;
-        available_for_tabs = view->width;
-    }
-
-    // === Step 2: Calculate base tab width ===
-    // Each tab gets an equal slice of available space
-    int tab_width = tab_count > 0 ? available_for_tabs / tab_count : 0;
-
-    // Enforce minimum tab width to prevent tabs becoming too narrow
-    if (tab_width < TAB_VIEW_MIN_TAB_WIDTH) {
-        tab_width = TAB_VIEW_MIN_TAB_WIDTH;
-    }
-
-    // Calculate how much horizontal space all tabs will actually use
-    int used_width = tab_width * tab_count + total_gap;
-    int start_x = view->x;  // default: start at left
-
-    // === Step 3: Determine horizontal start position based on tab_position ===
-    // If tabs don't fill entire width, align them according to position property
-    if (used_width < view->width) {
-        int leftover = view->width - used_width;
-        switch (view->view_properties.position) {
-            case TAB_POS_RIGHT:
-                // Tabs flush to right edge
-                start_x = view->x + leftover;
-                break;
-            case TAB_POS_CENTER:
-                // Tabs centered
-                start_x = view->x + leftover / 2;
-                break;
-            case TAB_POS_LEFT:
-            default:
-                // Tabs flush to left edge (already set)
-                start_x = view->x;
-                break;
-        }
-    }
-
-    // === Step 4: Position each tab button ===
-    int x_cursor = start_x;
+    int sum_text_w = 0; // width of the text in all tab titles
     for (int i = 0; i < tab_count; i++) {
-        int width = tab_width;
+        if (!view->tabs[i].initialised) {
+            return TAB_ERR_UNINITIALISED_TAB; // indicate layout was not successful due to uninitialised tabs
+        }
+        sum_text_w += lang_text_get_sequence_width(view->tabs[i].button.sequence, 1, view->view_properties.tab_font);
 
-        // TAB_SPREAD_MAX: distribute remainder pixels to leftmost tabs
-        // Example: 3 tabs in 100px width = 33px base, 1px remainder for first tab
-        if (view->view_properties.spread == TAB_SPREAD_MAX && tab_count > 0) {
-            int remainder = view->width % tab_count;
-            if (i < remainder) {
-                width += 1;  // Give extra pixel to first 'remainder' tabs
+    }
+
+    // === Step 1 - determine tab widths===
+    if (view->view_properties.width_mode != TAB_WIDTH_CUSTOM) { // custom widths  = separate case
+        int single_gap = 0;
+        int total_gap = 0;
+        int available_for_tabs = 0;
+        if (view->view_properties.spread != TAB_SPREAD_MAX) {
+            single_gap = view->view_properties.spread;
+            total_gap = single_gap * (tab_count - 1);  // gaps only exist between tabs (count-1 gaps)
+            available_for_tabs = view->width - total_gap;  // width available after accounting for gaps
+        } else {
+            total_gap = view->width - sum_text_w;
+            if (view->view_properties.position == TAB_POS_CENTER) {
+                // for center, gaps are also on left of the first tab and right of the last tab
+                single_gap = total_gap / (tab_count + 1); // +1 for the extra gap on the right of the last tab
+            } else {
+                single_gap = total_gap / (tab_count - 1); // for left or right aligned, distribute gaps evenly
+            }
+            available_for_tabs = view->width - single_gap * (tab_count - 1);
+            // there might be a remainder if total_gap is not perfectly divisible
+            int remainder = abs(total_gap - single_gap * (tab_count - 1));
+            // im literally only making it a variable so it can be easily seen in the debugger, dw about it
+        }
+
+        if (available_for_tabs < sum_text_w) {
+            return TAB_ERR_INSUFFICIENT_WIDTH; // not enough space to fit all tab titles, layout fails
+        }
+
+    } else {
+        // Fixed width for all tabs set via user_data. 
+        int sum_tab_w = 0;
+        for (int i = 0; i < tab_count; i++) {
+            int custom_width = (int) (intptr_t) view->tabs[i].user_data; // user_data holds custom width
+            sum_tab_w += custom_width;
+            if (custom_width <= 0) {
+                return TAB_ERR_CUSTOM_WIDTHS; // invalid custom width, layout fails
             }
         }
+        if (sum_tab_w > view->width) {
+            return TAB_ERR_INSUFFICIENT_WIDTH; // not enough space to fit all tabs with custom widths, layout fails
+        }
+    }
+    // === Step 2 - position tabs ===
+    /* GPT implementation start
 
-        // Set button geometry
-        view->tabs[i].button.x = x_cursor;
-        view->tabs[i].button.y = tab_y;
-        view->tabs[i].button.width = width;
-        view->tabs[i].button.height = view->tab_height;
+    int tab_y = view->y - view->tab_height;
+    int tab_x = view->x;
+    int single_gap = 0;
+    int total_tabs_w = 0;
 
-        // === Step 5: Update visual state for active/inactive tabs ===
-        view->tabs[i].button.is_active = (view->view_properties.active_tab == i);
-        view->tabs[i].button.color_mask = color_for_active_tab(
-            view->view_properties.style,
-            view->view_properties.active_tab == i
+    // First determine final button widths
+    for (int i = 0; i < tab_count; i++) {
+        int text_w = lang_text_get_sequence_width(
+            view->tabs[i].button.sequence,
+            1,
+            view->view_properties.tab_font
         );
 
-        x_cursor += width + gap;  // Move cursor to next tab position
+        switch (view->view_properties.width_mode) {
+            case TAB_WIDTH_EQUAL:
+                view->tabs[i].button.width = (sum_text_w / tab_count) + 20;
+                break;
+
+            case TAB_WIDTH_TO_CONTENT:
+                view->tabs[i].button.width = text_w + 20;
+                break;
+
+            case TAB_WIDTH_CUSTOM:
+                view->tabs[i].button.width = (int) (intptr_t) view->tabs[i].user_data;
+                break;
+
+            default:
+                view->tabs[i].button.width = text_w + 20;
+                break;
+        }
+
+        if (view->tabs[i].button.width < TAB_VIEW_MIN_TAB_WIDTH) {
+            view->tabs[i].button.width = TAB_VIEW_MIN_TAB_WIDTH;
+        }
+
+        view->tabs[i].button.height = view->tab_height;
+        total_tabs_w += view->tabs[i].button.width;
     }
 
-    // === Step 6: Calculate content area geometry ===
-    // Content area is flush with tab_view boundaries (no indent for default styles)
-    // This keeps the background color uniform across tabs and content
+    // Then determine the gap between tabs
+    if (view->view_properties.spread == TAB_SPREAD_MAX) {
+        if (tab_count > 1) {
+            single_gap = (view->width - total_tabs_w) / (tab_count - 1);
+        } else {
+            single_gap = 0;
+        }
+
+        if (single_gap < 0) {
+            return TAB_ERR_INSUFFICIENT_WIDTH;
+        }
+    } else {
+        single_gap = view->view_properties.spread;
+    }
+
+    int total_w = total_tabs_w + single_gap * (tab_count - 1);
+
+    // Finally determine starting x based on alignment
+    switch (view->view_properties.position) {
+        case TAB_POS_RIGHT:
+            tab_x = view->x + view->width - total_w;
+            break;
+
+        case TAB_POS_CENTER:
+            tab_x = view->x + (view->width - total_w) / 2;
+            break;
+
+        case TAB_POS_LEFT:
+        default:
+            tab_x = view->x;
+            break;
+    }
+
+    if (tab_x < view->x || tab_x + total_w > view->x + view->width) {
+        return TAB_ERR_INSUFFICIENT_WIDTH;
+    }
+
+    // Apply final geometry to buttons
+    for (int i = 0; i < tab_count; i++) {
+        view->tabs[i].button.x = tab_x;
+        view->tabs[i].button.y = tab_y;
+        view->tabs[i].button.color_mask = color_for_active_tab(
+            view->view_properties.style,
+            view->state.active_tab == i
+        );
+
+        tab_x += view->tabs[i].button.width + single_gap;
+    }
+
+    // === Step 3 - content area ===
     view->content.x = view->x;
     view->content.y = view->y;
     view->content.width = view->width;
     view->content.height = view->height;
+    GPT implementation end */
+    return TAB_LAYOUT_OK; // layout successful
 }
 
 void tab_view_init_tab(tab_view *view, int tab_index, content_draw_callback callback, const lang_fragment *frag)
@@ -300,35 +337,37 @@ void tab_view_init_tab(tab_view *view, int tab_index, content_draw_callback call
 
     view->tabs[tab_index].draw_callback = callback;
     view->tabs[tab_index].button.sequence = frag;
-    view->tabs[tab_index].button.sequence_size = frag ? 1 : 0;
+    view->tabs[tab_index].button.sequence_size = frag ? 1 : 0; // only one fragment per tab allowed in simple init
+    // if you'd like to make a more complex tab title, you will need to set properties yourself
     view->tabs[tab_index].visible = 1;
     view->tabs[tab_index].enabled = 1;
+    view->tabs[tab_index].initialised = 1;
 }
 
 void tab_view_set_tab_text(tab_view *view, int tab_index, const lang_fragment *frag)
 {
-    if (!view || !view->tabs) {
-        return;
-    }
-
-    if (tab_index < 0 || tab_index >= view->view_properties.count) {
+    if (!view || !view->tabs || tab_index < 0 || tab_index >= view->view_properties.count) {
         return;
     }
 
     view->tabs[tab_index].button.sequence = frag;
+    if (view->tabs[tab_index].draw_callback) {
+        // if draw_callback is already set, the tab is initialised
+        view->tabs[tab_index].initialised = 1;
+    }
 }
 
 void tab_view_set_tab_draw_callback(tab_view *view, int tab_index, content_draw_callback callback)
 {
-    if (!view || !view->tabs) {
-        return;
-    }
-
-    if (tab_index < 0 || tab_index >= view->view_properties.count) {
+    if (!view || !view->tabs || tab_index < 0 || tab_index >= view->view_properties.count) {
         return;
     }
 
     view->tabs[tab_index].draw_callback = callback;
+    if (view->tabs[tab_index].button.sequence) {
+        // if button.sequence is already set, the tab is initialised
+        view->tabs[tab_index].initialised = 1;
+    }
 }
 
 void tab_view_draw(tab_view *view)
@@ -354,7 +393,7 @@ void tab_view_draw(tab_view *view)
     }
 
     // Draw content for active tab
-    int active_tab = view->view_properties.active_tab;
+    int active_tab = view->state.active_tab;
     if (active_tab >= 0 && active_tab < view->view_properties.count) {
         tab *active = &view->tabs[active_tab];
         if (active->draw_callback) {
@@ -388,7 +427,7 @@ int tab_view_get_active_tab(const tab_view *view)
     if (!view || view->view_properties.count <= 0) {
         return -1;
     }
-    return view->view_properties.active_tab;
+    return view->state.active_tab;
 }
 
 void tab_view_set_active_tab(tab_view *view, int tab_index)
@@ -396,8 +435,8 @@ void tab_view_set_active_tab(tab_view *view, int tab_index)
     if (!view || tab_index < 0 || tab_index >= view->view_properties.count) {
         return;
     }
-    if (view->view_properties.active_tab != tab_index) {
-        view->view_properties.active_tab = tab_index;
+    if (view->state.active_tab != tab_index) {
+        view->state.active_tab = tab_index;
         tab_view_layout(view);
         window_request_refresh();
     }
