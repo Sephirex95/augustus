@@ -32,7 +32,7 @@ typedef struct complex_button {
     short y;
     short width;
     short height;
-    short is_focused;
+    short is_focused;             // bad wording - is_hovered would be more accurate
     short is_clicked;
     short is_active;              // persists toggle/selected/checked/expanded state
     short is_hidden;              // 1 = hidden, 0 = visible
@@ -49,6 +49,7 @@ typedef struct complex_button {
     int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
     int image_before;
     int image_after;
+    int flush_with_background; // if set, bottom border is not drawn
     color_t color_mask;
     font_t font;
     complex_button_style style;

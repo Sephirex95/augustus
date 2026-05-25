@@ -50,7 +50,11 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
     unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1, height_blocks + 1,
         label_color);
     int draw_red_border = !button->is_disabled ? button->is_focused : 0;    // Only draw border if enabled
-    button_border_draw_colored(button->x, button->y, button->width, button->height, draw_red_border, label_color);
+    if (button->flush_with_background) {
+        button_border_draw_colored_flush(button->x, button->y, button->width, button->height, draw_red_border, label_color);
+    } else {
+        button_border_draw_colored(button->x, button->y, button->width, button->height, draw_red_border, label_color);
+    }
     sequence_positioning pos = (!button->sequence_position) ? SEQUENCE_POSITION_CENTER : button->sequence_position;
     // Y offset based on positioning enum (row: top, center, bottom)
     int text_height = font_definition_for(font)->line_height;

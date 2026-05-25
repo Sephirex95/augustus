@@ -24,11 +24,13 @@ typedef enum {
     TAB_SPREAD_SMALL = 2,// tabs separated by small margin - 5% of the tab view width
     TAB_SPREAD_WIDE = 8, // tabs spread across the width of the tab view area
     TAB_SPREAD_MAX = -1,  // tabs spread across as much as possible - prioritised over the tab_position parameter
+    // but NOT prioritised over TAB_WIDTH_MAX -> in that case, TAB_SPREAD is set to WIDE.
 } tab_spread;
 
 typedef enum {
     TAB_WIDTH_EQUAL, // all tabs same width, matching longest tab text, or maximum possible width if not enough space
     TAB_WIDTH_TO_CONTENT, // each tab width matches its content text width + padding
+    TAB_WIDTH_MAX, // maximum possible width for each tab, dividing available space equally after accounting for gaps
     TAB_WIDTH_CUSTOM // use *user_data to store custom widths for each tab. 
 } tab_width_mode;
 

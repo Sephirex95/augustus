@@ -48,16 +48,20 @@ static void draw_foreground(void)
 {
     if (!tabs_initialized) {
         // Initialize tabs on first draw
-        tab_view_init_simple(&ledger_tabs, 24, 80, PANEL_W - 48, PANEL_H - 112, 3, TAB_VIEW_STYLE_DEFAULT);
+        tab_view_init_simple(&ledger_tabs, 24, 80, 752, 448, 4, TAB_VIEW_STYLE_DEFAULT);
+        ledger_tabs.view_properties.width_mode = TAB_WIDTH_MAX; // make tabs take up all available width
         tab_view_init_tab(&ledger_tabs, 0, placeholder_content_draw, tab_text_imports);
         tab_view_init_tab(&ledger_tabs, 1, placeholder_content_draw, tab_text_exports);
         tab_view_init_tab(&ledger_tabs, 2, placeholder_content_draw, tab_text_summary);
-        tabs_initialized = 1;
+        tab_view_init_tab(&ledger_tabs, 3, placeholder_content_draw, tab_text_imports);
+
+        tabs_initialized = tab_view_layout(&ledger_tabs) == TAB_LAYOUT_OK; // layout tabs and set initialized flag based on success  
     }
 
-    graphics_in_dialog_with_size(PANEL_W, PANEL_H);
 
+    graphics_in_dialog_with_size(PANEL_W, PANEL_H);
     tab_view_draw(&ledger_tabs);
+    graphics_in_dialog_with_size(PANEL_W, PANEL_H);
     image_buttons_draw(0, 0, image_buttons, 1);
 
     graphics_reset_dialog();
@@ -87,12 +91,13 @@ static void placeholder_content_draw(tab_view *view, tab *active_tab)
 {
     (void) view;
     (void) active_tab;
-    // Placeholder: in future, real content will be drawn here
-    // For now, just leave the content area empty (it's drawn with inner_panel_draw_colored)
+    int active = view->state.active_tab;
+    lang_text_draw_sequence(view->tabs[active].button.sequence, 1, 20, 20, FONT_LARGE_BROWN, COLOR_MASK_NONE);
 }
 
 void window_trade_ledger_show(void)
 {
+
     window_type window = {
         WINDOW_TRADE_LEDGER,
         draw_background,

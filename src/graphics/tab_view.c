@@ -53,6 +53,7 @@ Next iteration - FINISH tab_view as a structure!!
 #define TAB_VIEW_MIN_TAB_WIDTH 50
 #define TAB_VIEW_MIN_WIDTH 200 
 #define TAB_VIEW_MIN_HEIGHT 200 
+#define TAB_DEFAULT_MARGIN 10
 // arbitrary minimum sizes to prevent weird displays
 
 static complex_button_style button_style_for_tab_style(tab_view_style style)
@@ -155,8 +156,6 @@ void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, i
         view->tabs[i].visible = 1;
         view->tabs[i].enabled = 1;
     }
-
-    tab_view_layout(view);
 }
 
 void tab_view_destroy(tab_view *view)
@@ -169,26 +168,41 @@ void tab_view_destroy(tab_view *view)
     memset(view, 0, sizeof(*view)); // clear all fields
 }
 
+int tab_view_layout_singular(tab_view *view)
+{
+    // placeholder
+    return TAB_LAYOUT_OK;
+}
+
 int tab_view_layout(tab_view *view)
 {
     if (!view || !view->tabs || view->view_properties.count <= 0) {
         return TAB_ERR_NULL_VIEW;
     }
+    if (view->view_properties.spread == TAB_SPREAD_MAX && view->view_properties.width_mode == TAB_WIDTH_MAX) {
+        // These two modes are incompatible - if width is max, spread must be minimal!
+        // to account for this, we prioritise width mode and set spread to next best thing - wide.
+        view->view_properties.spread = TAB_SPREAD_WIDE;
+    }
+
+    if (view->view_properties.count == 1) {   // do a separate function for tab count 1
+        return tab_view_layout_singular(view);// no need to bother with it as a standard case
+    }
     int tab_count = view->view_properties.count;
     int sum_text_w = 0; // width of the text in all tab titles
+    int single_gap = 0;
+    int total_gap = 0;
+    int available_for_tabs = 0;
     for (int i = 0; i < tab_count; i++) {
         if (!view->tabs[i].initialised) {
             return TAB_ERR_UNINITIALISED_TAB; // indicate layout was not successful due to uninitialised tabs
         }
         sum_text_w += lang_text_get_sequence_width(view->tabs[i].button.sequence, 1, view->view_properties.tab_font);
-
     }
 
     // === Step 1 - determine tab widths===
     if (view->view_properties.width_mode != TAB_WIDTH_CUSTOM) { // custom widths  = separate case
-        int single_gap = 0;
-        int total_gap = 0;
-        int available_for_tabs = 0;
+
         if (view->view_properties.spread != TAB_SPREAD_MAX) {
             single_gap = view->view_properties.spread;
             total_gap = single_gap * (tab_count - 1);  // gaps only exist between tabs (count-1 gaps)
@@ -226,36 +240,30 @@ int tab_view_layout(tab_view *view)
         }
     }
     // === Step 2 - position tabs ===
-    /* GPT implementation start
 
-    int tab_y = view->y - view->tab_height;
+    int tab_y = view->y - view->tab_height + 4; // 4pixels down to 'sink' the tabs
     int tab_x = view->x;
-    int single_gap = 0;
     int total_tabs_w = 0;
 
     // First determine final button widths
     for (int i = 0; i < tab_count; i++) {
-        int text_w = lang_text_get_sequence_width(
-            view->tabs[i].button.sequence,
-            1,
-            view->view_properties.tab_font
-        );
+        int text_w = lang_text_get_sequence_width(view->tabs[i].button.sequence, 1, view->view_properties.tab_font);
 
         switch (view->view_properties.width_mode) {
-            case TAB_WIDTH_EQUAL:
-                view->tabs[i].button.width = (sum_text_w / tab_count) + 20;
+            case TAB_WIDTH_MAX:
+                view->tabs[i].button.width = available_for_tabs / tab_count;
                 break;
-
             case TAB_WIDTH_TO_CONTENT:
-                view->tabs[i].button.width = text_w + 20;
+                view->tabs[i].button.width = text_w + TAB_DEFAULT_MARGIN;
                 break;
 
             case TAB_WIDTH_CUSTOM:
                 view->tabs[i].button.width = (int) (intptr_t) view->tabs[i].user_data;
                 break;
 
+            case TAB_WIDTH_EQUAL:
             default:
-                view->tabs[i].button.width = text_w + 20;
+                view->tabs[i].button.width = (sum_text_w / tab_count) + TAB_DEFAULT_MARGIN;
                 break;
         }
 
@@ -269,12 +277,7 @@ int tab_view_layout(tab_view *view)
 
     // Then determine the gap between tabs
     if (view->view_properties.spread == TAB_SPREAD_MAX) {
-        if (tab_count > 1) {
-            single_gap = (view->width - total_tabs_w) / (tab_count - 1);
-        } else {
-            single_gap = 0;
-        }
-
+        single_gap = (view->width - total_tabs_w) / (tab_count - 1);
         if (single_gap < 0) {
             return TAB_ERR_INSUFFICIENT_WIDTH;
         }
@@ -296,7 +299,7 @@ int tab_view_layout(tab_view *view)
 
         case TAB_POS_LEFT:
         default:
-            tab_x = view->x;
+            tab_x = view->x; //miniature offset to align with border of the content area
             break;
     }
 
@@ -306,7 +309,7 @@ int tab_view_layout(tab_view *view)
 
     // Apply final geometry to buttons
     for (int i = 0; i < tab_count; i++) {
-        view->tabs[i].button.x = tab_x;
+        view->tabs[i].button.x = tab_x + (i == tab_count - 1) - (i == 0);// first pass -1, last pass +1. see note* below
         view->tabs[i].button.y = tab_y;
         view->tabs[i].button.color_mask = color_for_active_tab(
             view->view_properties.style,
@@ -315,13 +318,15 @@ int tab_view_layout(tab_view *view)
 
         tab_x += view->tabs[i].button.width + single_gap;
     }
+    //*note - button borders are drawn 1 pixel to the right to account for red border for 'focused' state. 
+    //in order to not rewrite the 15 lines of code that affect the entire codebase, adjusting the first and last only.
 
     // === Step 3 - content area ===
     view->content.x = view->x;
     view->content.y = view->y;
     view->content.width = view->width;
     view->content.height = view->height;
-    GPT implementation end */
+
     return TAB_LAYOUT_OK; // layout successful
 }
 
@@ -376,30 +381,28 @@ void tab_view_draw(tab_view *view)
         return;
     }
 
-    // Draw inner panel for content area (no outer border for tab_view itself)
-    inner_panel_draw_colored(
-        view->content.x,
-        view->content.y,
-        view->content.width,
-        view->content.height,
-        COLOR_MASK_NONE
-    );
-
-    // Draw all visible tab buttons
+    // Draw all visible tab buttons BEFORE the content section
     for (int i = 0; i < view->view_properties.count; i++) {
-        if (view->tabs[i].visible) {
+        if (view->tabs[i].visible && i != view->state.active_tab) {
             complex_button_draw(&view->tabs[i].button);
         }
     }
-
+    // Draw inner panel for content area (no outer border for tab_view itself)
+    int red_content = view->tabs[view->state.active_tab].button.is_focused;
+    button_border_draw(view->x, view->y + 1, view->width, view->height, red_content); // no focus state for the content area itself
+    // y+1 to ever so slightly lower the border 
+    view->tabs[view->state.active_tab].button.flush_with_background = 1; // active tab flushes with background
+    complex_button_draw(&view->tabs[view->state.active_tab].button); // draw active tab last so it looks flushed
     // Draw content for active tab
     int active_tab = view->state.active_tab;
+    graphics_in_dialog_with_size(view->width, view->height);
     if (active_tab >= 0 && active_tab < view->view_properties.count) {
         tab *active = &view->tabs[active_tab];
         if (active->draw_callback) {
             active->draw_callback(view, active);
         }
     }
+    graphics_reset_dialog();
 }
 
 int tab_view_handle_mouse(const mouse *m, tab_view *view)
