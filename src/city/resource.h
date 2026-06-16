@@ -19,6 +19,33 @@ typedef enum {
     STORAGE_TYPE_WAREHOUSES = 3
 } storage_types;
 
+typedef struct {
+    int year; //one trade ledger dataset per year, then archive and reset. 
+    int stock[RESOURCE_MAX]; // stock wouldn't be necessary to store since we can calculate, but this is for archiving too
+    int imported[RESOURCE_MAX];
+    int exported[RESOURCE_MAX];
+    int produced[RESOURCE_MAX];
+    int consumed[RESOURCE_MAX];
+    int balance[RESOURCE_MAX]; // in denarii, signed
+
+    /* Optional - if space is not an issue, keep em*/
+    /* Check if we can calculate the land/sea prices? then less storage - only rome price*/
+    int start_sell_price[RESOURCE_MAX]; 
+    int end_sell_price[RESOURCE_MAX]; 
+    int start_buy_price[RESOURCE_MAX]; 
+    int end_buy_price[RESOURCE_MAX]; 
+
+    /*if we can't calculate the exact prices in controlled and predictable way,
+    we need to store land/sea prices separately*/
+
+    int start_sell_price_sea[RESOURCE_MAX]; 
+    int end_sell_price_sea[RESOURCE_MAX]; 
+    int start_buy_price_sea[RESOURCE_MAX]; 
+    int end_buy_price_sea[RESOURCE_MAX]; 
+
+}trade_ledger_data; //at the end of the year, archive this data. Saves should store up to 3-5-7 years?
+
+
 int city_resource_count_food_on_granaries(resource_type food);
 
 int city_resource_count_warehouses_amount(resource_type resource);
