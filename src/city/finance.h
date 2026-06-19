@@ -2,6 +2,7 @@
 #define CITY_FINANCE_H
 
 #include "building/type.h"
+#include "city/resource.h"
 
 #define SMALL_TEMPLE_LEVY_MONTHLY 4
 #define FORT_LEVY_MONTHLY 8
@@ -30,6 +31,48 @@ typedef struct {
     int coverage;
     int count;
 } tourism_for_type;
+
+typedef struct {
+    int price;                  // final price per cart 
+
+    unsigned short empire_city_id;
+    unsigned char storage_id;
+
+    unsigned char month;        // 1-12
+    unsigned char resource_id;  // resource type?
+    unsigned char is_import;
+    unsigned char quantity;     // amount traded at this price
+} transaction; // 12 bytes babyyyyy
+
+typedef struct {
+    int year; //one trade ledger dataset per year, then archive and reset. 
+    int transactions; //number of transactions for the year - used for transaction history if i have patience to implement it
+
+    int stock[RESOURCE_MAX]; // stock wouldn't be necessary to store since we can calculate, but this is for archiving too
+
+    int imported[RESOURCE_MAX];
+    int exported[RESOURCE_MAX];
+
+    int produced[RESOURCE_MAX];
+    int consumed[RESOURCE_MAX];
+    int balance[RESOURCE_MAX]; // in denarii, signed
+
+    /* Optional - if space is not an issue, keep em*/
+    /* Check if we can calculate the land/sea prices? then less storage - only rome price*/
+    int start_sell_price[RESOURCE_MAX];
+    int end_sell_price[RESOURCE_MAX];
+    int start_buy_price[RESOURCE_MAX];
+    int end_buy_price[RESOURCE_MAX];
+
+    /*if we can't calculate the exact prices in controlled and predictable way,
+    we need to store land/sea prices separately*/
+
+    int start_sell_price_sea[RESOURCE_MAX];
+    int end_sell_price_sea[RESOURCE_MAX];
+    int start_buy_price_sea[RESOURCE_MAX];
+    int end_buy_price_sea[RESOURCE_MAX];
+
+}trade_ledger_data; //at the end of the year, archive this data. Saves should store up to 3-5-7 years?
 
 int city_finance_treasury(void);
 
@@ -80,6 +123,8 @@ void city_finance_estimate_taxes(void);
 void city_finance_handle_month_change(void);
 
 void city_finance_handle_year_change(void);
+
+void city_finance_record_trade_into_ledger(unsigned short empire_city_id, resource_type resource, int is_land, int is_import, int balance);
 
 typedef struct {
     struct {

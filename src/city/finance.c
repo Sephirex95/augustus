@@ -9,8 +9,12 @@
 #include "city/data_private.h"
 #include "city/culture.h"
 #include "city/festival.h"
+#include "city/resource.h"
+#include "core/array.h"
 #include "core/calc.h"
+#include "core/log.h"
 #include "core/random.h"
+#include "empire/trade_prices.h"
 #include "game/difficulty.h"
 #include "game/time.h"
 #include "figuretype/entertainer.h"
@@ -67,6 +71,15 @@ static tourism_for_type tourism_modifiers[] = {
     {BUILDING_GRAND_TEMPLE_VENUS, 3, 0, 0},
     {BUILDING_PANTHEON, 3, 0, 0}
 };
+
+#define TRANSACTION_STEP_SIZE 100
+
+static trade_ledger_data trade_ledgers[8]; // 7 years of data + current year
+static short trade_ledgers_count;
+static array(transaction) current_year_transactions; // array of transaction structs for the current year
+static array(transaction) last_year_transactions; // array of transaction structs for the last year
+// transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
+// we could store more but i dont want crudelios to blame me for the savegame bloat
 
 int city_finance_treasury(void)
 {
@@ -551,6 +564,47 @@ void city_finance_handle_year_change(void)
     reset_taxes();
     copy_amounts_to_last_year();
     pay_tribute();
+
+}
+
+void city_finance_record_trade_into_ledger(unsigned short empire_city_id, resource_type resource, int is_land,
+    int is_import, int balance)
+{
+
+}
+
+static void trade_ledger_year_change(void)
+{
+    //fetch end of the year prices for the current year before moving the ledgers
+    for (int i = 0; i < RESOURCE_MAX; i++) {
+        trade_ledgers[0].end_sell_price[i] = trade_price_sell((resource_type) i, 1);
+        trade_ledgers[0].end_buy_price[i] = trade_price_buy((resource_type) i, 1);
+        trade_ledgers[0].end_sell_price_sea[i] = trade_price_sell((resource_type) i, 0);
+        trade_ledgers[0].end_buy_price_sea[i] = trade_price_buy((resource_type) i, 0);
+    }
+    if (trade_ledgers_count < 7) {
+        trade_ledgers_count++;
+    }
+    for (int i = 0; i < trade_ledgers_count + 1; i++) {
+        trade_ledgers[i] = trade_ledgers[i + 1]; // shift the ledgers up one year
+    }
+    trade_ledgers[0] = (trade_ledger_data) { 0 }; // clear the current year data
+    trade_ledgers[0].year = game_time_year(); // fetch current year 
+
+    for (int i = 0; i < RESOURCE_MAX; i++) { // fetch start year prices
+        trade_ledgers[0].start_sell_price[i] = trade_price_sell((resource_type) i, 1);
+        trade_ledgers[0].start_buy_price[i] = trade_price_buy((resource_type) i, 1);
+        trade_ledgers[0].start_sell_price_sea[i] = trade_price_sell((resource_type) i, 0);
+        trade_ledgers[0].start_buy_price_sea[i] = trade_price_buy((resource_type) i, 0);
+    }
+
+    // Whatever shenaningans are necessary to copy the current year into last year and clear current year
+    if (!array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0)) {
+        log_error("Failed to allocate memory for current year transactions. Game will probably crash.", 0, 0);
+        return;
+    }
+
+    return;
 }
 
 int city_finance_tourism_income_last_month(void)

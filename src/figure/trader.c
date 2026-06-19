@@ -1,5 +1,6 @@
 #include "figure/trader.h"
 
+#include "city/finance.h"
 #include "empire/trade_prices.h"
 #include "figuretype/trader.h"
 #include "trader.h"
@@ -42,20 +43,28 @@ void trader_record_bought_resource(int trader_id, resource_type resource)
 {
     figure *f = figure_get(trader_id);
     int is_land_trader = f->type == FIGURE_TRADE_CARAVAN || f->type == FIGURE_TRADE_CARAVAN_DONKEY || f->type == FIGURE_NATIVE_TRADER;
+    unsigned short empire_city_id = f->empire_city_id;
+    int balance = trade_price_sell(resource, is_land_trader);
 
     data.traders[trader_id].bought_amount++;
     data.traders[trader_id].bought_resources[resource]++;
-    data.traders[trader_id].bought_value += trade_price_sell(resource, is_land_trader);
+    data.traders[trader_id].bought_value += balance;
+
+    city_finance_record_trade_into_ledger(empire_city_id, resource, is_land_trader, 1, balance);
 }
 
 void trader_record_sold_resource(int trader_id, resource_type resource)
 {
     figure *f = figure_get(trader_id);
     int is_land_trader = f->type == FIGURE_TRADE_CARAVAN || f->type == FIGURE_TRADE_CARAVAN_DONKEY || f->type == FIGURE_NATIVE_TRADER;
+    unsigned short empire_city_id = f->empire_city_id;
+    int balance = trade_price_buy(resource, is_land_trader);
 
     data.traders[trader_id].sold_amount++;
     data.traders[trader_id].sold_resources[resource]++;
-    data.traders[trader_id].sold_value += trade_price_buy(resource, is_land_trader);
+    data.traders[trader_id].sold_value += balance;
+
+    city_finance_record_trade_into_ledger(empire_city_id, resource, is_land_trader, 0, -balance);
 }
 
 int trader_bought_resources(int trader_id, resource_type resource)
