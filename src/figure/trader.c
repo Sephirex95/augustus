@@ -50,7 +50,7 @@ void trader_record_bought_resource(int trader_id, resource_type resource)
     data.traders[trader_id].bought_resources[resource]++;
     data.traders[trader_id].bought_value += balance;
 
-    city_finance_record_trade_into_ledger(empire_city_id, resource, is_land_trader, 1, balance);
+    //city_finance_record_trade_into_ledger()// finish the call
 }
 
 void trader_record_sold_resource(int trader_id, resource_type resource)
@@ -64,7 +64,7 @@ void trader_record_sold_resource(int trader_id, resource_type resource)
     data.traders[trader_id].sold_resources[resource]++;
     data.traders[trader_id].sold_value += balance;
 
-    city_finance_record_trade_into_ledger(empire_city_id, resource, is_land_trader, 0, -balance);
+    //city_finance_record_trade_into_ledger()// finish the call
 }
 
 int trader_bought_resources(int trader_id, resource_type resource)

@@ -76,10 +76,12 @@ static tourism_for_type tourism_modifiers[] = {
 
 static trade_ledger_data trade_ledgers[8]; // 7 years of data + current year
 static short trade_ledgers_count;
-static array(transaction) current_year_transactions; // array of transaction structs for the current year
-static array(transaction) last_year_transactions; // array of transaction structs for the last year
+static array(transaction_t) current_year_transactions; // array of transaction structs for the current year
+static array(transaction_t) last_year_transactions; // array of transaction structs for the last year
 // transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
 // we could store more but i dont want crudelios to blame me for the savegame bloat
+static int last_trader_id;
+static transaction_t current_transaction;
 
 int city_finance_treasury(void)
 {
@@ -567,10 +569,92 @@ void city_finance_handle_year_change(void)
 
 }
 
-void city_finance_record_trade_into_ledger(unsigned short empire_city_id, resource_type resource, int is_land,
-    int is_import, int balance)
+void city_finance_record_trade_into_ledger(int trader_id, int price, unsigned short empire_city_id,
+     unsigned char storage_id, unsigned char month, unsigned char resource, unsigned char is_import)
 {
 
+    // 21/06/2026 EOD - Next time figure out a streamlined way to handle calls to this function.
+    // same trader - can be different resource, different price, different import/export.
+    // different trader is definitely a new transaction. 
+    // determining if its the same or next transaction  - how many vars do we compare?
+
+    // two problems here - transactions as understood by the array vs transaction as displayed in the history
+    // determine the best compromise - as displayed in history, has to be grouping transactions, since transactions
+    // can be only for one resource.
+    // there are a lot of problems actually when i think about it. 
+    // traders trade slowly - there can be multiple transactions taking place simultaneously in the city, 
+    // and so we can have a pattern where one warehouse is trying to conduct a chain of transactions X,
+    // and in between the added transactions, another warehouse is conducting a chain of transactions Y,
+    // so the history will show a pattern of X, Y, X, Y, X, Y, and so on.
+    // research the best way to store
+
+    if (trader_id != last_trader_id && current_transaction.empire_city_id) {
+        // last transaction finished - set up a new one and put old one into the array
+        transaction_t *transaction;
+        array_new_item(current_year_transactions, transaction);
+        *transaction = current_transaction;
+        current_transaction = (transaction_t) { 0 };
+    } else if (!current_transaction.empire_city_id) {
+        // first transaction of the year
+        current_transaction.price = price;
+        current_transaction.empire_city_id = empire_city_id;
+        current_transaction.storage_id = storage_id;
+        current_transaction.month = month;
+        current_transaction.resource_id = resource;
+        current_transaction.is_import = is_import;
+        current_transaction.quantity = 1;
+    } else {
+        // same trader as last transaction - update the current transaction
+        if (current_transaction.resource_id != resource || current_transaction.is_import != is_import) {
+            // different resource or import/export type - put the current transaction into the array and start a new one
+            transaction_t *transaction;
+            array_new_item(current_year_transactions, transaction);
+            *transaction = current_transaction;
+            current_transaction = (transaction_t) { 0 };
+            current_transaction.price = price;
+            current_transaction.empire_city_id = empire_city_id;
+            current_transaction.storage_id = storage_id;
+            current_transaction.month = month;
+            current_transaction.resource_id = resource;
+            current_transaction.is_import = is_import;
+            current_transaction.quantity = 1;
+        } else {
+            // same resource and import/export type - update the quantity and price
+            current_transaction.quantity++;
+            current_transaction.price += price;
+        }
+    }
+}
+
+static int transfer_transactions_to_last_year(void) // AI solution for array transfer
+{
+    // 1) Clear destination first (your required sequence)
+    array_clear(last_year_transactions);
+
+    // 2) Initialize destination container
+    if (!array_init(last_year_transactions, TRANSACTION_STEP_SIZE,
+        current_year_transactions.constructor, current_year_transactions.in_use)) {
+        return 0;
+    }
+
+    // 3) Copy payload
+    if (current_year_transactions.size > 0) {
+        if (!array_expand(last_year_transactions, current_year_transactions.size)) {
+            array_clear(last_year_transactions);
+            return 0;
+        }
+
+        for (unsigned int i = 0; i < current_year_transactions.size; i++) {
+            memcpy(array_item(last_year_transactions, i),
+                   array_item(current_year_transactions, i),
+                   sizeof(*array_item(current_year_transactions, i)));
+        }
+        last_year_transactions.size = current_year_transactions.size;
+    }
+
+    // 4) Clear source only after successful copy
+    array_clear(current_year_transactions);
+    return 1;
 }
 
 static void trade_ledger_year_change(void)
@@ -597,8 +681,12 @@ static void trade_ledger_year_change(void)
         trade_ledgers[0].start_sell_price_sea[i] = trade_price_sell((resource_type) i, 0);
         trade_ledgers[0].start_buy_price_sea[i] = trade_price_buy((resource_type) i, 0);
     }
-
+    size_t tx_size = sizeof(transaction_t);
     // Whatever shenaningans are necessary to copy the current year into last year and clear current year
+    if (!transfer_transactions_to_last_year()) {
+        log_error("Failed to transfer transactions to last year. Game will probably crash.", 0, 0);
+        return;
+    }
     if (!array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0)) {
         log_error("Failed to allocate memory for current year transactions. Game will probably crash.", 0, 0);
         return;

@@ -42,7 +42,7 @@ typedef struct {
     unsigned char resource_id;  // resource type?
     unsigned char is_import;
     unsigned char quantity;     // amount traded at this price
-} transaction; // 12 bytes babyyyyy
+} transaction_t; // 12 bytes babyyyyy
 
 typedef struct {
     int year; //one trade ledger dataset per year, then archive and reset. 
@@ -124,7 +124,10 @@ void city_finance_handle_month_change(void);
 
 void city_finance_handle_year_change(void);
 
-void city_finance_record_trade_into_ledger(unsigned short empire_city_id, resource_type resource, int is_land, int is_import, int balance);
+void city_finance_record_trade_into_ledger(int trader_id, int price, unsigned short empire_city_id, unsigned char storage_id,
+     unsigned char month, unsigned char resource, unsigned char is_import);
+
+
 
 typedef struct {
     struct {
