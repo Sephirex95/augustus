@@ -652,13 +652,12 @@ static int transfer_transactions_to_last_year(void) // AI solution for array tra
 
 static void trade_ledger_year_change(void)
 {
-    //fetch end of the year prices for the current year before moving the ledgers
-    for (int i = 0; i < RESOURCE_MAX; i++) {
-        trade_ledgers[0].end_sell_price[i] = trade_price_sell((resource_type) i, 1);
-        trade_ledgers[0].end_buy_price[i] = trade_price_buy((resource_type) i, 1);
-        trade_ledgers[0].end_sell_price_sea[i] = trade_price_sell((resource_type) i, 0);
-        trade_ledgers[0].end_buy_price_sea[i] = trade_price_buy((resource_type) i, 0);
-    }
+    // EOD 22/06/2026 notes
+    // next time - connect the production, consumption, import and export
+    // import and export - decide if directly tied to transactions array or not
+    // add save/load for transactions array and ledger asap for testing
+    // pull the data from the ledger to the display and check if behaves as expected
+
     if (trade_ledgers_count < 7) {
         trade_ledgers_count++;
     }
@@ -667,13 +666,6 @@ static void trade_ledger_year_change(void)
     }
     trade_ledgers[0] = (trade_ledger_data) { 0 }; // clear the current year data
     trade_ledgers[0].year = game_time_year(); // fetch current year 
-
-    for (int i = 0; i < RESOURCE_MAX; i++) { // fetch start year prices
-        trade_ledgers[0].start_sell_price[i] = trade_price_sell((resource_type) i, 1);
-        trade_ledgers[0].start_buy_price[i] = trade_price_buy((resource_type) i, 1);
-        trade_ledgers[0].start_sell_price_sea[i] = trade_price_sell((resource_type) i, 0);
-        trade_ledgers[0].start_buy_price_sea[i] = trade_price_buy((resource_type) i, 0);
-    }
     size_t tx_size = sizeof(transaction_t);
     // Whatever shenaningans are necessary to copy the current year into last year and clear current year
     if (!transfer_transactions_to_last_year()) {

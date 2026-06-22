@@ -33,46 +33,28 @@ typedef struct {
 } tourism_for_type;
 
 typedef struct {
-    int price;    // final price per cart
-    // prices over 64k should be rather rare, but should add some exception handling anyway
-    unsigned short empire_city_id;
-    unsigned char storage_id;
-
-    unsigned char month;        // 1-12
-    unsigned char resource_id;  // resource type
-    unsigned short trader_id;  // ACTUAL f->trader_id, not the f->id !!
-    signed char quantity;     // amount traded at this price - negative numbers for exports, positive for imports
+    int price;                      // final price per cart
+    unsigned short empire_city_id;  // trader's origin city
+    unsigned char storage_id;       // where trade took place
+    unsigned char month;            // 1-12
+    unsigned char resource_id;      // resource_type can be converted back and forth
+    unsigned short trader_id;       // !! ACTUAL f->trader_id, not the f->id !!
+    signed char quantity;           // amount traded at this price - negative for exports, positive for imports
 } transaction_t; // 12 bytes babyyyyy
 
 typedef struct {
-    int year; //one trade ledger dataset per year, then archive and reset. 
-    int transactions; //number of transactions for the year - used for transaction history if i have patience to implement it
+    int year; // one trade ledger dataset per year, then archive and reset. 
+    int transactions; // number of transactions for the year - used for transaction history
 
-    int stock[RESOURCE_MAX]; // stock wouldn't be necessary to store since we can calculate, but this is for archiving too
+    int stock[RESOURCE_MAX]; // in stock at the end of the year
 
-    int imported[RESOURCE_MAX];
-    int exported[RESOURCE_MAX];
+    int imported[RESOURCE_MAX];  // cartloads, unsigned
+    int exported[RESOURCE_MAX];  // cartloads, unsigned
 
-    int produced[RESOURCE_MAX];
-    int consumed[RESOURCE_MAX];
-    int balance[RESOURCE_MAX]; // in denarii, signed
-
-    /* Optional - if space is not an issue, keep em*/
-    /* Check if we can calculate the land/sea prices? then less storage - only rome price*/
-    int start_sell_price[RESOURCE_MAX];
-    int end_sell_price[RESOURCE_MAX];
-    int start_buy_price[RESOURCE_MAX];
-    int end_buy_price[RESOURCE_MAX];
-
-    /*if we can't calculate the exact prices in controlled and predictable way,
-    we need to store land/sea prices separately*/
-
-    int start_sell_price_sea[RESOURCE_MAX];
-    int end_sell_price_sea[RESOURCE_MAX];
-    int start_buy_price_sea[RESOURCE_MAX];
-    int end_buy_price_sea[RESOURCE_MAX];
-
-}trade_ledger_data; //at the end of the year, archive this data. Saves should store up to 3-5-7 years?
+    int produced[RESOURCE_MAX];  // cartloads, unsigned
+    int consumed[RESOURCE_MAX];  // cartloads, unsigned
+    int balance[RESOURCE_MAX];   // in denarii, signed
+} trade_ledger_data; //at the end of the year, archive this data. Saves should store up to 7 years
 
 typedef struct {
     struct {
