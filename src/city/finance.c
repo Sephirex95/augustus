@@ -569,60 +569,53 @@ void city_finance_handle_year_change(void)
 
 }
 
-void city_finance_record_trade_into_ledger(int trader_id, int price, unsigned short empire_city_id,
-     unsigned char storage_id, unsigned char month, unsigned char resource, unsigned char is_import)
+static int get_transaction_index(unsigned short trader_id, int price, unsigned short empire_city_id,
+     unsigned char storage_id, unsigned char month, resource_type resource, unsigned char is_import)
 {
+    // O(n) instead of O(1) like array_item, but it shouldn't be called often enough to matter at all.
+    // If game lags during transactions, then the answer is storing the id in the transaction_t.
+    // small increase in structure size, but still completely manageable
 
-    // 21/06/2026 EOD - Next time figure out a streamlined way to handle calls to this function.
-    // same trader - can be different resource, different price, different import/export.
-    // different trader is definitely a new transaction. 
-    // determining if its the same or next transaction  - how many vars do we compare?
-
-    // two problems here - transactions as understood by the array vs transaction as displayed in the history
-    // determine the best compromise - as displayed in history, has to be grouping transactions, since transactions
-    // can be only for one resource.
-    // there are a lot of problems actually when i think about it. 
-    // traders trade slowly - there can be multiple transactions taking place simultaneously in the city, 
-    // and so we can have a pattern where one warehouse is trying to conduct a chain of transactions X,
-    // and in between the added transactions, another warehouse is conducting a chain of transactions Y,
-    // so the history will show a pattern of X, Y, X, Y, X, Y, and so on.
-    // research the best way to store
-
-    if (trader_id != last_trader_id && current_transaction.empire_city_id) {
-        // last transaction finished - set up a new one and put old one into the array
-        transaction_t *transaction;
-        array_new_item(current_year_transactions, transaction);
-        *transaction = current_transaction;
-        current_transaction = (transaction_t) { 0 };
-    } else if (!current_transaction.empire_city_id) {
-        // first transaction of the year
-        current_transaction.price = price;
-        current_transaction.empire_city_id = empire_city_id;
-        current_transaction.storage_id = storage_id;
-        current_transaction.month = month;
-        current_transaction.resource_id = resource;
-        current_transaction.is_import = is_import;
-        current_transaction.quantity = 1;
-    } else {
-        // same trader as last transaction - update the current transaction
-        if (current_transaction.resource_id != resource || current_transaction.is_import != is_import) {
-            // different resource or import/export type - put the current transaction into the array and start a new one
-            transaction_t *transaction;
-            array_new_item(current_year_transactions, transaction);
-            *transaction = current_transaction;
-            current_transaction = (transaction_t) { 0 };
-            current_transaction.price = price;
-            current_transaction.empire_city_id = empire_city_id;
-            current_transaction.storage_id = storage_id;
-            current_transaction.month = month;
-            current_transaction.resource_id = resource;
-            current_transaction.is_import = is_import;
-            current_transaction.quantity = 1;
-        } else {
-            // same resource and import/export type - update the quantity and price
-            current_transaction.quantity++;
-            current_transaction.price += price;
+    unsigned char resource_id = (unsigned char) resource;
+    // find the transaction in the current year transactions array that matches the given parameters
+    for (unsigned int i = 0; i < current_year_transactions.size; i++) {
+        transaction_t *tx = array_item(current_year_transactions, i);
+        unsigned char tx_is_import = tx->quantity < 0 ? 0 : 1;
+        if (tx->trader_id == trader_id &&
+            tx->month == month &&
+            tx->resource_id == resource_id &&
+            tx->price == price &&
+            tx->storage_id == storage_id &&
+            tx->empire_city_id == empire_city_id &&
+            tx_is_import == is_import) {
+            return i;
         }
+    }
+    return -1;
+}
+
+void city_finance_record_trade_into_ledger(unsigned short trader_id, int price, unsigned short empire_city_id,
+     unsigned char storage_id, unsigned char month, resource_type resource, unsigned char is_import)
+{
+    int transaction_index = get_transaction_index(trader_id, price, empire_city_id, storage_id, month, resource, is_import);
+    if (transaction_index >= 0) {
+        // there's already a transaction that matches the parameters this year
+        transaction_t *tx = array_item(current_year_transactions, transaction_index);
+        tx->quantity += is_import ? 1 : -1;
+    } else {
+        // new transaction - add to the array
+        transaction_t new_transaction = {
+            .trader_id = trader_id,
+            .price = price,
+            .empire_city_id = empire_city_id,
+            .storage_id = storage_id,
+            .month = month,
+            .resource_id = (unsigned char) resource,
+            .quantity = is_import ? -1 : 1
+        };
+        transaction_t *tx;
+        array_new_item(current_year_transactions, tx);
+        *tx = new_transaction;
     }
 }
 

@@ -33,15 +33,15 @@ typedef struct {
 } tourism_for_type;
 
 typedef struct {
-    int price;                  // final price per cart 
-
+    int price;    // final price per cart
+    // prices over 64k should be rather rare, but should add some exception handling anyway
     unsigned short empire_city_id;
     unsigned char storage_id;
 
     unsigned char month;        // 1-12
-    unsigned char resource_id;  // resource type?
-    unsigned char is_import;
-    unsigned char quantity;     // amount traded at this price
+    unsigned char resource_id;  // resource type
+    unsigned short trader_id;  // ACTUAL f->trader_id, not the f->id !!
+    signed char quantity;     // amount traded at this price - negative numbers for exports, positive for imports
 } transaction_t; // 12 bytes babyyyyy
 
 typedef struct {
@@ -73,6 +73,28 @@ typedef struct {
     int end_buy_price_sea[RESOURCE_MAX];
 
 }trade_ledger_data; //at the end of the year, archive this data. Saves should store up to 3-5-7 years?
+
+typedef struct {
+    struct {
+        int taxes;
+        int exports;
+        int donated;
+        int total;
+    } income;
+    struct {
+        int imports;
+        int wages;
+        int construction;
+        int interest;
+        int salary;
+        int sundries;
+        int tribute;
+        int total;
+        int levies;
+    } expenses;
+    int net_in_out;
+    int balance;
+} finance_overview;
 
 int city_finance_treasury(void);
 
@@ -124,32 +146,8 @@ void city_finance_handle_month_change(void);
 
 void city_finance_handle_year_change(void);
 
-void city_finance_record_trade_into_ledger(int trader_id, int price, unsigned short empire_city_id, unsigned char storage_id,
-     unsigned char month, unsigned char resource, unsigned char is_import);
-
-
-
-typedef struct {
-    struct {
-        int taxes;
-        int exports;
-        int donated;
-        int total;
-    } income;
-    struct {
-        int imports;
-        int wages;
-        int construction;
-        int interest;
-        int salary;
-        int sundries;
-        int tribute;
-        int total;
-        int levies;
-    } expenses;
-    int net_in_out;
-    int balance;
-} finance_overview;
+void city_finance_record_trade_into_ledger(unsigned short trader_id, int price, unsigned short empire_city_id,
+     unsigned char storage_id, unsigned char month, resource_type resource, unsigned char is_import);
 
 int city_finance_tourism_income_last_month(void);
 
