@@ -563,12 +563,12 @@ static void pay_tribute(void)
 static int get_ledger_year(int years_ago)
 {
     if (years_ago < 0 || years_ago > trade_ledgers_count) {
-        return NULL;
+        return 0;
     }
     if (!(&trade_ledgers[years_ago].year)) { // just a sanity check - will need to run on older saves
         trade_ledgers[years_ago].year = (int) (game_time_year() - years_ago);
     }
-    return &trade_ledgers[years_ago];
+    return (int) &trade_ledgers[years_ago];
 }
 
 void city_finance_trade_ledger_add_produced(resource_type resource)
