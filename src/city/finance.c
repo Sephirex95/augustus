@@ -11,6 +11,7 @@
 #include "city/festival.h"
 #include "city/resource.h"
 #include "core/array.h"
+#include "core/buffer.h"
 #include "core/calc.h"
 #include "core/log.h"
 #include "core/random.h"
@@ -80,8 +81,7 @@ static array(transaction_t) current_year_transactions; // array of transaction s
 static array(transaction_t) last_year_transactions; // array of transaction structs for the last year
 // transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
 // we could store more but i dont want crudelios to blame me for the savegame bloat
-static int last_trader_id;
-static transaction_t current_transaction;
+
 
 int city_finance_treasury(void)
 {
@@ -98,7 +98,6 @@ void city_finance_treasury_add_miscellaneous(int amount)
     city_finance_treasury_add(amount);
     city_data.finance.misc_this_year += amount;
 }
-
 
 int city_finance_out_of_money(void)
 {
@@ -561,6 +560,88 @@ static void pay_tribute(void)
     last_year->expenses.total = last_year->expenses.tribute + expenses;
 }
 
+static int get_ledger_year(int years_ago)
+{
+
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return NULL;
+    }
+    if (!(&trade_ledgers[years_ago].year)) { // just a sanity check - will need to run on older saves
+        trade_ledgers[years_ago].year = game_time_year() - years_ago;
+    }
+    return &trade_ledgers[years_ago];
+}
+
+void city_finance_trade_ledger_add_produced(resource_type resource)
+{
+    trade_ledgers[0].produced[resource]++;
+    return;
+}
+
+void city_finance_trade_ledger_add_consumed(resource_type resource, int quantity)
+{
+    trade_ledgers[0].consumed[resource] += quantity;
+    return;
+}
+
+void city_finance_trade_ledger_add_imported(resource_type resource)
+{
+    trade_ledgers[0].imported[resource]++;
+    return;
+}
+
+void city_finance_trade_ledger_add_exported(resource_type resource)
+{
+    trade_ledgers[0].exported[resource]++;
+    return;
+}
+
+void city_finance_trade_ledger_add_balance(resource_type resource, int balance)
+{
+    trade_ledgers[0].balance[resource] += balance;
+    return;
+}
+
+int city_finance_trade_ledger_get_produced(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    return trade_ledgers[years_ago].produced[resource];
+}
+
+int city_finance_trade_ledger_get_consumed(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    return trade_ledgers[years_ago].consumed[resource];
+}
+
+int city_finance_trade_ledger_get_imported(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    return trade_ledgers[years_ago].imported[resource];
+}
+
+int city_finance_trade_ledger_get_exported(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    return trade_ledgers[years_ago].exported[resource];
+}
+
+int city_finance_trade_ledger_get_balance(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    return trade_ledgers[years_ago].balance[resource];
+}
+
 void city_finance_handle_year_change(void)
 {
     reset_taxes();
@@ -653,19 +734,24 @@ static int transfer_transactions_to_last_year(void) // AI solution for array tra
 static void trade_ledger_year_change(void)
 {
     // EOD 22/06/2026 notes
-    // next time - connect the production, consumption, import and export
-    // import and export - decide if directly tied to transactions array or not
-    // add save/load for transactions array and ledger asap for testing
-    // pull the data from the ledger to the display and check if behaves as expected
-
+    // next time - connect the production, consumption, import and export - DONE
+    // import and export - decide if directly tied to transactions array or not - DONE, not directly, separate counts
+    // add save/load for transactions array and ledger asap for testing -todo
+    // pull the data from the ledger to the display and check if behaves as expected -todo
+    // for display use lang_text_draw_month_year_max_width() - draws month year
     if (trade_ledgers_count < 7) {
         trade_ledgers_count++;
+    }
+    for (int i = 0; i < RESOURCE_MAX; i++) { //get stocks for end-of year
+        trade_ledgers[0].stock[i] = city_resource_get_total_amount((resource_type) i, 0);
     }
     for (int i = 0; i < trade_ledgers_count + 1; i++) {
         trade_ledgers[i] = trade_ledgers[i + 1]; // shift the ledgers up one year
     }
-    trade_ledgers[0] = (trade_ledger_data) { 0 }; // clear the current year data
+
+    memset(&trade_ledgers[0], 0, sizeof(trade_ledgers[0]));
     trade_ledgers[0].year = game_time_year(); // fetch current year 
+
     size_t tx_size = sizeof(transaction_t);
     // Whatever shenaningans are necessary to copy the current year into last year and clear current year
     if (!transfer_transactions_to_last_year()) {
@@ -676,6 +762,7 @@ static void trade_ledger_year_change(void)
         log_error("Failed to allocate memory for current year transactions. Game will probably crash.", 0, 0);
         return;
     }
+
 
     return;
 }
@@ -698,6 +785,109 @@ const finance_overview *city_finance_overview_last_year(void)
 const finance_overview *city_finance_overview_this_year(void)
 {
     return &city_data.finance.this_year;
+}
+
+void city_finance_ledger_save_state(buffer *buf)
+{
+    size_t current_count = current_year_transactions.size;
+    size_t last_count = last_year_transactions.size;
+    size_t tx_size = 4 + 2 + 1 + 1 + 1 + 2 + 1; // 12 bytes per transaction
+    size_t total_size = sizeof(int16_t) // trade_ledgers_count
+        + 8 * (sizeof(int32_t) * 2 + sizeof(int32_t) * RESOURCE_MAX * 6) // 8 ledger entries
+        + sizeof(int32_t) + current_count * tx_size // current year transactions
+        + sizeof(int32_t) + last_count * tx_size;   // last year transactions
+
+    buffer_init_dynamic(buf, total_size);
+
+    buffer_write_i16(buf, trade_ledgers_count);
+    for (int i = 0; i < 8; i++) {
+        buffer_write_i32(buf, trade_ledgers[i].year);
+        buffer_write_i32(buf, trade_ledgers[i].transactions);
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].stock[r]); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].imported[r]); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].exported[r]); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].produced[r]); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].consumed[r]); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { buffer_write_i32(buf, trade_ledgers[i].balance[r]); }
+    }
+
+    buffer_write_i32(buf, (int32_t) current_count);
+    transaction_t *tx;
+    array_foreach(current_year_transactions, tx)
+    {
+        buffer_write_i32(buf, tx->price);
+        buffer_write_u16(buf, tx->empire_city_id);
+        buffer_write_u8(buf, tx->storage_id);
+        buffer_write_u8(buf, tx->month);
+        buffer_write_u8(buf, tx->resource_id);
+        buffer_write_u16(buf, tx->trader_id);
+        buffer_write_i8(buf, tx->quantity);
+    }
+
+    buffer_write_i32(buf, (int32_t) last_count);
+    array_foreach(last_year_transactions, tx)
+    {
+        buffer_write_i32(buf, tx->price);
+        buffer_write_u16(buf, tx->empire_city_id);
+        buffer_write_u8(buf, tx->storage_id);
+        buffer_write_u8(buf, tx->month);
+        buffer_write_u8(buf, tx->resource_id);
+        buffer_write_u16(buf, tx->trader_id);
+        buffer_write_i8(buf, tx->quantity);
+    }
+}
+
+void city_finance_ledger_load_state(buffer *buf)
+{
+    buffer_load_dynamic(buf);
+
+    trade_ledgers_count = buffer_read_i16(buf);
+    for (int i = 0; i < 8; i++) {
+        trade_ledgers[i].year = buffer_read_i32(buf);
+        trade_ledgers[i].transactions = buffer_read_i32(buf);
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].stock[r] = buffer_read_i32(buf); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].imported[r] = buffer_read_i32(buf); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].exported[r] = buffer_read_i32(buf); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].produced[r] = buffer_read_i32(buf); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].consumed[r] = buffer_read_i32(buf); }
+        for (int r = 0; r < RESOURCE_MAX; r++) { trade_ledgers[i].balance[r] = buffer_read_i32(buf); }
+    }
+
+    array_clear(current_year_transactions);
+    int count = buffer_read_i32(buf);
+    if (!array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0) ||
+        !array_expand(current_year_transactions, count)) {
+        log_error("Failed to allocate memory for current year transactions during load.", 0, 0);
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        transaction_t *tx = array_next(current_year_transactions);
+        tx->price = buffer_read_i32(buf);
+        tx->empire_city_id = buffer_read_u16(buf);
+        tx->storage_id = buffer_read_u8(buf);
+        tx->month = buffer_read_u8(buf);
+        tx->resource_id = buffer_read_u8(buf);
+        tx->trader_id = buffer_read_u16(buf);
+        tx->quantity = buffer_read_i8(buf);
+    }
+
+    array_clear(last_year_transactions);
+    count = buffer_read_i32(buf);
+    if (!array_init(last_year_transactions, TRANSACTION_STEP_SIZE, 0, 0) ||
+        !array_expand(last_year_transactions, count)) {
+        log_error("Failed to allocate memory for last year transactions during load.", 0, 0);
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        transaction_t *tx = array_next(last_year_transactions);
+        tx->price = buffer_read_i32(buf);
+        tx->empire_city_id = buffer_read_u16(buf);
+        tx->storage_id = buffer_read_u8(buf);
+        tx->month = buffer_read_u8(buf);
+        tx->resource_id = buffer_read_u8(buf);
+        tx->trader_id = buffer_read_u16(buf);
+        tx->quantity = buffer_read_i8(buf);
+    }
 }
 
 int city_finance_spawn_tourist(void)

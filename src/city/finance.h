@@ -3,6 +3,7 @@
 
 #include "building/type.h"
 #include "city/resource.h"
+#include "core/buffer.h"
 
 #define SMALL_TEMPLE_LEVY_MONTHLY 4
 #define FORT_LEVY_MONTHLY 8
@@ -45,7 +46,7 @@ typedef struct {
 typedef struct {
     int year; // one trade ledger dataset per year, then archive and reset. 
     int transactions; // number of transactions for the year - used for transaction history
-
+    // transactions count not yet wired - implement with history
     int stock[RESOURCE_MAX]; // in stock at the end of the year
 
     int imported[RESOURCE_MAX];  // cartloads, unsigned
@@ -126,6 +127,26 @@ void city_finance_estimate_taxes(void);
 
 void city_finance_handle_month_change(void);
 
+void city_finance_trade_ledger_add_produced(resource_type resource);
+
+void city_finance_trade_ledger_add_consumed(resource_type resource, int quantity); // caesar's requests - avoids loops
+
+void city_finance_trade_ledger_add_imported(resource_type resource);
+
+void city_finance_trade_ledger_add_exported(resource_type resource);
+
+void city_finance_trade_ledger_add_balance(resource_type resource, int balance);
+
+int city_finance_trade_ledger_get_produced(resource_type resource, int years_ago);
+
+int city_finance_trade_ledger_get_consumed(resource_type resource, int years_ago);
+
+int city_finance_trade_ledger_get_imported(resource_type resource, int years_ago);
+
+int city_finance_trade_ledger_get_exported(resource_type resource, int years_ago);
+
+int city_finance_trade_ledger_get_balance(resource_type resource, int years_ago);
+
 void city_finance_handle_year_change(void);
 
 void city_finance_record_trade_into_ledger(unsigned short trader_id, int price, unsigned short empire_city_id,
@@ -140,5 +161,9 @@ const finance_overview *city_finance_overview_last_year(void);
 const finance_overview *city_finance_overview_this_year(void);
 
 int city_finance_spawn_tourist(void);
+
+void city_finance_ledger_save_state(buffer *buf);
+
+void city_finance_ledger_load_state(buffer *buf);
 
 #endif // CITY_FINANCE_H

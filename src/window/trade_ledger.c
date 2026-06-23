@@ -1,5 +1,6 @@
 #include "trade_ledger.h"
 
+#include "city/finance.h"
 #include "city/resource.h"
 #include "core/image_group.h"
 
@@ -139,8 +140,22 @@ static void draw_resource_row(const grid_box_item *item)
     resource_type current_resource = resources->items[real_index];
     int resource_img_id = resource_get_data(current_resource)->image.icon;
     const uint8_t *name = resource_get_data(current_resource)->text;
+    int imported = city_finance_trade_ledger_get_imported(current_resource, 0);
+    int produced = city_finance_trade_ledger_get_produced(current_resource, 0);
+    int consumed = city_finance_trade_ledger_get_consumed(current_resource, 0);
+    int exported = city_finance_trade_ledger_get_exported(current_resource, 0);
+    int balance = city_finance_trade_ledger_get_balance(current_resource, 0);
+    font_t balance_font = (balance < 0) ? FONT_NORMAL_RED : FONT_NORMAL_BLACK;
+    int x_gap = 40;
+    int number_y = item->y + 10;
+
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
     text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(imported, 120 + x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(balance, 120 + 7 * x_gap, number_y, x_gap, balance_font, COLOR_MASK_NONE);
 
 }
 

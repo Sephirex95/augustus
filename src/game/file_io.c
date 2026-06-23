@@ -9,6 +9,7 @@
 #include "building/storage.h"
 #include "city/culture.h"
 #include "city/data.h"
+#include "city/finance.h"
 #include "city/message.h"
 #include "city/view.h"
 #include "core/dir.h"
@@ -232,6 +233,7 @@ typedef struct {
     buffer *building_model_data;
     buffer *rubble_grid;
     buffer *production_rates;
+    buffer *finance_ledger;
 } savegame_state;
 
 typedef struct {
@@ -713,6 +715,9 @@ static void init_savegame_data(savegame_version_t version)
     if (version_data.features.custom_production_rates) {
         state->production_rates = create_savegame_piece(PIECE_SIZE_DYNAMIC, 1);
     }
+    if (version > SAVE_GAME_LAST_NO_LEDGER) {
+        state->finance_ledger = create_savegame_piece(PIECE_SIZE_DYNAMIC, 0);
+    }
 }
 
 static void scenario_load_from_state(scenario_state *file, scenario_version_t version)
@@ -998,6 +1003,9 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
     if (version <= SAVE_GAME_LAST_NO_EMPIRE_EDITOR) {
         scenario_events_migrate_to_buys_sells();
     }
+    if (version > SAVE_GAME_LAST_NO_LEDGER) {
+        city_finance_ledger_load_state(state->finance_ledger);
+    }
 }
 
 static void savegame_save_to_state(savegame_state *state)
@@ -1089,6 +1097,7 @@ static void savegame_save_to_state(savegame_state *state)
     figure_visited_buildings_save_state(state->visited_buildings);
 
     production_rates_save(state->production_rates);
+    city_finance_ledger_save_state(state->finance_ledger);
 }
 
 static int get_scenario_version(FILE *fp)

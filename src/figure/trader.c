@@ -82,7 +82,8 @@ void trader_record_bought_resource(int figure_id, unsigned short trader_id, reso
     data.traders[trader_id].bought_amount++;
     data.traders[trader_id].bought_resources[resource]++;
     data.traders[trader_id].bought_value += balance;
-
+    city_finance_trade_ledger_add_exported(resource);
+    city_finance_trade_ledger_add_balance(resource, balance);
     city_finance_record_trade_into_ledger(trader_id, balance, empire_city_id, storage_id, game_time_month(), resource, 0);
 }
 
@@ -96,7 +97,8 @@ void trader_record_sold_resource(int figure_id, unsigned short trader_id, resour
     data.traders[trader_id].sold_amount++;
     data.traders[trader_id].sold_resources[resource]++;
     data.traders[trader_id].sold_value += balance;
-
+    city_finance_trade_ledger_add_imported(resource);
+    city_finance_trade_ledger_add_balance(resource, -balance);
     city_finance_record_trade_into_ledger(trader_id, balance, empire_city_id, storage_id, game_time_month(), resource, 1);
 }
 
