@@ -657,6 +657,7 @@ int city_finance_trade_ledger_get_stock(resource_type resource, int years_ago)
 void city_finance_handle_year_change(void)
 {
     reset_taxes();
+    trade_ledger_year_change();
     copy_amounts_to_last_year();
     pay_tribute();
 
