@@ -3,12 +3,11 @@
 #include "city/finance.h"
 #include "city/resource.h"
 #include "core/image_group.h"
-
+#include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/grid_box.h"
 #include "graphics/image.h"
 #include "graphics/image_button.h"
-#include "graphics/button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/tab_view.h"
@@ -22,15 +21,17 @@
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
+static void hide_irrelevant_checkbox_clicked(const complex_button *btn);
+static void remove_irrelevant_resources(void);
 
 static tab_view ledger_tabs;
 static int tabs_initialized = 0;
 static const resource_list *resources;
+static resource_list filtered_resources;
 static grid_box_type resource_table;
 static dropdown_button ledger_year_dropdown;
 static int selected_year_index = 0;
 static int hide_irrelevant = 0;
-static complex_button hide_irrelevant_checkbox;
 
 static const lang_fragment tab_text_trade[] = {
     {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Trade"},
@@ -46,6 +47,16 @@ static const lang_fragment tab_text_summary[] = {
 
 static image_button image_buttons[] = {
     {744, 554, 24, 24, IB_NORMAL, GROUP_CONTEXT_ICONS, 4, button_close, button_none, 0, 0, 1},
+};
+
+static complex_button hide_irrelevant_checkbox = {
+        .x = 26,
+        .y = 510,
+        .width = 250,
+        .height = 20,
+        .left_click_handler = hide_irrelevant_checkbox_clicked,
+        .is_hidden = 0,
+        .is_disabled = 0,
 };
 
 static void trade_draw_content(tab_view *view, tab *active_tab);
@@ -69,9 +80,33 @@ static void dropdown_selected_callback(dropdown_button *dd)
 
 static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
 {
-    (void) btn;
     hide_irrelevant = !hide_irrelevant;
-    window_invalidate();
+    remove_irrelevant_resources();
+    window_invalidate(); //need to invalidate window to go through init again and re-do the grid box
+}
+
+static void remove_irrelevant_resources(void)
+{
+    int i = 0;
+    while (i < filtered_resources.size) {
+        resource_type current_resource = filtered_resources.items[i];
+        int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
+        int produced = city_finance_trade_ledger_get_produced(current_resource, selected_year_index);
+        int consumed = city_finance_trade_ledger_get_consumed(current_resource, selected_year_index);
+        int exported = city_finance_trade_ledger_get_exported(current_resource, selected_year_index);
+        int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
+        int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
+
+        if (imported == 0 && produced == 0 && consumed == 0 && exported == 0 && stock == 0 && balance == 0) {
+            // Remove this resource from the filtered list
+            for (int j = i; j < filtered_resources.size - 1; j++) {
+                filtered_resources.items[j] = filtered_resources.items[j + 1];
+            }
+            filtered_resources.size--;
+            i--; // Adjust index to account for removed item
+        }
+        i++; // Move to the next resource
+    }
 }
 
 static void trade_ledger_init(void)
@@ -98,16 +133,6 @@ static void trade_ledger_init(void)
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
 
-    hide_irrelevant_checkbox = (complex_button) {
-        .x = 26,
-        .y = 510,
-        .width = 250,
-        .height = 20,
-        .left_click_handler = hide_irrelevant_checkbox_clicked,
-        .is_hidden = 0,
-        .is_disabled = 0,
-    };
-
     resource_table = (grid_box_type) {
             .x = 10,
             .y = 80,
@@ -124,6 +149,12 @@ static void trade_ledger_init(void)
     // get resource list for the scenario
     city_resource_determine_available(1);
     resources = city_resource_get_available();
+    filtered_resources = *resources;
+    if (hide_irrelevant) {
+        remove_irrelevant_resources();
+        grid_box_init(&resource_table, filtered_resources.size);
+    }
+
     grid_box_init(&resource_table, resources->size);
 }
 
@@ -217,7 +248,7 @@ static void draw_resource_row(const grid_box_item *item)
 
 
     int real_index = item->index;
-    resource_type current_resource = resources->items[real_index];
+    resource_type current_resource = hide_irrelevant ? filtered_resources.items[real_index] : resources->items[real_index];
     int resource_img_id = resource_get_data(current_resource)->image.icon;
     const uint8_t *name = resource_get_data(current_resource)->text;
     int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
