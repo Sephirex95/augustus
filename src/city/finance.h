@@ -147,6 +147,8 @@ int city_finance_trade_ledger_get_exported(resource_type resource, int years_ago
 
 int city_finance_trade_ledger_get_balance(resource_type resource, int years_ago);
 
+int city_finance_trade_ledger_get_stock(resource_type resource, int years_ago);
+
 void city_finance_handle_year_change(void);
 
 void city_finance_record_trade_into_ledger(unsigned short trader_id, int price, unsigned short empire_city_id,

@@ -10,6 +10,7 @@
 #define DROPDOWN_BUTTON_MAX_COUNT 20 // arbitrary limit for static storage
 
 static complex_button dropdown_button_storage[DROPDOWN_BUTTON_MAX_COUNT] = { 0 }; //buffer for simple init
+static complex_button dropdown_button_anchor_storage = { 0 }; // for restoring anchor
 
 static int calculate_text_width(const complex_button *btn, font_t font)
 {
@@ -39,7 +40,51 @@ static void update_anchor(dropdown_button *dd)
     anchor->color_mask = selected->color_mask;
     anchor->font = selected->font;
     anchor->style = selected->style;
-    memcpy((void *)&anchor->tooltip_c, (void *)&selected->tooltip_c, sizeof(tooltip_context));
+    memcpy((void *) &anchor->tooltip_c, (void *) &selected->tooltip_c, sizeof(tooltip_context));
+}
+
+static void save_anchor(dropdown_button *dd)
+{
+    if (!dd || dd->num_buttons == 0) {
+        return;
+    }
+    complex_button *anchor = &dd->buttons[0];
+    memcpy(&dropdown_button_anchor_storage, anchor, sizeof(complex_button));
+}
+
+static void restore_anchor(dropdown_button *dd)
+{
+    // don't use memcpy on the entire button - it will copy state, flags, and bug the dropdown.
+    if (!dd || dd->num_buttons == 0) {
+        return;
+    }
+    // copy only the visual parameters
+    complex_button *anchor_og = &dropdown_button_anchor_storage;
+    complex_button *anchor = &dd->buttons[0];
+    anchor->sequence = anchor_og->sequence;
+    anchor->sequence_size = anchor_og->sequence_size;
+    anchor->sequence_position = anchor_og->sequence_position;
+    anchor->image_before = anchor_og->image_before;
+    anchor->image_after = anchor_og->image_after;
+    anchor->color_mask = anchor_og->color_mask;
+    anchor->font = anchor_og->font;
+    anchor->style = anchor_og->style;
+    memcpy((void *) &anchor->tooltip_c, (void *) &anchor_og->tooltip_c, sizeof(tooltip_context));
+}
+
+void dropdown_button_advanced_update_anchor(dropdown_button *dd)
+{
+    update_anchor(dd); // expose the internal function for non-simple init
+}
+
+void dropdown_button_advanced_restore_anchor(dropdown_button *dd)
+{
+    restore_anchor(dd); // expose the internal function for non-simple init
+}
+
+void dropdown_button_advanced_save_anchor(dropdown_button *dd)
+{
+    save_anchor(dd); // expose the internal function for non-simple init
 }
 
 /* --- Default left click handler for dropdown options --- */
@@ -147,7 +192,9 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
     origin->sequence_position = SEQUENCE_POSITION_CENTER;
     origin->sequence_size = 1;
     origin->left_click_handler = dropdown_button_default_origin_click;
-    origin->user_data = dd; // pointer to parent 
+    origin->user_data = dd; // pointer to parent
+    save_anchor(dd); // store original anchor for restoring
+
     // Setup options [1..count-1]
     for (unsigned int i = 1; i < count; i++) {
         complex_button *opt = &dd->buttons[i];
@@ -183,10 +230,15 @@ void dropdown_button_draw(const dropdown_button *dd)
     if (dd->num_buttons == 0) {
         return;
     }
-    update_anchor((dropdown_button *) dd); // cast away const to update anchor
-    complex_button_draw(&dd->buttons[0]); // Always draw anchor
+    if (dd->show_origin && dd->expanded) {
+        restore_anchor((dropdown_button *) dd);
+    } else {
+        update_anchor((dropdown_button *) dd); // cast away const to update anchor
+    }
     // Draw options if expanded
+    complex_button_draw(&dd->buttons[0]); // always draw origin
     if (dd->expanded) {
+        // if expanded, make anchor show the default instead of currently selected index
         for (unsigned int i = 1; i < dd->num_buttons; i++) {
             complex_button_draw(&dd->buttons[i]);
         }

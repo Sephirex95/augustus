@@ -565,10 +565,10 @@ static int get_ledger_year(int years_ago)
     if (years_ago < 0 || years_ago > trade_ledgers_count) {
         return 0;
     }
-    if (!(&trade_ledgers[years_ago].year)) { // just a sanity check - will need to run on older saves
+    if (!trade_ledgers[years_ago].year) { // just a sanity check - will need to run on older saves
         trade_ledgers[years_ago].year = (int) (game_time_year() - years_ago);
     }
-    return (int) &trade_ledgers[years_ago];
+    return trade_ledgers[years_ago].year;
 }
 
 void city_finance_trade_ledger_add_produced(resource_type resource)
@@ -640,6 +640,19 @@ int city_finance_trade_ledger_get_balance(resource_type resource, int years_ago)
     }
     return trade_ledgers[years_ago].balance[resource];
 }
+
+int city_finance_trade_ledger_get_stock(resource_type resource, int years_ago)
+{
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
+        return 0;
+    }
+    // update from city resource - not point in duplicating the efforts
+    if (years_ago == 0) {
+        trade_ledgers[0].stock[resource] = city_resource_get_total_amount(resource, 0);
+    }
+    return trade_ledgers[years_ago].stock[resource];
+}
+
 
 void city_finance_handle_year_change(void)
 {
@@ -738,32 +751,31 @@ static void trade_ledger_year_change(void)
     // add save/load for transactions array and ledger asap for testing -todo
     // pull the data from the ledger to the display and check if behaves as expected -todo
     // for display use lang_text_draw_month_year_max_width() - draws month year
+
+    for (int i = 0; i < RESOURCE_MAX; i++) {
+        trade_ledgers[0].stock[i] = city_resource_get_total_amount((resource_type) i, 0);
+    }
+
     if (trade_ledgers_count < 7) {
         trade_ledgers_count++;
     }
-    for (int i = 0; i < RESOURCE_MAX; i++) { //get stocks for end-of year
-        trade_ledgers[0].stock[i] = city_resource_get_total_amount((resource_type) i, 0);
-    }
-    for (int i = 0; i < trade_ledgers_count + 1; i++) {
-        trade_ledgers[i] = trade_ledgers[i + 1]; // shift the ledgers up one year
+
+    for (int i = trade_ledgers_count; i > 0; i--) {
+        trade_ledgers[i] = trade_ledgers[i - 1];
     }
 
     memset(&trade_ledgers[0], 0, sizeof(trade_ledgers[0]));
-    trade_ledgers[0].year = game_time_year(); // fetch current year 
+    trade_ledgers[0].year = game_time_year();
 
-    size_t tx_size = sizeof(transaction_t);
-    // Whatever shenaningans are necessary to copy the current year into last year and clear current year
     if (!transfer_transactions_to_last_year()) {
         log_error("Failed to transfer transactions to last year. Game will probably crash.", 0, 0);
         return;
     }
+
     if (!array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0)) {
         log_error("Failed to allocate memory for current year transactions. Game will probably crash.", 0, 0);
         return;
     }
-
-
-    return;
 }
 
 int city_finance_tourism_income_last_month(void)

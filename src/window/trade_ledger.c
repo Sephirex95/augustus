@@ -8,12 +8,14 @@
 #include "graphics/grid_box.h"
 #include "graphics/image.h"
 #include "graphics/image_button.h"
+#include "graphics/button.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/tab_view.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
+#include "widget/dropdown_button.h"
 
 #define PANEL_W 800
 #define PANEL_H 600
@@ -23,8 +25,12 @@ static void placeholder_content_draw(tab_view *view, tab *active_tab);
 
 static tab_view ledger_tabs;
 static int tabs_initialized = 0;
-static resource_list *resources;
+static const resource_list *resources;
 static grid_box_type resource_table;
+static dropdown_button ledger_year_dropdown;
+static int selected_year_index = 0;
+static int hide_irrelevant = 0;
+static complex_button hide_irrelevant_checkbox;
 
 static const lang_fragment tab_text_trade[] = {
     {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Trade"},
@@ -44,21 +50,76 @@ static image_button image_buttons[] = {
 
 static void trade_draw_content(tab_view *view, tab *active_tab);
 static void draw_resource_row(const grid_box_item *item);
+static void draw_hide_irrelevant_checkbox(void);
+static void hide_irrelevant_checkbox_clicked(const complex_button *btn);
+
+static int dropdown_to_years_ago(int selected_index)
+{
+    if (selected_index <= 1) {
+        return 0; // current year
+    }
+    return selected_index - 1; // 1..7 years ago
+}
+
+static void dropdown_selected_callback(dropdown_button *dd)
+{
+    selected_year_index = dropdown_to_years_ago(dd->selected_index);
+    window_invalidate();
+}
+
+static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
+{
+    (void) btn;
+    hide_irrelevant = !hide_irrelevant;
+    window_invalidate();
+}
 
 static void trade_ledger_init(void)
 {
+    static lang_fragment dd_fragments[9] = { 0 };
+
+    for (int i = 0; i < 3; i++) {
+        dd_fragments[i].type = LANG_FRAG_LABEL;
+        dd_fragments[i].text_group = CUSTOM_TRANSLATION;
+    }
+    dd_fragments[0].text_id = TR_UI_SELECT_TRADE_LEDGER_YEAR; // anchor
+    dd_fragments[1].text_id = TR_UI_CURRENT_YEAR;
+    dd_fragments[2].text_id = TR_UI_LAST_YEAR;
+
+    for (int i = 3; i < 9; i++) {
+        dd_fragments[i].type = LANG_FRAG_AMOUNT;
+        dd_fragments[i].text_group = CUSTOM_TRANSLATION;
+        dd_fragments[i].text_id = TR_UI_YEAR_AGO;
+        dd_fragments[i].number = i - 1;
+    }
+
+    selected_year_index = 0;
+    dropdown_button_init_simple(600, 510, dd_fragments, 9, &ledger_year_dropdown);
+    ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
+    ledger_year_dropdown.selected_callback = dropdown_selected_callback;
+
+    hide_irrelevant_checkbox = (complex_button) {
+        .x = 26,
+        .y = 510,
+        .width = 250,
+        .height = 20,
+        .left_click_handler = hide_irrelevant_checkbox_clicked,
+        .is_hidden = 0,
+        .is_disabled = 0,
+    };
+
     resource_table = (grid_box_type) {
-        .x = 10,
-        .y = 80,
-        .width = 45 * BLOCK_SIZE,
-        .height = 22 * BLOCK_SIZE,
-        .num_columns = 1,
-        .item_height = 40,
-        .item_margin.horizontal = 10,
-        .item_margin.vertical = 5,
-        .extend_to_hidden_scrollbar = 1,
-        .on_click = 0,
-        .draw_item = draw_resource_row,
+            .x = 10,
+            .y = 80,
+            .width = 45 * BLOCK_SIZE,
+            .height = 22 * BLOCK_SIZE,
+            .num_columns = 1,
+            .item_height = 40,
+            .item_margin.horizontal = 10,
+            .item_margin.vertical = 5,
+            .extend_to_hidden_scrollbar = 1,
+            .on_click = 0,
+            .draw_item = draw_resource_row,
     };
     // get resource list for the scenario
     city_resource_determine_available(1);
@@ -76,12 +137,25 @@ static void draw_background(void)
     graphics_reset_dialog();
 }
 
+static void draw_hide_irrelevant_checkbox(void)
+{
+    const uint8_t *label = translation_for(TR_UI_HIDE_IRRELEVANT_RESOURCES);
+    int box_x = hide_irrelevant_checkbox.x;
+    int box_y = hide_irrelevant_checkbox.y;
+
+    button_border_draw(box_x, box_y, 20, 20, hide_irrelevant_checkbox.is_focused);
+    if (hide_irrelevant) {
+        text_draw((const uint8_t *) "x", box_x + 6, box_y + 3, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    }
+    text_draw(label, box_x + 28, box_y + 2, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+}
+
 static void draw_foreground(void)
 {
     if (!tabs_initialized) {
         // Initialize tabs on first draw
         trade_ledger_init();
-        tab_view_init_simple(&ledger_tabs, 22, 80, 753, 448, 3, TAB_VIEW_STYLE_DEFAULT);
+        tab_view_init_simple(&ledger_tabs, 22, 80, 753, 464, 3, TAB_VIEW_STYLE_DEFAULT);
         ledger_tabs.view_properties.width_mode = TAB_WIDTH_MAX; // make tabs take up all available width
         tab_view_init_tab(&ledger_tabs, 0, trade_draw_content, tab_text_trade);
         tab_view_init_tab(&ledger_tabs, 1, placeholder_content_draw, tab_text_production);
@@ -90,12 +164,14 @@ static void draw_foreground(void)
         tabs_initialized = tab_view_layout(&ledger_tabs) == TAB_LAYOUT_OK; // layout tabs and set initialized flag based on success  
     }
 
-
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
+
     tab_view_draw(&ledger_tabs);
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
     image_buttons_draw(0, 0, image_buttons, 1);
 
+    draw_hide_irrelevant_checkbox();
+    dropdown_button_draw(&ledger_year_dropdown);
     graphics_reset_dialog();
 }
 
@@ -109,10 +185,14 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (image_buttons_handle_mouse(m_dialog, 0, 0, image_buttons, 1, 0)) {
         return;
     }
+    if (complex_button_handle_mouse(m_dialog, &hide_irrelevant_checkbox)) {
+        return;
+    }
     if (input_go_back_requested(m, h)) {
         window_go_back();
     }
     grid_box_handle_input(&resource_table, m_dialog, 1);
+    dropdown_button_handle_mouse(m_dialog, &ledger_year_dropdown);
 }
 
 static void button_close(int param1, int param2)
@@ -140,12 +220,32 @@ static void draw_resource_row(const grid_box_item *item)
     resource_type current_resource = resources->items[real_index];
     int resource_img_id = resource_get_data(current_resource)->image.icon;
     const uint8_t *name = resource_get_data(current_resource)->text;
-    int imported = city_finance_trade_ledger_get_imported(current_resource, 0);
-    int produced = city_finance_trade_ledger_get_produced(current_resource, 0);
-    int consumed = city_finance_trade_ledger_get_consumed(current_resource, 0);
-    int exported = city_finance_trade_ledger_get_exported(current_resource, 0);
-    int balance = city_finance_trade_ledger_get_balance(current_resource, 0);
-    font_t balance_font = (balance < 0) ? FONT_NORMAL_RED : FONT_NORMAL_BLACK;
+    int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
+    int produced = city_finance_trade_ledger_get_produced(current_resource, selected_year_index);
+    int consumed = city_finance_trade_ledger_get_consumed(current_resource, selected_year_index);
+    int exported = city_finance_trade_ledger_get_exported(current_resource, selected_year_index);
+    int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
+    int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
+    // sort this out or wrap it into some helper
+    font_t stock_font;
+    color_t stock_color;
+    font_t balance_font;
+    color_t balance_color;
+    if (stock > 0) {
+        stock_font = FONT_NORMAL_PLAIN;
+        stock_color = COLOR_FONT_GREEN;
+    } else {
+        stock_font = FONT_NORMAL_BLACK;
+        stock_color = COLOR_MASK_NONE;
+    }
+    if (balance < 0) {
+        balance_font = FONT_NORMAL_PLAIN;
+        balance_color = COLOR_FONT_RED;
+    } else {
+        balance_font = FONT_NORMAL_BLACK;
+        balance_color = COLOR_MASK_NONE;
+    }
+
     int x_gap = 40;
     int number_y = item->y + 10;
 
@@ -155,7 +255,8 @@ static void draw_resource_row(const grid_box_item *item)
     text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(balance, 120 + 7 * x_gap, number_y, x_gap, balance_font, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, stock_font);
+    text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, balance_font);
 
 }
 
@@ -175,7 +276,8 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw((const uint8_t *) "Exp", 120 + 4 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Dn", 120 + 7 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Stock", 120 + 6 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Dn", 120 + 8 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
 
 
     grid_box_request_refresh(&resource_table);

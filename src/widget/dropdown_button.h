@@ -23,9 +23,11 @@ struct dropdown_button {
     int selected_value;                    /**< Arbitrary value carried by selected option */
     void (*selected_callback)              /**< click handler for options */
         (dropdown_button *button);         /**< The dropdown_button pointer is handed over to the selected_callback*/
-    void (*rightclick_expanded_callback)  /**< If null, all rightclicks while expanded will de-expand the dropdown*/
+    void (*rightclick_expanded_callback)   /**< If null, all rightclicks while expanded will de-expand the dropdown*/
         (dropdown_button *button);         /**< The dropdown_button pointer is handed over to the rightclick_callback*/
-    /* Layout configuration */
+    short show_origin;                     /**< 1 = show anchor[0] button on no selection, or while expanded */
+    /* 0 = always show selected index if present, instead of the origin/anchor button */
+/* Layout configuration */
     int width;                             /**< Dropdown width: 0 = auto (based on longest text) */
     int spacing;                           /**< Vertical spacing between option buttons (px) */
     int padding;                           /**< Horizontal padding added to text width (px) */
@@ -92,5 +94,21 @@ int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd);
  */
 void dropdown_button_default_option_click(const complex_button *btn);
 
+/**
+ * @brief Exposing internal helper for non-simple init users
+ */
+void dropdown_button_advanced_update_anchor(dropdown_button *dd);
+
+/**
+ * @brief Exposing internal helper for non-simple init users
+ */
+void dropdown_button_advanced_restore_anchor(dropdown_button *dd);
+
+/**
+ * @brief Exposing internal helper for non-simple init users
+ */
+void dropdown_button_advanced_save_anchor(dropdown_button *dd);
 
 #endif // GRAPHICS_DROPDOWN_BUTTON_H
+
+
