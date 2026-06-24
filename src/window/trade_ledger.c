@@ -50,7 +50,7 @@ static image_button image_buttons[] = {
 };
 
 static complex_button hide_irrelevant_checkbox = {
-        .x = 26,
+        .x = 32,
         .y = 510,
         .width = 250,
         .height = 20,
@@ -81,8 +81,12 @@ static void dropdown_selected_callback(dropdown_button *dd)
 static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
 {
     hide_irrelevant = !hide_irrelevant;
-    remove_irrelevant_resources();
-    window_invalidate(); //need to invalidate window to go through init again and re-do the grid box
+    if (hide_irrelevant) {
+        remove_irrelevant_resources();
+    }
+    int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
+    grid_box_update_total_items(&resource_table, total_items);
+    window_invalidate();
 }
 
 static void remove_irrelevant_resources(void)
@@ -153,9 +157,9 @@ static void trade_ledger_init(void)
     if (hide_irrelevant) {
         remove_irrelevant_resources();
         grid_box_init(&resource_table, filtered_resources.size);
+    } else {
+        grid_box_init(&resource_table, resources->size);
     }
-
-    grid_box_init(&resource_table, resources->size);
 }
 
 static void draw_background(void)
@@ -178,7 +182,7 @@ static void draw_hide_irrelevant_checkbox(void)
     if (hide_irrelevant) {
         text_draw((const uint8_t *) "x", box_x + 6, box_y + 3, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     }
-    text_draw(label, box_x + 28, box_y + 2, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw(label, box_x + 28, box_y + 4, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
 }
 
 static void draw_foreground(void)
@@ -258,17 +262,9 @@ static void draw_resource_row(const grid_box_item *item)
     int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
     int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
     // sort this out or wrap it into some helper
-    font_t stock_font;
-    color_t stock_color;
     font_t balance_font;
     color_t balance_color;
-    if (stock > 0) {
-        stock_font = FONT_NORMAL_PLAIN;
-        stock_color = COLOR_FONT_GREEN;
-    } else {
-        stock_font = FONT_NORMAL_BLACK;
-        stock_color = COLOR_MASK_NONE;
-    }
+
     if (balance < 0) {
         balance_font = FONT_NORMAL_PLAIN;
         balance_color = COLOR_FONT_RED;
@@ -286,8 +282,8 @@ static void draw_resource_row(const grid_box_item *item)
     text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, stock_font);
-    text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, balance_font);
+    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, balance_font, balance_color);
 
 }
 
