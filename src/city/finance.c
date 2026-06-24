@@ -82,6 +82,8 @@ static array(transaction_t) last_year_transactions; // array of transaction stru
 // transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
 // we could store more but i dont want crudelios to blame me for the savegame bloat
 
+static void trade_ledger_year_change(void);
+
 
 int city_finance_treasury(void)
 {
