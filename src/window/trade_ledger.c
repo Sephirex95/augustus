@@ -91,9 +91,11 @@ static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
 
 static void remove_irrelevant_resources(void)
 {
-    int i = 0;
-    while (i < filtered_resources.size) {
-        resource_type current_resource = filtered_resources.items[i];
+    filtered_resources.size = 0;
+
+    for (int i = 0; i < resources->size; i++) {
+        resource_type current_resource = resources->items[i];
+
         int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
         int produced = city_finance_trade_ledger_get_produced(current_resource, selected_year_index);
         int consumed = city_finance_trade_ledger_get_consumed(current_resource, selected_year_index);
@@ -101,15 +103,9 @@ static void remove_irrelevant_resources(void)
         int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
         int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
 
-        if (imported == 0 && produced == 0 && consumed == 0 && exported == 0 && stock == 0 && balance == 0) {
-            // Remove this resource from the filtered list
-            for (int j = i; j < filtered_resources.size - 1; j++) {
-                filtered_resources.items[j] = filtered_resources.items[j + 1];
-            }
-            filtered_resources.size--;
-            i--; // Adjust index to account for removed item
+        if (imported || produced || consumed || exported || stock || balance) {
+            filtered_resources.items[filtered_resources.size++] = current_resource;
         }
-        i++; // Move to the next resource
     }
 }
 

@@ -7,11 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DROPDOWN_BUTTON_MAX_COUNT 20 // arbitrary limit for static storage
-
-static complex_button dropdown_button_storage[DROPDOWN_BUTTON_MAX_COUNT] = { 0 }; //buffer for simple init
-static complex_button dropdown_button_anchor_storage = { 0 }; // for restoring anchor
-
 static int calculate_text_width(const complex_button *btn, font_t font)
 {
     if (!btn->sequence || btn->sequence_size == 0) {
@@ -48,8 +43,9 @@ static void save_anchor(dropdown_button *dd)
     if (!dd || dd->num_buttons == 0) {
         return;
     }
+    complex_button *anchor_og = &dd->anchor_backup;
     complex_button *anchor = &dd->buttons[0];
-    memcpy(&dropdown_button_anchor_storage, anchor, sizeof(complex_button));
+    memcpy(anchor_og, anchor, sizeof(complex_button));
 }
 
 static void restore_anchor(dropdown_button *dd)
@@ -59,7 +55,7 @@ static void restore_anchor(dropdown_button *dd)
         return;
     }
     // copy only the visual parameters
-    complex_button *anchor_og = &dropdown_button_anchor_storage;
+    complex_button *anchor_og = &dd->anchor_backup;
     complex_button *anchor = &dd->buttons[0];
     anchor->sequence = anchor_og->sequence;
     anchor->sequence_size = anchor_og->sequence_size;
@@ -115,7 +111,8 @@ static void dropdown_cancel(const complex_button *btn)
 void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     unsigned int num_buttons, int width, int spacing, int padding)
 {
-    dd->buttons = buttons;
+    memcpy(dd->buttons, buttons, sizeof(complex_button) * num_buttons);
+    //dd->buttons = buttons;
     dd->num_buttons = num_buttons;
     dd->expanded = 0;
     dd->selected_index = -1;
@@ -131,7 +128,7 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     }
 
     // Use origin's geometry as anchor
-    complex_button *origin = &buttons[0];
+    complex_button *origin = &dd->buttons[0];
 
     // --- Determine width ---
     int calc_width = width;
@@ -168,8 +165,6 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
         memset(dd, 0, sizeof(*dd));
         return;
     }
-    dd->buttons = dropdown_button_storage;
-    memset(dd->buttons, 0, sizeof(dropdown_button_storage));
     dd->num_buttons = count;
     dd->expanded = 0;
     dd->selected_index = dd->selected_index > 0 ? dd->selected_index : 0; // show the sequence of the origin by default
@@ -245,7 +240,7 @@ void dropdown_button_draw(const dropdown_button *dd)
     }
 }
 
-static void unfocuse_all(const dropdown_button *dd)
+static void unfocus_all(dropdown_button *dd)
 {
     for (unsigned int i = 0; i < dd->num_buttons; i++) {
         dd->buttons[i].is_focused = 0;
@@ -280,7 +275,7 @@ int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd)
                 if (dd->selected_callback && i) { // activate the callback if dropdown state changed. 
                     dd->selected_callback((dropdown_button *) dd); // pass dd as parameter, with selected index set
                 }
-                unfocuse_all(dd); // remove focus from all buttons so the tooltip functions
+                unfocus_all(dd); // remove focus from all buttons so the tooltip functions
                 window_request_refresh();
                 return handled;
             }
@@ -289,14 +284,14 @@ int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd)
             if (dd->rightclick_expanded_callback) {
                 dd->rightclick_expanded_callback((dropdown_button *) dd);
                 dd->expanded = 0; // collapse
-                unfocuse_all(dd); // remove focus from all buttons so the tooltip functions
+                unfocus_all(dd); // remove focus from all buttons so the tooltip functions
                 window_request_refresh();
                 return handled;
             }
         }
         if (m->left.went_up) { // collapse if clicked outside
             dd->expanded = 0;
-            unfocuse_all(dd); // remove focus from all buttons so the tooltip functions
+            unfocus_all(dd); // remove focus from all buttons so the tooltip functions
             window_request_refresh();
         }
     }
