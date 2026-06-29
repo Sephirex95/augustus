@@ -59,6 +59,8 @@ static complex_button hide_irrelevant_checkbox = {
         .is_disabled = 0,
 };
 
+static complex_button header_buttons[6] = { 0 }; //header buttons with sorting implemented - will need mini arrows 
+
 static void trade_draw_content(tab_view *view, tab *active_tab);
 static void draw_resource_row(const grid_box_item *item);
 static void draw_hide_irrelevant_checkbox(void);
@@ -294,7 +296,7 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     int x_gap = 40;
     int starting_y = 65;
     lang_text_draw(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, 20, starting_y, FONT_NORMAL_BLACK);
-    text_draw((const uint8_t *) "#", 120, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    //text_draw((const uint8_t *) "#", 120, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw((const uint8_t *) "Imp", 120 + x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
     text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
