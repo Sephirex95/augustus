@@ -9,10 +9,12 @@
 #define MAX_COMPLEX_BUTTON_PARAMETERS 10 // arbitrary 
 
 typedef enum {
-    COMPLEX_BUTTON_STYLE_DEFAULT,  // Basic style: single rectangle with red border and texture fill
+    COMPLEX_BUTTON_STYLE_DEFAULT,  // Basic style: white/red border, transparent fill - inherited from background
     COMPLEX_BUTTON_STYLE_DEFAULT_SMALL, // like default but small font and less padding
     COMPLEX_BUTTON_STYLE_GRAY,     // main-menu-like style
-    COMPLEX_BUTTON_STANDARD_COLORFUL  // colorful style with gradient background
+    COMPLEX_BUTTON_STYLE_DEFAULT_WOOD, // wood-like style
+    COMPLEX_BUTTON_STYLE_COLORFUL,  // colorful style with gradient background
+    COMPLEX_BUTTON_STYLE_CUSTOM // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
 
 typedef enum {

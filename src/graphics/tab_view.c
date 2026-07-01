@@ -54,6 +54,10 @@ Next iteration - FINISH tab_view as a structure!!
 #define TAB_VIEW_MIN_WIDTH 200 
 #define TAB_VIEW_MIN_HEIGHT 200 
 #define TAB_DEFAULT_MARGIN 10
+
+
+#define CUSTOM_CLR1 0xffa98462  // just for debugging to test multipel colors
+#define CUSTOM_CLR2 0xffb7a08a  // muted taupe brown
 // arbitrary minimum sizes to prevent weird displays
 
 static complex_button_style button_style_for_tab_style(tab_view_style style)
@@ -63,8 +67,8 @@ static complex_button_style button_style_for_tab_style(tab_view_style style)
             return COMPLEX_BUTTON_STYLE_GRAY;
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
             return COMPLEX_BUTTON_STYLE_DEFAULT_SMALL;
-        case TAB_VIEW_STYLE_COLORFUL:
-        case TAB_VIEW_STYLE_DEFAULT:
+        case TAB_VIEW_STYLE_WOOD:
+            return COMPLEX_BUTTON_STYLE_DEFAULT_WOOD;
         default:
             return COMPLEX_BUTTON_STYLE_DEFAULT;
     }
@@ -75,6 +79,8 @@ static font_t button_font_for_tab_style(tab_view_style style)
     switch (style) {
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
             return FONT_SMALL_PLAIN;
+        case TAB_VIEW_STYLE_WOOD:
+            return FONT_NORMAL_BROWN;
         case TAB_VIEW_STYLE_GRAY:
         case TAB_VIEW_STYLE_COLORFUL:
         case TAB_VIEW_STYLE_DEFAULT:
@@ -83,20 +89,39 @@ static font_t button_font_for_tab_style(tab_view_style style)
     }
 }
 
-static color_t color_for_active_tab(tab_view_style style, int is_active)
+static color_t color_for_active_tab_button(tab_view_style style, int is_active)
 {
-    // Only apply color differentiation in colorful mode
-    if (style == TAB_VIEW_STYLE_COLORFUL) {
-        if (is_active) {
-            return COLOR_MASK_NONE;
-        }
-        // Subtle color for inactive tabs in colorful mode
-        return COLOR_MASK_PASTEL_GRAY;
+
+    switch (style) {
+        case TAB_VIEW_STYLE_COLORFUL:
+            return is_active ? COLOR_MASK_NONE : COLOR_MASK_PASTEL_GRAY;
+        case TAB_VIEW_STYLE_WOOD:
+            return COLOR_MASK_PASTEL_BROWN2; // consistent brown for all tabs in wood mode
+        case TAB_VIEW_STYLE_DEFAULT:
+        case TAB_VIEW_STYLE_DEFAULT_SMALL:
+        case TAB_VIEW_STYLE_GRAY:
+        default:
+            return COLOR_MASK_NONE; // uniform color for default and wood styles
     }
-    // For default styles, keep all tabs uniform color
-    return COLOR_MASK_NONE;
 }
 
+static color_t color_for_tab_background(tab_view_style style)
+{
+    switch (style) {
+        case TAB_VIEW_STYLE_DEFAULT:
+        case TAB_VIEW_STYLE_DEFAULT_SMALL:
+            return COLOR_MASK_NONE; // transparent background for default styles
+        case TAB_VIEW_STYLE_COLORFUL:
+            return COLOR_MASK_PASTEL_TURQUOISE; // vibrant background for colorful mode
+        case TAB_VIEW_STYLE_GRAY:
+            return COLOR_MASK_PASTEL_GRAY; // consistent gray for gray mode
+        case TAB_VIEW_STYLE_WOOD:
+            return COLOR_MASK_PASTEL_BROWN2; // wood-like brown for wood style
+        default:
+            return COLOR_MASK_NONE; // fallback to transparent
+    }
+
+}
 
 static void tab_click_handler(const complex_button *btn)
 {
@@ -311,7 +336,7 @@ int tab_view_layout(tab_view *view)
     for (int i = 0; i < tab_count; i++) {
         view->tabs[i].button.x = tab_x + (i == tab_count - 1) - (i == 0);// first pass -1, last pass +1. see note* below
         view->tabs[i].button.y = tab_y;
-        view->tabs[i].button.color_mask = color_for_active_tab(
+        view->tabs[i].button.color_mask = color_for_active_tab_button(
             view->view_properties.style,
             view->state.active_tab == i
         );
@@ -389,7 +414,12 @@ void tab_view_draw(tab_view *view)
     }
     // Draw inner panel for content area (no outer border for tab_view itself)
     int red_content = view->tabs[view->state.active_tab].button.is_focused;
-    button_border_draw(view->x, view->y + 1, view->width, view->height, red_content); // no focus state for the content area itself
+    color_t content_color = color_for_tab_background(view->view_properties.style);
+    graphics_set_clip_rectangle(view->content.x, view->content.y, view->content.width, view->content.height);
+    unbordered_panel_draw_colored(view->content.x, view->content.y,
+         view->content.width / BLOCK_SIZE, view->content.height / BLOCK_SIZE, content_color);
+    graphics_reset_clip_rectangle();
+    button_border_draw_colored(view->x, view->y + 1, view->width, view->height, red_content, content_color); // no focus state for the content area itself
     // y+1 to ever so slightly lower the border 
     view->tabs[view->state.active_tab].button.flush_with_background = 1; // active tab flushes with background
     complex_button_draw(&view->tabs[view->state.active_tab].button); // draw active tab last so it looks flushed

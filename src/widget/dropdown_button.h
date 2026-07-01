@@ -29,8 +29,8 @@ struct dropdown_button {
     void (*rightclick_expanded_callback)   /**< If null, all rightclicks while expanded will de-expand the dropdown*/
         (dropdown_button *button);         /**< The dropdown_button pointer is handed over to the rightclick_callback*/
     short show_origin;                     /**< 1 = show anchor[0] button on no selection, or while expanded */
-                                           /**< 0 = always show selected index if present, instead of the origin button */
-    /* Layout configuration */
+    /**< 0 = always show selected index if present, instead of the origin button */
+/* Layout configuration */
     int width;                             /**< Dropdown width: 0 = auto (based on longest text) */
     int spacing;                           /**< Vertical spacing between option buttons (px) */
     int padding;                           /**< Horizontal padding added to text width (px) */
@@ -66,8 +66,10 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
  * @param frags  Array of lang_fragments (size = count)
  * @param count  Number of fragments (>=1)
  * @param dd     Pointer to dropdown_button to initialize
+ * @param style  Style to apply to all buttons, 0 for default
  */
-void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsigned int count, dropdown_button *dd);
+void dropdown_button_init_simple(int x, int y, const lang_fragment *frags,
+    unsigned int count, dropdown_button *dd, complex_button_style style);
 
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c);
 

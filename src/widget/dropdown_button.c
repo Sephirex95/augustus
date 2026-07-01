@@ -159,7 +159,8 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     }
 }
 
-void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsigned int count, dropdown_button *dd)
+void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsigned int count,
+     dropdown_button *dd, complex_button_style style)
 {
     if (count == 0 || count > DROPDOWN_BUTTON_MAX_COUNT) {
         memset(dd, 0, sizeof(*dd));
@@ -193,7 +194,7 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
     // Setup options [1..count-1]
     for (unsigned int i = 1; i < count; i++) {
         complex_button *opt = &dd->buttons[i];
-        opt->style = COMPLEX_BUTTON_STYLE_DEFAULT;
+        opt->style = style;
         opt->is_hidden = 0;
         opt->is_disabled = 0;
         opt->sequence = &frags[i];

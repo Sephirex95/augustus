@@ -18,6 +18,9 @@
 
 #define PANEL_W 800
 #define PANEL_H 600
+#define LEDGER_CLR COLOR_MASK_PASTEL_GRAY
+#define LEDGER_BG_CLR COLOR_MASK_PASTEL_BROWN
+#define LEDGER_BUTTON_CLR COLOR_MASK_PASTEL_BROWN2
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
@@ -131,7 +134,7 @@ static void trade_ledger_init(void)
     }
 
     selected_year_index = 0;
-    dropdown_button_init_simple(600, 510, dd_fragments, 9, &ledger_year_dropdown);
+    dropdown_button_init_simple(600, 510, dd_fragments, 9, &ledger_year_dropdown, COMPLEX_BUTTON_STYLE_DEFAULT_WOOD);
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
 
@@ -164,7 +167,7 @@ static void draw_background(void)
 {
     window_draw_underlying_window();
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
-    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, COLOR_MASK_NONE);
+    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, LEDGER_CLR);
     inner_panel_draw_colored(8, 8, PANEL_W - 16, 40, COLOR_MASK_NONE);
     lang_text_draw_centered(CUSTOM_TRANSLATION, TR_UI_TRADE_LEDGER_HEADER, 0, 12, PANEL_W, FONT_LARGE_BROWN);
     graphics_reset_dialog();
@@ -178,9 +181,9 @@ static void draw_hide_irrelevant_checkbox(void)
 
     button_border_draw(box_x, box_y, 20, 20, hide_irrelevant_checkbox.is_focused);
     if (hide_irrelevant) {
-        text_draw((const uint8_t *) "x", box_x + 6, box_y + 3, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+        text_draw((const uint8_t *) "x", box_x + 6, box_y + 3, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
     }
-    text_draw(label, box_x + 28, box_y + 4, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw(label, box_x + 28, box_y + 4, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
 }
 
 static void draw_foreground(void)
@@ -188,7 +191,7 @@ static void draw_foreground(void)
     if (!tabs_initialized) {
         // Initialize tabs on first draw
         trade_ledger_init();
-        tab_view_init_simple(&ledger_tabs, 22, 80, 753, 464, 3, TAB_VIEW_STYLE_DEFAULT);
+        tab_view_init_simple(&ledger_tabs, 22, 80, 753, 464, 3, TAB_VIEW_STYLE_WOOD);
         ledger_tabs.view_properties.width_mode = TAB_WIDTH_MAX; // make tabs take up all available width
         tab_view_init_tab(&ledger_tabs, 0, trade_draw_content, tab_text_trade);
         tab_view_init_tab(&ledger_tabs, 1, placeholder_content_draw, tab_text_production);
@@ -267,7 +270,7 @@ static void draw_resource_row(const grid_box_item *item)
         balance_font = FONT_NORMAL_PLAIN;
         balance_color = COLOR_FONT_RED;
     } else {
-        balance_font = FONT_NORMAL_BLACK;
+        balance_font = FONT_NORMAL_BROWN;
         balance_color = COLOR_MASK_NONE;
     }
 
@@ -275,12 +278,12 @@ static void draw_resource_row(const grid_box_item *item)
     int number_y = item->y + 10;
 
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
-    text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(imported, 120 + x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(imported, 120 + x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
     text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, balance_font, balance_color);
 
 }
@@ -295,14 +298,14 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     // header row  - replace with borderless buttons for each column, with sorting func
     int x_gap = 40;
     int starting_y = 65;
-    lang_text_draw(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, 20, starting_y, FONT_NORMAL_BLACK);
-    //text_draw((const uint8_t *) "#", 120, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Imp", 120 + x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Exp", 120 + 4 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Stock", 120 + 6 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Dn", 120 + 8 * x_gap, starting_y, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
+    lang_text_draw(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, 20, starting_y, FONT_NORMAL_BROWN);
+    //text_draw((const uint8_t *) "#", 120, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Imp", 120 + x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Exp", 120 + 4 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Stock", 120 + 6 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Dn", 120 + 8 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
 
 
     grid_box_request_refresh(&resource_table);

@@ -387,7 +387,7 @@ static void dropdown_init(void)
     repeat_interval_dropdown.selected_callback = set_repeat_interval_type;
     repeat_interval_dropdown.selected_index =
         data.event->repeat_interval ? data.event->repeat_interval : REPEAT_INTERVAL_DAYS;
-    dropdown_button_init_simple(dd_x, dd_y, repeat_interval_frags, 4, &repeat_interval_dropdown);
+    dropdown_button_init_simple(dd_x, dd_y, repeat_interval_frags, 4, &repeat_interval_dropdown, 0);
 
 }
 

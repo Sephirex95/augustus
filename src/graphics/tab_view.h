@@ -16,6 +16,7 @@ typedef enum {
     TAB_VIEW_STYLE_DEFAULT,       // Basic style: single rectangle with red border and texture fill
     TAB_VIEW_STYLE_DEFAULT_SMALL, // like default but small font and less padding
     TAB_VIEW_STYLE_GRAY,          // main-menu-like style
+    TAB_VIEW_STYLE_WOOD,          // wood-like style
     TAB_VIEW_STYLE_COLORFUL       // colorful style with gradient background
 } tab_view_style;
 

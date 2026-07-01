@@ -25,7 +25,38 @@ color_t complex_button_basic_colors(int id)
         case 8: return COLOR_MASK_PASTEL_BLUE;
         case 9: return COLOR_MASK_PASTEL_DARK_BLUE;
         case 10: return COLOR_MASK_PASTEL_BLACK;
+        case 11: return COLOR_MASK_PASTEL_BROWN;
         default: return COLOR_MASK_NONE;
+    }
+}
+
+static font_t font_for_button_style(complex_button_style style)
+{
+    switch (style) {
+        case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
+            return FONT_SMALL_PLAIN;
+        case COMPLEX_BUTTON_STYLE_DEFAULT_WOOD:
+            return FONT_NORMAL_BROWN;
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_GRAY:
+        case COMPLEX_BUTTON_STYLE_COLORFUL:
+        default:
+            return FONT_NORMAL_BLACK;
+    }
+}
+
+static color_t color_for_button_style(complex_button_style style)
+{
+    switch (style) {
+        case COMPLEX_BUTTON_STYLE_COLORFUL:
+            return COLOR_MASK_PASTEL_TURQUOISE;
+        case COMPLEX_BUTTON_STYLE_DEFAULT_WOOD:
+            return COLOR_MASK_PASTEL_BROWN2;
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
+        case COMPLEX_BUTTON_STYLE_GRAY:
+        default:
+            return COLOR_MASK_NONE;
     }
 }
 
@@ -33,12 +64,13 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
 {
     font_t font;
     const int inner_margin = 2; // small horizontal margin for text/images
-    switch (base_font) {
-        default:
+    switch (base_font) { // this bit just changes fonts for disabled buttons. It should be moved out of the drawing fnc
         case FONT_NORMAL_BLACK:
             font = !button->is_disabled ? FONT_NORMAL_BLACK : FONT_NORMAL_WHITE;
             break;
         case FONT_SMALL_PLAIN:
+        case FONT_NORMAL_BROWN:
+        default:
             font = base_font;
             break;
     }
@@ -163,19 +195,19 @@ void complex_button_draw(const complex_button *button)
     if (button->is_hidden) {
         return;
     }
-    color_t base_color = button->color_mask ? button->color_mask : COLOR_MASK_NONE;
-    font_t base_font = button->font ? button->font : FONT_NORMAL_BLACK;
+    if (button->style == COMPLEX_BUTTON_STYLE_CUSTOM) {
+        // Custom style - bypasses the default selection of colors/fonts
+        draw_default_style(button, button->font, button->color_mask);
+        return;
+    }
+    color_t base_color = color_for_button_style(button->style);
+    font_t base_font = font_for_button_style(button->style);
     switch (button->style) {
-        case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
-            draw_default_style(button, base_font, base_color);
-            break;
         case COMPLEX_BUTTON_STYLE_GRAY:
             draw_grey_style(button);
             break;
-        case COMPLEX_BUTTON_STYLE_DEFAULT:
-        default:
+        default: // all others use the default function 
             draw_default_style(button, base_font, base_color);
-            break;
     }
 }
 

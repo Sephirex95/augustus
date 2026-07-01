@@ -102,6 +102,9 @@ typedef uint32_t color_t;
 #define COLOR_MASK_PASTEL_GRAY        0xffc0c0c0  // balanced neutral gray
 #define COLOR_MASK_PASTEL_BLACK       0xff3a3a3a  // soft black 
 #define COLOR_MASK_PASTEL_DARK_BLUE   0xff6d87b8  // desaturated navy blue
+#define COLOR_MASK_PASTEL_BROWN       0xffa98462  // medium wood brown
+#define COLOR_MASK_PASTEL_BROWN2      0xffb7a08a  // muted taupe brown
+#define COLOR_MASK_PASTEL_BROWN3      0xffc4a484  // classic pastel brown
 
 #define COLOR_MOUSE_DARK_GRAY 0xff3f3f3f
 #define COLOR_MOUSE_MEDIUM_GRAY 0xff737373
