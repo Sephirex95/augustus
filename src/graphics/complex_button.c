@@ -30,7 +30,7 @@ color_t complex_button_basic_colors(int id)
     }
 }
 
-static font_t font_for_button_style(complex_button_style style)
+font_t complex_button_font_for_style(complex_button_style style)
 {
     switch (style) {
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
@@ -45,7 +45,7 @@ static font_t font_for_button_style(complex_button_style style)
     }
 }
 
-static color_t color_for_button_style(complex_button_style style)
+color_t complex_button_color_for_style(complex_button_style style)
 {
     switch (style) {
         case COMPLEX_BUTTON_STYLE_COLORFUL:
@@ -200,8 +200,8 @@ void complex_button_draw(const complex_button *button)
         draw_default_style(button, button->font, button->color_mask);
         return;
     }
-    color_t base_color = color_for_button_style(button->style);
-    font_t base_font = font_for_button_style(button->style);
+    color_t base_color = complex_button_color_for_style(button->style);
+    font_t base_font = complex_button_font_for_style(button->style);
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
             draw_grey_style(button);

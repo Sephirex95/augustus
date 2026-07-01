@@ -22,10 +22,13 @@
 #define LEDGER_BG_CLR COLOR_MASK_PASTEL_BROWN
 #define LEDGER_BUTTON_CLR COLOR_MASK_PASTEL_BROWN2
 
+static color_t balance_red = COLOR_MASK_RED;
+static font_t balance_font = FONT_NORMAL_BROWN;
+
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
 static void hide_irrelevant_checkbox_clicked(const complex_button *btn);
-static void remove_irrelevant_resources(void);
+static void refresh_irrelevant_resources(void);
 
 static tab_view ledger_tabs;
 static int tabs_initialized = 0;
@@ -86,19 +89,17 @@ static void dropdown_selected_callback(dropdown_button *dd)
 static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
 {
     hide_irrelevant = !hide_irrelevant;
-    if (hide_irrelevant) {
-        remove_irrelevant_resources();
-    }
+    refresh_irrelevant_resources();
     int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
     grid_box_update_total_items(&resource_table, total_items);
     window_invalidate();
 }
 
-static void remove_irrelevant_resources(void)
+static void refresh_irrelevant_resources(void)
 {
     filtered_resources.size = 0;
 
-    for (int i = 0; i < resources->size; i++) {
+    for (unsigned int i = 0; i < resources->size; i++) {
         resource_type current_resource = resources->items[i];
 
         int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
@@ -156,7 +157,7 @@ static void trade_ledger_init(void)
     resources = city_resource_get_available();
     filtered_resources = *resources;
     if (hide_irrelevant) {
-        remove_irrelevant_resources();
+        refresh_irrelevant_resources();
         grid_box_init(&resource_table, filtered_resources.size);
     } else {
         grid_box_init(&resource_table, resources->size);
@@ -263,15 +264,15 @@ static void draw_resource_row(const grid_box_item *item)
     int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
     int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
     // sort this out or wrap it into some helper
-    font_t balance_font;
-    color_t balance_color;
+    font_t bal_font;
+    color_t bal_color;
 
     if (balance < 0) {
-        balance_font = FONT_NORMAL_PLAIN;
-        balance_color = COLOR_FONT_RED;
+        bal_font = balance_font;
+        bal_color = balance_red;
     } else {
-        balance_font = FONT_NORMAL_BROWN;
-        balance_color = COLOR_MASK_NONE;
+        bal_color = COLOR_MASK_NONE;
+        bal_font = FONT_NORMAL_BROWN;
     }
 
     int x_gap = 40;
@@ -284,7 +285,7 @@ static void draw_resource_row(const grid_box_item *item)
     text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
     text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
     text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, balance_font, balance_color);
+    text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, bal_font, bal_color);
 
 }
 
@@ -293,7 +294,7 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     // start with resource overview, second function for by city view
     (void) view;
     (void) active_tab;
-    int active = view->state.active_tab;
+    // int active = view->state.active_tab;
 
     // header row  - replace with borderless buttons for each column, with sorting func
     int x_gap = 40;

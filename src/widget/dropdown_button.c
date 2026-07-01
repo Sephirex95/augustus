@@ -174,13 +174,14 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
     dd->spacing = 2;
     dd->padding = 10;
 
+    font_t style_font = complex_button_font_for_style(style); // ensure font is set for style
     // Setup origin (button 0)
     complex_button *origin = &dd->buttons[0];
     origin->x = x;
     origin->y = y;
-    origin->height = font_definition_for(FONT_NORMAL_BLACK)->line_height + 6;
+    origin->height = font_definition_for(style_font)->line_height + 8;
     origin->width = buttons_width;
-    origin->style = COMPLEX_BUTTON_STYLE_DEFAULT;
+    origin->style = style;
     origin->is_hidden = 0;
     origin->is_disabled = 0;
     int has_selection = dd->selected_index > 0;

@@ -61,6 +61,8 @@ typedef struct complex_button {
 
 
 color_t complex_button_basic_colors(int id);
+font_t complex_button_font_for_style(complex_button_style style);
+color_t complex_button_color_for_style(complex_button_style style);
 void complex_button_draw(const complex_button *button);
 void complex_button_array_draw(const complex_button *buttons, unsigned int num_buttons);
 int complex_button_handle_mouse(const mouse *m, complex_button *btn);
