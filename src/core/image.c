@@ -250,9 +250,6 @@ static struct {
     int max_image_height;
 } data;
 
-static color_t font_normal_brown_main_color = COLOR_MASK_NONE;
-static color_t font_normal_brown_color = COLOR_MASK_NONE;
-
 static void read_header(buffer *buf)
 {
     buffer_skip(buf, 80); // header integers
@@ -608,41 +605,6 @@ static void make_plain_fonts_white(const image *img_info, const image_atlas_data
     }
 }
 
-static color_t make_recolor_font_white(const image *img_info, const image_atlas_data *atlas_data, int start_offset)
-{
-    int brown_start = start_offset + font_definition_for(FONT_NORMAL_BROWN)->image_offset;
-    int limit = font_definition_for(FONT_NORMAL_BLACK)->image_offset -
-        font_definition_for(FONT_NORMAL_PLAIN)->image_offset;
-
-    // Sample the brown color from the first glyph that has visible pixels
-    color_t brown_color = COLOR_MASK_NONE;
-    for (int i = 0; i < limit && brown_color == COLOR_MASK_NONE; i++) {
-        const image *img = &img_info[brown_start + i];
-        if (!img->width || !img->height) {
-            continue;
-        }
-        color_t *pixels = atlas_data->buffers[img->atlas.id & IMAGE_ATLAS_BIT_MASK];
-        int width = atlas_data->image_widths[img->atlas.id & IMAGE_ATLAS_BIT_MASK];
-        pixels += img->atlas.y_offset * width + img->atlas.x_offset;
-        for (int y = 0; y < img->height && brown_color == COLOR_MASK_NONE; y++) {
-            for (int x = 0; x < img->width; x++) {
-                if ((pixels[x] & COLOR_CHANNEL_ALPHA) != ALPHA_TRANSPARENT) {
-                    brown_color = ALPHA_OPAQUE | (pixels[x] & COLOR_CHANNEL_RGB);
-                    break;
-                }
-            }
-            pixels += width;
-        }
-    }
-
-    // Turn FONT_NORMAL_BROWN glyphs white so FONT_NORMAL_RECOLOR shares clean white pixels
-    for (int i = 0; i < limit; i++) {
-        make_font_white(&img_info[brown_start + i], atlas_data);
-    }
-
-    return brown_color;
-}
-
 static void free_draw_data(image_draw_data *draw_datas, int entries)
 {
     for (int i = 0; i < entries; i++) {
@@ -793,8 +755,6 @@ int image_load_climate(int climate_id, int is_editor, int force_reload, int keep
     free_draw_data(draw_data, IMAGE_MAIN_ENTRIES);
     free(tmp_data);
     make_plain_fonts_white(data.main, atlas_data, image_group(GROUP_FONT));
-    font_normal_brown_main_color = make_recolor_font_white(data.main, atlas_data, image_group(GROUP_FONT));
-    font_normal_brown_color = font_normal_brown_main_color;
     if (!keep_atlas_buffers) {
         assets_init(data.is_editor != is_editor, atlas_data->buffers, atlas_data->image_widths);
     }
@@ -892,7 +852,6 @@ static int load_external_fonts(int base_offset)
     free(tmp_data);
     free_draw_data(draw_data, EXTERNAL_FONT_ENTRIES);
     make_plain_fonts_white(data.font, atlas_data, base_offset);
-    font_normal_brown_color = make_recolor_font_white(data.font, atlas_data, base_offset);
     graphics_renderer()->create_image_atlas(atlas_data, 1);
     image_packer_free(&data.packer);
 
@@ -1167,7 +1126,6 @@ int image_load_fonts(encoding_type encoding)
         return load_multibyte_font(MULTIBYTE_FONT_JAPANESE);
     } else {
         free_font_memory();
-        font_normal_brown_color = font_normal_brown_main_color;
         return 1;
     }
 }
@@ -1419,11 +1377,6 @@ void image_crop(image *img, const color_t *pixels)
 int image_group(int group)
 {
     return data.group_image_ids[group];
-}
-
-color_t image_get_font_normal_brown_color(void)
-{
-    return font_normal_brown_color;
 }
 
 const image *image_get(int id)
