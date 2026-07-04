@@ -60,6 +60,8 @@ static color_t base_color_for_font(font_t font)
         case FONT_NORMAL_PLAIN:
         case FONT_LARGE_PLAIN:
             return COLOR_FONT_PLAIN;
+        case FONT_NORMAL_BROWN:
+            return image_get_font_normal_brown_color();
         default:
             return COLOR_MASK_NONE;
     }

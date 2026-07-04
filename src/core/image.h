@@ -158,6 +158,12 @@ void image_crop(image *img, const color_t *pixels);
 int image_group(int group);
 
 /**
+ * Gets the color used to tint FONT_NORMAL_BROWN glyphs (which are stored as white in the atlas)
+ * @return The brown tint color for FONT_NORMAL_BROWN
+ */
+color_t image_get_font_normal_brown_color(void);
+
+/**
  * Gets an image by id
  * @param id Image ID
  * @return Image
