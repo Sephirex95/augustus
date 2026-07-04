@@ -89,13 +89,6 @@ static void draw_multibyte_letter(font_t font, const image *img, int x, int y, c
         case FONT_LARGE_BROWN:
             graphics_renderer()->draw_image(img, x, y, COLOR_FONT_PLAIN, scale);
             break;
-        case FONT_NORMAL_RECOLOR:
-            // Recolorable font - uses white glyphs with color overlay
-            if (!color) {
-                color = COLOR_WHITE;
-            }
-            graphics_renderer()->draw_image(img, x, y, ALPHA_OPAQUE | color, scale);
-            break;
         default: // Plain + brown
             if (!color) {
                 color = base_color_for_font(font);

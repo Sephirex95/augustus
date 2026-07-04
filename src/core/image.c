@@ -603,16 +603,6 @@ static void make_plain_fonts_white(const image *img_info, const image_atlas_data
     for (int i = 0; i < limit; i++) {
         make_font_white(&img_info[i + start_font_offset], atlas_data);
     }
-    // Convert FONT_NORMAL_BROWN glyphs to white for recoloring font
-    start_font_offset = start_offset + font_definition_for(FONT_NORMAL_BROWN)->image_offset;
-    limit = font_definition_for(FONT_TYPES_MAX)->image_offset -
-        font_definition_for(FONT_NORMAL_BROWN)->image_offset;
-    if (limit <= 0) {
-        limit = 134;  // Default number of glyphs per font size
-    }
-    for (int i = 0; i < limit; i++) {
-        make_font_white(&img_info[i + start_font_offset], atlas_data);
-    }
 }
 
 static void free_draw_data(image_draw_data *draw_datas, int entries)
