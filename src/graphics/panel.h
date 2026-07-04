@@ -21,6 +21,8 @@ void unbordered_panel_draw(int x, int y, int width_blocks, int height_blocks);
 
 void unbordered_panel_draw_colored(int x, int y, int width_blocks, int height_blocks, color_t color);
 
+void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color);
+
 void label_draw(int x, int y, int width_blocks, int type);
 
 void large_label_draw(int x, int y, int width_blocks, int type);

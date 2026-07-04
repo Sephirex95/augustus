@@ -18,12 +18,12 @@
 
 #define PANEL_W 800
 #define PANEL_H 600
-#define LEDGER_CLR COLOR_MASK_PASTEL_GRAY
-#define LEDGER_BG_CLR COLOR_MASK_PASTEL_BROWN
-#define LEDGER_BUTTON_CLR COLOR_MASK_PASTEL_BROWN2
 
-static color_t balance_red = COLOR_MASK_RED;
-static font_t balance_font = FONT_NORMAL_BROWN;
+static color_t balance_red = COLOR_MASK_IMPERIAL_RED;
+static font_t balance_font = FONT_NORMAL_RECOLOR;
+static color_t bg_color0 = COLOR_MASK_PASTEL_GRAY;
+static color_t bg_color1 = COLOR_MASK_PASTEL_BROWN2;
+static color_t bg_color2 = 0xffd8c3ad;
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
@@ -168,7 +168,7 @@ static void draw_background(void)
 {
     window_draw_underlying_window();
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
-    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, LEDGER_CLR);
+    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, bg_color0);
     inner_panel_draw_colored(8, 8, PANEL_W - 16, 40, COLOR_MASK_NONE);
     lang_text_draw_centered(CUSTOM_TRANSLATION, TR_UI_TRADE_LEDGER_HEADER, 0, 12, PANEL_W, FONT_LARGE_BROWN);
     graphics_reset_dialog();
@@ -255,6 +255,7 @@ static void draw_resource_row(const grid_box_item *item)
 
     int real_index = item->index;
     resource_type current_resource = hide_irrelevant ? filtered_resources.items[real_index] : resources->items[real_index];
+
     int resource_img_id = resource_get_data(current_resource)->image.icon;
     const uint8_t *name = resource_get_data(current_resource)->text;
     int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
@@ -277,6 +278,11 @@ static void draw_resource_row(const grid_box_item *item)
 
     int x_gap = 40;
     int number_y = item->y + 10;
+    // unbordered_panel_draw_colored(item->x, item->y, item->width / BLOCK_SIZE, item->height / BLOCK_SIZE, bg_color2);
+    // button_border_draw(item->x, item->y, item->width, item->height, 0);
+
+    bordered_panel_draw_colored(item->x, item->y, item->width, item->height, 0, bg_color2);
+
 
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
     text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BROWN, COLOR_MASK_NONE);

@@ -1,6 +1,8 @@
 #include "panel.h"
 
 #include "assets/assets.h"
+#include "graphics/button.h"
+#include "graphics/graphics.h"
 #include "graphics/image.h"
 
 void outer_panel_draw(int x, int y, int width_blocks, int height_blocks)
@@ -126,6 +128,20 @@ void unbordered_panel_draw_colored(int x, int y, int width_blocks, int height_bl
 void unbordered_panel_draw(int x, int y, int width_blocks, int height_blocks)
 {
     unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, COLOR_MASK_NONE);
+}
+
+void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color)
+{
+    if (width_px <= 0 || height_px <= 0) {
+        return;
+    }
+
+    graphics_set_clip_rectangle(x, y, width_px, height_px);
+    int width_blocks = (width_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int height_blocks = (height_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, color);
+    graphics_reset_clip_rectangle();
+    button_border_draw_colored(x, y, width_px, height_px, has_focus, color);
 }
 
 void inner_panel_draw(int x, int y, int width_blocks, int height_blocks)
