@@ -20,10 +20,11 @@
 #define PANEL_H 600
 
 static color_t balance_red = COLOR_MASK_IMPERIAL_RED;
-static font_t balance_font = FONT_NORMAL_RECOLOR;
+static font_t balance_font = FONT_NORMAL_BROWN;
 static color_t bg_color0 = COLOR_MASK_PASTEL_GRAY;
 static color_t bg_color1 = COLOR_MASK_PASTEL_BROWN2;
 static color_t bg_color2 = 0xffd8c3ad;
+static color_t brown_correction = COLOR_BLACK; // white atlas inversion test
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
@@ -242,7 +243,7 @@ static void placeholder_content_draw(tab_view *view, tab *active_tab)
     (void) view;
     (void) active_tab;
     int active = view->state.active_tab;
-    lang_text_draw_sequence(view->tabs[active].button.sequence, 1, 20, 20, FONT_LARGE_BROWN, COLOR_MASK_NONE);
+    lang_text_draw_sequence(view->tabs[active].button.sequence, 1, 20, 20, FONT_LARGE_BROWN, brown_correction);
 }
 
 static void draw_resource_row(const grid_box_item *item)
@@ -285,12 +286,12 @@ static void draw_resource_row(const grid_box_item *item)
 
 
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
-    text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(imported, 120 + x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_BROWN, brown_correction);
+    text_draw_number_centered_colored(imported, 120 + x_gap, number_y, x_gap, FONT_NORMAL_BROWN, brown_correction);
+    text_draw_number_centered_colored(produced, 120 + 2 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, brown_correction);
+    text_draw_number_centered_colored(consumed, 120 + 3 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, brown_correction);
+    text_draw_number_centered_colored(exported, 120 + 4 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, brown_correction);
+    text_draw_number_centered_colored(stock, 120 + 6 * x_gap, number_y, x_gap, FONT_NORMAL_BROWN, brown_correction);
     text_draw_number_centered_colored(balance, 120 + 8 * x_gap, number_y, x_gap, bal_font, bal_color);
 
 }
@@ -307,12 +308,12 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     int starting_y = 65;
     lang_text_draw(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, 20, starting_y, FONT_NORMAL_BROWN);
     //text_draw((const uint8_t *) "#", 120, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Imp", 120 + x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Exp", 120 + 4 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Stock", 120 + 6 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    text_draw((const uint8_t *) "Dn", 120 + 8 * x_gap, starting_y, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
+    text_draw((const uint8_t *) "Imp", 120 + x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
+    text_draw((const uint8_t *) "Pro", 120 + 2 * x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
+    text_draw((const uint8_t *) "Con", 120 + 3 * x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
+    text_draw((const uint8_t *) "Exp", 120 + 4 * x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
+    text_draw((const uint8_t *) "Stock", 120 + 6 * x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
+    text_draw((const uint8_t *) "Dn", 120 + 8 * x_gap, starting_y, FONT_NORMAL_BROWN, brown_correction);
 
 
     grid_box_request_refresh(&resource_table);
