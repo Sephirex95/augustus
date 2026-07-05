@@ -19,6 +19,25 @@
 #define NO_POSITION ((unsigned int) -1)
 #define WIDTH_BORDER 16
 
+/* Next time start here:
+* In dropdown button/complex button styles:
+    *add a style for the inner_panel draw as the background
+    *add a style that mimicks the main menu buttons
+* Remove the sorting button draw and replace it completely with a standard dropdown button.
+* Dropdown button for sorting - icon before text
+* Filter section - draw the static filter icon and border for the entire section.
+* In filter section:
+    * Open/closed cycling button - X / Y / Nothing + tooltip
+    * Sea/Land cycling button - just add tooltip
+    * Resource picker - dropdown as placeholder,
+    *       > think about a grid selector for the future - could be used with other things, like roadblock styles
+    * Sell/Buy/Any - cycling or dropdown? test both.
+* Still need to make a history asset for the dropdown
+* Should also fit RESET button somewhere :
+*   > add a hover on the filter icon that overlays a small red X over it- when pressed, reset filters
+*/
+
+
 // Forward declaration of sidebar_city_entry structure
 typedef struct {
     int sidebar_item_id;
