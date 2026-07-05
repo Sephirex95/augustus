@@ -24,7 +24,10 @@
     *add a style for the inner_panel draw as the background
     *add a style that mimicks the main menu buttons
 * Remove the sorting button draw and replace it completely with a standard dropdown button.
-* Dropdown button for sorting - icon before text
+* Dropdown button for sorting:
+    * icon before text
+    * if sorting selected, leave only selected text + icon before, no 'Sort by' text
+* Move arrow button to it's own border, next to the sorting dropdown. Use the new cutout arrow asset.
 * Filter section - draw the static filter icon and border for the entire section.
 * In filter section:
     * Open/closed cycling button - X / Y / Nothing + tooltip
