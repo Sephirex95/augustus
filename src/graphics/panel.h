@@ -19,9 +19,11 @@ void inner_panel_draw_colored(int x, int y, int width, int height, color_t color
 
 void unbordered_panel_draw(int x, int y, int width_blocks, int height_blocks);
 
+void unbordered_panel_draw_px(int x, int y, int width_px, int height_px);
+
 void unbordered_panel_draw_colored(int x, int y, int width_blocks, int height_blocks, color_t color);
 
-void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color);
+void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color, color_t color_border);
 
 void label_draw(int x, int y, int width_blocks, int type);
 

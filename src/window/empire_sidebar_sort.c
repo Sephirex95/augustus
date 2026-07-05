@@ -10,8 +10,6 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/text.h"
-#include "graphics/grid_box.h"
-#include "core/image_group.h"
 #include "core/string.h"
 #include "input/mouse.h"
 #include "translation/translation.h"
@@ -39,7 +37,6 @@ static struct {
     int hovered_sorting_button;
     int sorting_reversed;
     int expanded_main;
-    int resource_selection_active;
 } sort_data = {
     .current_sorting = SORT_BY_NAME,
     .current_filtering = FILTER_NONE,
@@ -47,7 +44,6 @@ static struct {
     .hovered_sorting_button = NO_POSITION,
     .sorting_reversed = 0,
     .expanded_main = -1,
-    .resource_selection_active = 0
 };
 
 // Arrow button info structure
@@ -111,7 +107,6 @@ void window_empire_sidebar_sort_init(void)
     sort_data.hovered_sorting_button = NO_POSITION;
     sort_data.sorting_reversed = 0;
     sort_data.expanded_main = -1;
-    sort_data.resource_selection_active = 0;
     sorting_button_count = 0;
 }
 
@@ -122,7 +117,6 @@ resource_type window_empire_sidebar_sort_get_selected_filter_resource(void) { re
 int window_empire_sidebar_sort_get_hovered_sorting_button(void) { return sort_data.hovered_sorting_button; }
 int window_empire_sidebar_sort_get_sorting_reversed(void) { return sort_data.sorting_reversed; }
 int window_empire_sidebar_sort_get_expanded_main(void) { return sort_data.expanded_main; }
-int window_empire_sidebar_sort_get_resource_selection_active(void) { return sort_data.resource_selection_active; }
 
 // Setter functions
 void window_empire_sidebar_sort_set_current_sorting(int sorting) { sort_data.current_sorting = sorting; }
@@ -131,7 +125,6 @@ void window_empire_sidebar_sort_set_selected_filter_resource(resource_type resou
 void window_empire_sidebar_sort_set_hovered_sorting_button(int button) { sort_data.hovered_sorting_button = button; }
 void window_empire_sidebar_sort_set_sorting_reversed(int reversed) { sort_data.sorting_reversed = reversed; }
 void window_empire_sidebar_sort_set_expanded_main(int expanded) { sort_data.expanded_main = expanded; }
-void window_empire_sidebar_sort_set_resource_selection_active(int active) { sort_data.resource_selection_active = active; }
 
 // Reset functions
 void window_empire_sidebar_sort_reset_hovered_sorting_button(void) { sort_data.hovered_sorting_button = NO_POSITION; }
@@ -247,48 +240,49 @@ int window_empire_sidebar_sort_city_matches_current_filter(const empire_city *ci
         return 0; // Null cities don't match any filter
     }
 
-    switch (sort_data.current_filtering) {
-        case FILTER_BY_OPEN:
-            return city->is_open;
-        case FILTER_BY_CLOSED:
-            return !city->is_open;
-        case FILTER_BY_RESOURCE:
-        {
-            for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
-                if ((city->buys_resource[r] || city->sells_resource[r]) &&
-                    sort_data.selected_filter_resource == r) {
-                    return 1;
-                }
-            }
-            return 0;
-        }
-        case FILTER_BY_RESOURCE_SELL:
-        {
-            for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
-                if (city->sells_resource[r] &&
-                    sort_data.selected_filter_resource == r) {
-                    return 1;
-                }
-            }
-            return 0;
-        }
-        case FILTER_BY_RESOURCE_BUY:
-        {
-            for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
-                if (city->buys_resource[r] &&
-                    sort_data.selected_filter_resource == r) {
-                    return 1;
-                }
-            }
-            return 0;
-        }
-        case FILTER_BY_LAND:
-            return !city->is_sea_trade;
-        case FILTER_BY_SEA:
-            return city->is_sea_trade;
-        default: // FILTER_NONE
-            return 1;
+    filter_method filters = sort_data.current_filtering;
+    if (filters == FILTER_NONE) {
+        return 1;
     }
+
+    if ((filters & FILTER_BY_OPEN) && !city->is_open) {
+        return 0;
+    }
+    if ((filters & FILTER_BY_CLOSED) && city->is_open) {
+        return 0;
+    }
+    if ((filters & FILTER_BY_LAND) && city->is_sea_trade) {
+        return 0;
+    }
+    if ((filters & FILTER_BY_SEA) && !city->is_sea_trade) {
+        return 0;
+    }
+
+    if (filters & (FILTER_BY_RESOURCE | FILTER_BY_RESOURCE_SELL | FILTER_BY_RESOURCE_BUY)) {
+        int matches_resource = 0;
+
+        for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
+            if (sort_data.selected_filter_resource != r) {
+                continue;
+            }
+            if ((filters & FILTER_BY_RESOURCE) && (city->buys_resource[r] || city->sells_resource[r])) {
+                matches_resource = 1;
+            }
+            if ((filters & FILTER_BY_RESOURCE_SELL) && city->sells_resource[r]) {
+                matches_resource = 1;
+            }
+            if ((filters & FILTER_BY_RESOURCE_BUY) && city->buys_resource[r]) {
+                matches_resource = 1;
+            }
+            break;
+        }
+
+        if (!matches_resource) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 void window_empire_sidebar_sort_draw_simple_button(int x, int y, int width, int height, int is_focused, int group1, int number1,
@@ -296,43 +290,28 @@ void window_empire_sidebar_sort_draw_simple_button(int x, int y, int width, int 
 {
     graphics_set_clip_rectangle(x, y, width, height);
     int height_blocks = height / BLOCK_SIZE;
-    unbordered_panel_draw(x, y, width / BLOCK_SIZE + 1, height_blocks);
+    //unbordered_panel_draw(x, y, width / BLOCK_SIZE + 1, height_blocks);
+    inner_panel_draw(x, y, width / BLOCK_SIZE + 1, height_blocks);
     graphics_reset_clip_rectangle();
     int margin = 8;
     button_border_draw(x, y, width, height, is_focused);
-    int font_height = font_definition_for(FONT_NORMAL_BLACK)->line_height;
+    int font_height = font_definition_for(FONT_NORMAL_GREEN)->line_height;
     int y_text_offset = y + (height / 2) - (font_height / 2);
     int cursor_x = 0, text_x = 0, available_width = 0, image_width = 0, content_width = 0;
-    if (number2 == TR_EMPIRE_SIDE_BAR_FILTER_BY_NONE) { // dont draw second text if it's "None"
-        group2 = -1;
-        number2 = -1;
-    }
     if (image_id > 0) {
         const image *img = image_get(image_id);
         image_width = img->width;
     }
-    // Special handling for resource buttons - use resource name instead of lang_text
-    if (button_type >= BUTTON_INDEX_FILTERING_RESOURCES) {
-        resource_type r = button_type - BUTTON_INDEX_FILTERING_RESOURCES;
-        const uint8_t *resource_name = resource_get_data(r)->text;
-        int text_width = text_get_width(resource_name, FONT_NORMAL_BLACK);
-        // Account for image width if present
-        content_width = text_width;
-        available_width = width - 2 * margin;
-        text_x = x + margin + (available_width - content_width) / 2;
-        cursor_x = text_x + text_draw(resource_name, text_x, y_text_offset, FONT_NORMAL_BLACK, COLOR_MASK_NONE);
-    } else {
-        // Calculate total text width for centering and account for image width if present
-        int text1_width = lang_text_get_width(group1, number1, FONT_NORMAL_BLACK);
-        int text2_width = (number2 >= 0) ? lang_text_get_width(group2, number2, FONT_NORMAL_BLACK) : 0;
-        int total_text_width = text1_width + text2_width;
-        available_width = width - 2 * margin;
-        content_width = total_text_width + image_width;
-        text_x = x + margin + (available_width - content_width) / 2; // Center horizontally
-        cursor_x = text_x + lang_text_draw(group1, number1, text_x, y_text_offset, FONT_NORMAL_BLACK);
-        if (number2 >= 0) {
-            cursor_x += lang_text_draw(group2, number2, cursor_x, y_text_offset, FONT_NORMAL_BLACK);
-        }
+    // Calculate total text width for centering and account for image width if present
+    int text1_width = lang_text_get_width(group1, number1, FONT_NORMAL_GREEN);
+    int text2_width = (number2 >= 0) ? lang_text_get_width(group2, number2, FONT_NORMAL_GREEN) : 0;
+    int total_text_width = text1_width + text2_width;
+    available_width = width - 2 * margin;
+    content_width = total_text_width + image_width;
+    text_x = x + margin + (available_width - content_width) / 2; // Center horizontally
+    cursor_x = text_x + lang_text_draw(group1, number1, text_x, y_text_offset, FONT_NORMAL_GREEN);
+    if (number2 >= 0) {
+        cursor_x += lang_text_draw(group2, number2, cursor_x, y_text_offset, FONT_NORMAL_GREEN);
     }
     if (image_id > 0) {
         const image *img = image_get(image_id);
@@ -369,7 +348,7 @@ void window_empire_sidebar_sort_draw_expanding_buttons(int sidebar_x_min, int si
     int button_v_spacing = button_height + v_margin; // 4px standard spacing
     int button_h_spacing = 10; // 10px horizontal spacing between buttons
     int available_width = sidebar_width - (has_scrollbar ? 4 * BLOCK_SIZE : WIDTH_BORDER); // 4 *blocksize for scrollbar
-    int button_width = (available_width - button_h_spacing) / 2; // Two buttons side by side
+    int button_width = (available_width - 2 * button_h_spacing) / 3; // Three sections for buttons
     int base_x = sidebar_x_min + button_h_spacing;
     int base_y = sidebar_y_min + v_margin; // small margin from the top
 
@@ -383,30 +362,6 @@ void window_empire_sidebar_sort_draw_expanding_buttons(int sidebar_x_min, int si
         CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT, // Base text: "Sort by:"
         CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT_BY_NAME + window_empire_sidebar_sort_get_current_sorting(), 0, 0);
     window_empire_sidebar_sort_draw_sorting_arrow_button(x_sort, base_y, button_width, button_height);
-    int x_filter = base_x + button_width + button_h_spacing;    // Filter main button
-    // Filter main button with current selection displayed
-    int filter_group2 = CUSTOM_TRANSLATION;
-    int filter_number2 = TR_EMPIRE_SIDE_BAR_FILTER_BY_RESOURCE + window_empire_sidebar_sort_get_current_filtering();
-    int filter_image_id = 0;
-    switch (window_empire_sidebar_sort_get_current_filtering()) {
-        case FILTER_BY_RESOURCE:
-        case FILTER_BY_RESOURCE_SELL:
-        case FILTER_BY_RESOURCE_BUY:
-            if (window_empire_sidebar_sort_get_selected_filter_resource() != RESOURCE_NONE) {
-                filter_image_id = resource_get_data(window_empire_sidebar_sort_get_selected_filter_resource())->image.icon;
-            }
-            break;
-        case FILTER_BY_LAND:
-            filter_image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1;
-            break;
-        case FILTER_BY_SEA:
-            filter_image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE);
-            break;
-    }
-
-    window_empire_sidebar_sort_draw_simple_button(x_filter, base_y, button_width, button_height,
-        window_empire_sidebar_sort_get_hovered_sorting_button() == BUTTON_INDEX_FILTER_MAIN, //hovered state
-        CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_FILTER, filter_group2, filter_number2, 1, filter_image_id);
 
     if (window_empire_sidebar_sort_get_expanded_main() == 0) {
         for (int i = 0; i < MAX_SORTING_KEY; ++i) {
@@ -415,35 +370,6 @@ void window_empire_sidebar_sort_draw_expanding_buttons(int sidebar_x_min, int si
             window_empire_sidebar_sort_draw_simple_button(x_sort, y, button_width, button_height,
                 window_empire_sidebar_sort_get_hovered_sorting_button() == button_type, //hovered state
                 CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT_BY_NAME + i, -1, -1, button_type, 0);
-        }
-    } else if (window_empire_sidebar_sort_get_expanded_main() == 1) {
-        if (window_empire_sidebar_sort_get_resource_selection_active()) {
-            // Show resource list instead of normal filter options
-            int resource_count = 0;
-            for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
-                if (resource_is_storable(r) &&
-                (empire_can_export_resource_potentially(r) || empire_can_import_resource_potentially(r))) {
-                    int button_type = BUTTON_INDEX_FILTERING_RESOURCES + r; // Use 100+ range for resource buttons
-                    int y = base_y + v_margin + button_height + resource_count * button_v_spacing;
-                    int is_focused = (window_empire_sidebar_sort_get_hovered_sorting_button() == button_type);
-                    window_empire_sidebar_sort_draw_simple_button(x_filter, y, button_width, button_height, is_focused,
-                        -1, -1, -1, -1, button_type, resource_get_data(r)->image.icon);
-                    // text doesn't matter, resource name will decided basing on button_type
-                    resource_count++;
-                }
-            }
-        } else {
-            // Show normal filter options
-            for (int i = 0; i < MAX_FILTER_KEY; ++i) {
-                int button_type = BUTTON_INDEX_FIRST_FILTER_METHOD + i;
-                int y = base_y + v_margin + button_height + i * button_v_spacing;
-                int translation_key = TR_EMPIRE_SIDE_BAR_FILTER_BY_RESOURCE + i;
-                int is_focused = (window_empire_sidebar_sort_get_hovered_sorting_button() == button_type);
-                int image_id = (i == FILTER_BY_LAND) ? image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1 :
-                    (i == FILTER_BY_SEA) ? image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) : 0; //default 0
-                window_empire_sidebar_sort_draw_simple_button(x_filter, y, button_width, button_height, is_focused,
-                    CUSTOM_TRANSLATION, translation_key, -1, -1, button_type, image_id);
-            }
         }
     }
 }
@@ -466,10 +392,8 @@ int window_empire_sidebar_sort_handle_expanding_buttons_input(const mouse *m)
     }
 
     // If right-clicked and something is expanded: collapse it and exit
-    if (m->right.went_up &&
-        (window_empire_sidebar_sort_get_expanded_main() != NO_POSITION || window_empire_sidebar_sort_get_resource_selection_active())) {
+    if (m->right.went_up && window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) {
         window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-        window_empire_sidebar_sort_set_resource_selection_active(0);
         return 1; // Block further input
     }
 
@@ -485,60 +409,11 @@ int window_empire_sidebar_sort_handle_expanding_buttons_input(const mouse *m)
                     window_empire_sidebar_sort_set_expanded_main((window_empire_sidebar_sort_get_expanded_main() == BUTTON_INDEX_SORT_MAIN) ?
                      NO_POSITION : BUTTON_INDEX_SORT_MAIN);
                     return 1;
-                } else if (btn->button_type == BUTTON_INDEX_FILTER_MAIN) {
-                    if (window_empire_sidebar_sort_get_expanded_main() == BUTTON_INDEX_FILTER_MAIN) {
-                        // Already expanded, collapse it
-                        window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-                        window_empire_sidebar_sort_set_resource_selection_active(0);
-                    } else {
-                        // Expand and show normal filter options (not resource selection)
-                        window_empire_sidebar_sort_set_expanded_main(BUTTON_INDEX_FILTER_MAIN);
-                        window_empire_sidebar_sort_set_resource_selection_active(0); // Always start with normal filters
-                    }
-                    return 1;
                 } else if (btn->button_type >= BUTTON_INDEX_FIRST_SORT_METHOD &&
-                           btn->button_type < BUTTON_INDEX_FIRST_FILTER_METHOD) {
+                           btn->button_type < BUTTON_INDEX_FIRST_SORT_METHOD + MAX_SORTING_KEY) {
                     window_empire_sidebar_sort_set_current_sorting(btn->button_type - BUTTON_INDEX_FIRST_SORT_METHOD);
                     window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
                     return 1;
-                } else if (btn->button_type >= BUTTON_INDEX_FIRST_FILTER_METHOD &&
-                           btn->button_type < BUTTON_INDEX_FILTERING_RESOURCES) {
-                    int filter_index = btn->button_type - BUTTON_INDEX_FIRST_FILTER_METHOD;
-                    // Ensure filter_index is within valid bounds
-                    if (filter_index >= 0 && filter_index < MAX_FILTER_KEY) {
-                        if (filter_index == FILTER_BY_RESOURCE ||
-                            filter_index == FILTER_BY_RESOURCE_SELL ||
-                            filter_index == FILTER_BY_RESOURCE_BUY) {
-                            window_empire_sidebar_sort_set_current_filtering(filter_index);
-                            window_empire_sidebar_sort_set_resource_selection_active(1);
-                            return 1;
-                        } else {
-                            // Normal filter selection
-                            window_empire_sidebar_sort_set_current_filtering(filter_index);
-                            window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-                            window_empire_sidebar_sort_set_resource_selection_active(0);
-                            return 1;
-                        }
-                    }
-                } else if (btn->button_type >= BUTTON_INDEX_FILTERING_RESOURCES) {
-                    // Resource button clicked (in resource selection mode)
-                    resource_type selected_resource = btn->button_type - BUTTON_INDEX_FILTERING_RESOURCES;
-                    // Validate resource is within bounds
-                    if (selected_resource >= RESOURCE_MIN && selected_resource < RESOURCE_MAX) {
-                        window_empire_sidebar_sort_set_selected_filter_resource(selected_resource);
-                        // SELL, BUY or BOTH
-                        int current_filter = window_empire_sidebar_sort_get_current_filtering();
-                        if (current_filter == FILTER_BY_RESOURCE_SELL) {
-                            window_empire_sidebar_sort_set_current_filtering(FILTER_BY_RESOURCE_SELL);
-                        } else if (current_filter == FILTER_BY_RESOURCE_BUY) {
-                            window_empire_sidebar_sort_set_current_filtering(FILTER_BY_RESOURCE_BUY);
-                        } else {
-                            window_empire_sidebar_sort_set_current_filtering(FILTER_BY_RESOURCE);
-                        }
-                        window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-                        window_empire_sidebar_sort_set_resource_selection_active(0);
-                        return 1;
-                    }
                 }
                 window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
                 return 1; //clicked away
@@ -549,7 +424,6 @@ int window_empire_sidebar_sort_handle_expanding_buttons_input(const mouse *m)
     if (m->left.went_up && window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) {
         // If left-clicked outside any button, collapse the expanded section
         window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-        window_empire_sidebar_sort_set_resource_selection_active(0);
         return 1; // Block further input
     }
     return (window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) ? 1 : 0;

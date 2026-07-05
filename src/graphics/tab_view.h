@@ -11,6 +11,7 @@ typedef struct tab tab;
 typedef struct tab_view tab_view;
 
 typedef void (*content_draw_callback)(tab_view *, tab *);
+typedef int (*content_mouse_handler)(const mouse *, void *);
 
 typedef enum {
     TAB_VIEW_STYLE_DEFAULT,       // Basic style: single rectangle with red border and texture fill
@@ -105,6 +106,8 @@ void tab_view_destroy(tab_view *view);
 int tab_view_layout(tab_view *view); //returns TAB_LAYOUT_OK for successful layout
 void tab_view_draw(tab_view *view);
 int tab_view_handle_mouse(const mouse *m, tab_view *view);
+int tab_view_handle_content_mouse(const tab_view *view, const mouse *m, int source_width, int source_height,
+    content_mouse_handler handler, void *user_data);
 
 /* Tab configuration */
 void tab_view_init_tab(tab_view *view, int tab_index, content_draw_callback callback, const lang_fragment *frag);

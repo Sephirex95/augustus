@@ -545,7 +545,7 @@ static void button_go_to_orders(const generic_button *button)
 
 int window_building_handle_rubble_button(const mouse *m, building_info_context *c)
 {
-    return complex_button_handle_mouse(m, repair_building_button);
+    return complex_button_handle_mouse(repair_building_button, m);
 }
 
 int window_building_handle_mouse_roadblock_button(const mouse *m, building_info_context *c)

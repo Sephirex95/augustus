@@ -19,16 +19,20 @@
 #define PANEL_W 800
 #define PANEL_H 600
 
-static color_t balance_red = COLOR_MASK_IMPERIAL_RED;
-static font_t balance_font = FONT_NORMAL_BROWN;
-static color_t bg_color0 = COLOR_MASK_PASTEL_GRAY;
-static color_t bg_color1 = COLOR_MASK_PASTEL_BROWN2;
-static color_t bg_color2 = 0xffd8c3ad;
-static color_t brown_correction = COLOR_BLACK; // white atlas inversion test
+static color_t balance_font_red = 0;
+static font_t balance_font = FONT_NORMAL_RED;
+static font_t balance_font_green = FONT_NORMAL_GREEN;
+static color_t bg_color_window = COLOR_MASK_PASTEL_GRAY;
+static color_t bg_color_tabs = COLOR_MASK_PASTEL_BROWN2;
+static color_t bg_color_items = 0xffd8c3ad;
+static color_t brown_correction = 0; // white atlas inversion test
+static color_t green_correction = 0; // white atlas inversion test
+static color_t active_item_border = COLOR_WHITE;
+
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
-static void hide_irrelevant_checkbox_clicked(const complex_button *btn);
+static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn);
 static void refresh_irrelevant_resources(void);
 
 static tab_view ledger_tabs;
@@ -39,6 +43,10 @@ static grid_box_type resource_table;
 static dropdown_button ledger_year_dropdown;
 static int selected_year_index = 0;
 static int hide_irrelevant = 0;
+
+static const lang_fragment hide_irrelevant_sequence[] = {
+    {.type = LANG_FRAG_LABEL, .text_group = CUSTOM_TRANSLATION, .text_id = TR_UI_HIDE_IRRELEVANT_RESOURCES},
+};
 
 static const lang_fragment tab_text_trade[] = {
     {.type = LANG_FRAG_TEXT, .text = (const uint8_t *) "Trade"},
@@ -56,22 +64,24 @@ static image_button image_buttons[] = {
     {744, 554, 24, 24, IB_NORMAL, GROUP_CONTEXT_ICONS, 4, button_close, button_none, 0, 0, 1},
 };
 
-static complex_button hide_irrelevant_checkbox = {
-        .x = 32,
-        .y = 510,
+static checkbox_button hide_irrelevant_checkbox = {
+        .x = 12,
+        .y = 430,
         .width = 250,
         .height = 20,
         .left_click_handler = hide_irrelevant_checkbox_clicked,
-        .is_hidden = 0,
-        .is_disabled = 0,
+    .font = FONT_NORMAL_BROWN,
+    .sequence = hide_irrelevant_sequence,
+    .sequence_size = 1,
 };
 
 static complex_button header_buttons[6] = { 0 }; //header buttons with sorting implemented - will need mini arrows 
 
 static void trade_draw_content(tab_view *view, tab *active_tab);
 static void draw_resource_row(const grid_box_item *item);
-static void draw_hide_irrelevant_checkbox(void);
-static void hide_irrelevant_checkbox_clicked(const complex_button *btn);
+static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn);
+static int handle_resource_table_mouse(const mouse *m, void *user_data);
+static int handle_trade_tab_mouse(const mouse *m, void *user_data);
 
 static int dropdown_to_years_ago(int selected_index)
 {
@@ -87,9 +97,9 @@ static void dropdown_selected_callback(dropdown_button *dd)
     window_invalidate();
 }
 
-static void hide_irrelevant_checkbox_clicked(const complex_button *btn)
+static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn)
 {
-    hide_irrelevant = !hide_irrelevant;
+    hide_irrelevant = btn->is_checked;
     refresh_irrelevant_resources();
     int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
     grid_box_update_total_items(&resource_table, total_items);
@@ -136,7 +146,7 @@ static void trade_ledger_init(void)
     }
 
     selected_year_index = 0;
-    dropdown_button_init_simple(600, 510, dd_fragments, 9, &ledger_year_dropdown, COMPLEX_BUTTON_STYLE_DEFAULT_WOOD);
+    dropdown_button_init_simple(580, 430, dd_fragments, 9, &ledger_year_dropdown, COMPLEX_BUTTON_STYLE_LIGHT_WOOD);
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
 
@@ -157,6 +167,7 @@ static void trade_ledger_init(void)
     city_resource_determine_available(1);
     resources = city_resource_get_available();
     filtered_resources = *resources;
+    hide_irrelevant_checkbox.is_checked = hide_irrelevant;
     if (hide_irrelevant) {
         refresh_irrelevant_resources();
         grid_box_init(&resource_table, filtered_resources.size);
@@ -169,23 +180,10 @@ static void draw_background(void)
 {
     window_draw_underlying_window();
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
-    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, bg_color0);
+    outer_panel_draw_colored(0, 0, PANEL_W, PANEL_H, bg_color_window);
     inner_panel_draw_colored(8, 8, PANEL_W - 16, 40, COLOR_MASK_NONE);
-    lang_text_draw_centered(CUSTOM_TRANSLATION, TR_UI_TRADE_LEDGER_HEADER, 0, 12, PANEL_W, FONT_LARGE_BROWN);
+    lang_text_draw_centered(CUSTOM_TRANSLATION, TR_UI_TRADE_LEDGER_HEADER, 0, 17, PANEL_W, FONT_LARGE_BROWN);
     graphics_reset_dialog();
-}
-
-static void draw_hide_irrelevant_checkbox(void)
-{
-    const uint8_t *label = translation_for(TR_UI_HIDE_IRRELEVANT_RESOURCES);
-    int box_x = hide_irrelevant_checkbox.x;
-    int box_y = hide_irrelevant_checkbox.y;
-
-    button_border_draw(box_x, box_y, 20, 20, hide_irrelevant_checkbox.is_focused);
-    if (hide_irrelevant) {
-        text_draw((const uint8_t *) "x", box_x + 6, box_y + 3, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
-    }
-    text_draw(label, box_x + 28, box_y + 4, FONT_NORMAL_BROWN, COLOR_MASK_NONE);
 }
 
 static void draw_foreground(void)
@@ -203,13 +201,9 @@ static void draw_foreground(void)
     }
 
     graphics_in_dialog_with_size(PANEL_W, PANEL_H);
-
-    tab_view_draw(&ledger_tabs);
-    graphics_in_dialog_with_size(PANEL_W, PANEL_H);
     image_buttons_draw(0, 0, image_buttons, 1);
+    tab_view_draw(&ledger_tabs);
 
-    draw_hide_irrelevant_checkbox();
-    dropdown_button_draw(&ledger_year_dropdown);
     graphics_reset_dialog();
 }
 
@@ -223,14 +217,37 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (image_buttons_handle_mouse(m_dialog, 0, 0, image_buttons, 1, 0)) {
         return;
     }
-    if (complex_button_handle_mouse(m_dialog, &hide_irrelevant_checkbox)) {
+    if (checkbox_button_handle_mouse(&hide_irrelevant_checkbox, m_dialog)) {
         return;
     }
     if (input_go_back_requested(m, h)) {
         window_go_back();
     }
-    grid_box_handle_input(&resource_table, m_dialog, 1);
-    dropdown_button_handle_mouse(m_dialog, &ledger_year_dropdown);
+    tab_view_handle_content_mouse(&ledger_tabs, m_dialog, PANEL_W, PANEL_H, handle_trade_tab_mouse, 0);
+}
+
+static int handle_resource_table_mouse(const mouse *m, void *user_data)
+{
+    grid_box_type *grid = user_data;
+    if (!grid) {
+        return 0;
+    }
+    return grid_box_handle_input(grid, m, 1);
+}
+
+static int handle_trade_tab_mouse(const mouse *m, void *user_data)
+{
+    (void) user_data;
+    if (tab_view_get_active_tab(&ledger_tabs) != 0) {
+        return 0;
+    }
+    if (dropdown_button_handle_mouse(m, &ledger_year_dropdown)) {
+        return 1;
+    }
+    if (checkbox_button_handle_mouse(&hide_irrelevant_checkbox, m)) {
+        return 1;
+    }
+    return handle_resource_table_mouse(m, &resource_table);
 }
 
 static void button_close(int param1, int param2)
@@ -271,18 +288,18 @@ static void draw_resource_row(const grid_box_item *item)
 
     if (balance < 0) {
         bal_font = balance_font;
-        bal_color = balance_red;
+        bal_color = balance_font_red;
     } else {
-        bal_color = COLOR_MASK_NONE;
-        bal_font = FONT_NORMAL_BROWN;
+        bal_color = green_correction;
+        bal_font = balance_font_green;
     }
 
     int x_gap = 40;
     int number_y = item->y + 10;
-    // unbordered_panel_draw_colored(item->x, item->y, item->width / BLOCK_SIZE, item->height / BLOCK_SIZE, bg_color2);
+    // unbordered_panel_draw_colored(item->x, item->y, item->width / BLOCK_SIZE, item->height / BLOCK_SIZE, bg_color_items);
     // button_border_draw(item->x, item->y, item->width, item->height, 0);
-
-    bordered_panel_draw_colored(item->x, item->y, item->width, item->height, 0, bg_color2);
+    int is_focused = item->is_focused;
+    bordered_panel_draw_colored(item->x, item->y, item->width, item->height, is_focused, bg_color_items, active_item_border);
 
 
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
@@ -318,6 +335,8 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
 
     grid_box_request_refresh(&resource_table);
     grid_box_draw(&resource_table);
+    checkbox_button_draw(&hide_irrelevant_checkbox);
+    dropdown_button_draw(&ledger_year_dropdown);
 
 }
 

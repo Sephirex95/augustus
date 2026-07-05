@@ -270,7 +270,6 @@ int grid_box_handle_input(grid_box_type *grid_box, const mouse *m, int in_dialog
         return 1;
     }
     if (determine_focus(grid_box, m->x, m->y)) {
-
         grid_box_request_refresh(grid_box);
     }
 

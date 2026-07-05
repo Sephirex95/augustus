@@ -219,7 +219,7 @@ int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c
     if (dd->num_buttons == 0) {
         return 0;
     }
-    return complex_button_array_handle_tooltip(dd->buttons, dd->num_buttons, c);
+    return complex_button_array_handle_tooltip(dd->buttons, c, dd->num_buttons);
 }
 
 void dropdown_button_draw(const dropdown_button *dd)
@@ -256,7 +256,7 @@ int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd)
         return 0;
     }
 
-    if (complex_button_handle_mouse(m, &dd->buttons[0])) {    // Handle origin
+    if (complex_button_handle_mouse(&dd->buttons[0], m)) {    // Handle origin
         handled = 1;
         window_request_refresh();
         return handled; // don't process options on same click
@@ -271,7 +271,7 @@ int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd)
             return handled; // collapse on any rightclick if no callback
         }
         for (unsigned int i = 1; i < dd->num_buttons; i++) { //handle option buttons
-            if (complex_button_handle_mouse(m, &dd->buttons[i])) {
+            if (complex_button_handle_mouse(&dd->buttons[i], m)) {
                 dd->expanded = 0; // collapse
                 dd->selected_index = i; // This is the best place to set selected_index
                 if (dd->selected_callback && i) { // activate the callback if dropdown state changed. 

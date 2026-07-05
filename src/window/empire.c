@@ -17,6 +17,7 @@
 #include "game/tutorial.h"
 #include "game/system.h"
 #include "graphics/arrow_button.h"
+#include "graphics/complex_button.h"
 #include "graphics/generic_button.h"
 #include "graphics/graphics.h"
 #include "graphics/grid_box.h"
@@ -201,6 +202,7 @@ static void window_empire_draw_trade_route_pulses(const empire_object *route_obj
 static trade_row_style get_trade_row_style(const empire_city *city, int is_sell, int max_draw_width, trade_style_variant variant);
 static open_trade_button_style get_open_trade_button_style(int x, int y, trade_style_variant variant);
 
+
 //buttons
 static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
@@ -223,6 +225,7 @@ static int is_sidebar_border(const mouse *m);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
+static int route_type_filter_button_click(const cycling_button *button);
 
 //buttons position registrators to enable dynamic positioning
 static void register_resource_button(int x, int y, int width, int height, resource_type r, int highlight);
@@ -233,6 +236,8 @@ static trade_open_button trade_open_buttons[MAX_TRADE_OPEN_BUTTONS];
 static int trade_open_button_count = 0;
 static resource_button resource_buttons[MAX_RESOURCE_BUTTONS];
 static int resource_button_count = 0;
+static cycling_button route_type_filter_btn;
+static cycling_button route_open_filter_btn;
 
 //sidebar-related arrays and variables
 static scrollbar_type sidebar_scrollbar;
@@ -325,7 +330,6 @@ static void init(void)
         window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE); // no resource selected
     }
     window_empire_sidebar_sort_set_hovered_sorting_button(NO_POSITION);
-    window_empire_sidebar_sort_set_resource_selection_active(0); // not in resource selection mode
 
     data.sidebar.width_percent = config_get(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH); // default sidebar width (25%)
     data.sidebar.dragging = 0; // not dragging initially
@@ -380,6 +384,28 @@ static void setup_sidebar(void)
     data.sidebar.y_max = map_draw_y_max;
 }
 
+static void setup_route_type_filter_button(void)
+{
+    int x = data.sidebar.x_min + data.sidebar.margin_left + 300;
+    int y = data.sidebar.y_min + 5; // below sorting buttons
+    int width = 54;
+    int height = 32;
+
+    int sea_trade_icon = assets_get_image_id("UI", "Sea_Trade_Icon_Centered");
+    int land_trade_icon = assets_get_image_id("UI", "Land_Trade_Icon_Centered");
+    int both_trade_icon = assets_get_image_id("UI", "Both_Trade_Icons");
+
+    route_type_filter_btn.x = x;
+    route_type_filter_btn.y = y;
+    route_type_filter_btn.width = width;
+    route_type_filter_btn.height = height;
+    route_type_filter_btn.left_click_handler = route_type_filter_button_click;
+    route_type_filter_btn.state_count = 3;
+    route_type_filter_btn.states[0].image_before = both_trade_icon; // All
+    route_type_filter_btn.states[1].image_before = land_trade_icon; // Land
+    route_type_filter_btn.states[2].image_before = sea_trade_icon;  // Sea
+}
+
 static void setup_sidebar_gridbox(void)
 {
     if (data.sidebar.width_percent < 1) {
@@ -388,7 +414,7 @@ static void setup_sidebar_gridbox(void)
 
     int y = data.sidebar.y_min + data.sidebar.margin_top;
     sidebar_city_count = 0;
-
+    setup_route_type_filter_button();
     for (int i = 1; i < empire_city_get_array_size(); i++) { // skip "no city" entry
         empire_city *city = empire_city_get(i);
         if (!city->in_use || city->type != EMPIRE_CITY_TRADE) continue;
@@ -434,6 +460,8 @@ static void setup_sidebar_gridbox(void)
     sidebar_grid_box.offset_scrollbar_y = grid_box_has_scrollbar(&sidebar_grid_box) ? -20 : 0;
     grid_box_set_bounds(&sidebar_grid_box, sidebar_grid_box.x, sidebar_grid_box.y, sidebar_grid_box.width, sidebar_grid_box.height);
 }
+
+
 
 // -------------------------------------------------------------------------------------------------------
 //                                              SIDEBAR HELPERS
@@ -1711,7 +1739,6 @@ static void draw_panel_buttons(void)
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 100, image_button_advisor, 1);
     image_buttons_draw(data.panel.x_min + 24, data.y_max - 100, image_button_show_prices, 1);
     image_buttons_draw(data.panel.x_min + 50, data.y_max - 44, image_button_ledger, 1);
-    //image_buttons_draw(data.sidebar.x_min-32,data.y_min + 100, button_toggle_sidebar_width, 1);
     if (data.selected_button != NO_POSITION) {
         const trade_open_button *btn = &trade_open_buttons[data.selected_button];
         button_border_draw(btn->x - 1, btn->y - 1, btn->width + 2, btn->height + 2, 1);
@@ -1726,6 +1753,10 @@ static void draw_sidebar_grid_box(void)
         data.sidebar.width,
         data.sidebar.height
     );
+    if (data.sidebar.width_percent > 25 && (!data.sidebar.dragging || data.sidebar.dragging_width > 5)) {
+        inner_panel_draw(data.sidebar.x_min, data.sidebar.y_min, (data.sidebar.width / BLOCK_SIZE) + 1, 50 / BLOCK_SIZE);
+
+    }
     grid_box_draw(&sidebar_grid_box);
     graphics_set_clip_rectangle(
         data.sidebar.x_min,
@@ -1733,8 +1764,9 @@ static void draw_sidebar_grid_box(void)
         data.sidebar.width,
         data.sidebar.height
     );
-    if (data.sidebar.width_percent > 5 && (!data.sidebar.dragging || data.sidebar.dragging_width > 5)) {
+    if (data.sidebar.width_percent > 25 && (!data.sidebar.dragging || data.sidebar.dragging_width > 5)) {
         window_empire_sidebar_sort_draw_expanding_buttons(data.sidebar.x_min, data.sidebar.y_min, data.sidebar.width, grid_box_has_scrollbar(&sidebar_grid_box));
+        cycling_button_draw(&route_type_filter_btn);
     }
 
     graphics_reset_clip_rectangle();
@@ -1966,6 +1998,29 @@ void handle_sidebar_dragging(const mouse *m)
     data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
 }
 
+static int route_type_filter_button_click(const cycling_button *button)
+{
+    filter_method filters = window_empire_sidebar_sort_get_current_filtering();
+
+    filters &= ~(FILTER_BY_LAND | FILTER_BY_SEA);
+
+    switch (button->state_index) {
+        case 0: // All
+            break;
+
+        case 1: // Land
+            filters |= FILTER_BY_LAND;
+            break;
+
+        case 2: // Sea
+            filters |= FILTER_BY_SEA;
+            break;
+    }
+
+    window_empire_sidebar_sort_set_current_filtering(filters);
+    window_request_refresh();
+    return 1;
+}
 
 static void handle_input(const mouse *m, const hotkeys *h)
 {
@@ -1983,8 +2038,10 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (window_empire_sidebar_sort_handle_expanding_buttons_input(m)) {
             return; //block other input handling if the expanding buttons are active
         }
+        if (cycling_button_handle_mouse(&route_type_filter_btn, m)) {
+            return;
+        }
         grid_box_handle_input(&sidebar_grid_box, m, 1);
-
     }
 
     if (m->is_touch) {

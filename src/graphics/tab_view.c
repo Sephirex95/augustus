@@ -415,7 +415,7 @@ void tab_view_draw(tab_view *view)
     // Draw inner panel for content area (no outer border for tab_view itself)
     int red_content = view->tabs[view->state.active_tab].button.is_focused;
     color_t content_color = color_for_tab_background(view->view_properties.style);
-    bordered_panel_draw_colored(view->content.x, view->content.y, view->content.width, view->content.height, red_content, content_color);
+    bordered_panel_draw_colored(view->content.x, view->content.y, view->content.width, view->content.height, red_content, content_color, content_color);
     // y+1 to ever so slightly lower the border 
     view->tabs[view->state.active_tab].button.flush_with_background = 1; // active tab flushes with background
     complex_button_draw(&view->tabs[view->state.active_tab].button); // draw active tab last so it looks flushed
@@ -442,13 +442,41 @@ int tab_view_handle_mouse(const mouse *m, tab_view *view)
     // Handle mouse for all visible tabs
     for (int i = 0; i < view->view_properties.count; i++) {
         if (view->tabs[i].visible && view->tabs[i].enabled) {
-            if (complex_button_handle_mouse(m, &view->tabs[i].button)) {
+            if (complex_button_handle_mouse(&view->tabs[i].button, m)) {
                 handled = 1;
             }
         }
     }
 
     return handled;
+}
+
+static int tab_view_translate_mouse_to_content(const tab_view *view, const mouse *m, int source_width, int source_height,
+    mouse *out_mouse)
+{
+    if (!m || !out_mouse) {
+        return 0;
+    }
+
+    *out_mouse = *m;
+    if (!view || view->width <= 0 || view->height <= 0) {
+        return 0;
+    }
+
+    // Map mouse coordinates from source dialog space to tab content drawing space.
+    out_mouse->x += (view->width - source_width) / 2;
+    out_mouse->y += (view->height - source_height) / 2;
+    return 1;
+}
+
+int tab_view_handle_content_mouse(const tab_view *view, const mouse *m, int source_width, int source_height,
+    content_mouse_handler handler, void *user_data)
+{
+    mouse mapped_mouse;
+    if (!handler || !tab_view_translate_mouse_to_content(view, m, source_width, source_height, &mapped_mouse)) {
+        return 0;
+    }
+    return handler(&mapped_mouse, user_data);
 }
 
 int tab_view_get_active_tab(const tab_view *view)

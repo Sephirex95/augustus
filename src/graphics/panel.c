@@ -130,7 +130,16 @@ void unbordered_panel_draw(int x, int y, int width_blocks, int height_blocks)
     unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, COLOR_MASK_NONE);
 }
 
-void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color)
+void unbordered_panel_draw_px(int x, int y, int width_px, int height_px)
+{
+    graphics_set_clip_rectangle(x, y, width_px, height_px);
+    int width_blocks = (width_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int height_blocks = (height_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    unbordered_panel_draw(x, y, width_blocks, height_blocks);
+    graphics_reset_clip_rectangle();
+}
+
+void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color_bg, color_t color_border)
 {
     if (width_px <= 0 || height_px <= 0) {
         return;
@@ -139,9 +148,9 @@ void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int 
     graphics_set_clip_rectangle(x, y, width_px, height_px);
     int width_blocks = (width_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
     int height_blocks = (height_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, color);
+    unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, color_bg);
     graphics_reset_clip_rectangle();
-    button_border_draw_colored(x, y, width_px, height_px, has_focus, color);
+    button_border_draw_colored(x, y, width_px, height_px, has_focus, color_border);
 }
 
 void inner_panel_draw(int x, int y, int width_blocks, int height_blocks)

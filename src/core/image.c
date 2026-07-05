@@ -608,6 +608,8 @@ static void make_plain_fonts_white(const image *img_info, const image_atlas_data
 {
     int limit = font_definition_for(FONT_NORMAL_BLACK)->image_offset -
         font_definition_for(FONT_NORMAL_PLAIN)->image_offset;
+    for (int i = 0; i < limit; i++) {
+        make_font_white(&img_info[i + start_offset], atlas_data);
     }
     int start_font_offset = start_offset + font_definition_for(FONT_LARGE_PLAIN)->image_offset;
     limit = font_definition_for(FONT_LARGE_BLACK)->image_offset -

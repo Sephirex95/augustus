@@ -127,6 +127,20 @@
 	<image id="Land Trade Policy Off Button">
 		<layer group="179" image="1" mask="grayscale"/>
 	</image>
+	<!-- Note: Trade ledger separators and route icon composites (52x32) -->
+	<image id="Trade_Separator_Long" src="trades_separator_long"/>
+	<image id="Trade_Separator_Short" src="trades_separator_short"/>
+	<image id="Sea_Trade_Icon_Centered" width="52" height="32">
+		<layer group="179" image="0" x="0" y="0"/>
+	</image>
+	<image id="Land_Trade_Icon_Centered" width="52" height="32">
+		<layer group="179" image="1" x="1" y="-1"/>
+	</image>
+	<image id="Both_Trade_Icons" width="52" height="32">
+		<layer group="179" image="0" x="0" y="0"/>
+		<layer group="179" image="1" x="24" y="11"/>
+		<layer group="this" image="Trade_Separator_Short" x="0" y="0"/>
+	</image>
 	<!-- Note: Fix for Hagia Sophia sprite (removes historically inaccurate Islamic minarets, which were added to the building in the 1500s) -->
 	<image id="H Sophia Fix" src="Hagia_Sophia_Fix"/>
 	<!-- Note: Button for Housing Advisor -->
@@ -1482,5 +1496,19 @@
 		<layer group="128" image="22" x="0" y="0"/>
 		<layer src="Advisor_Button_H" x="5" y="4"/>
 		<layer src="Trade_Ledger_H" x="0" y="0"/>
+	</image>
+	<image id="Arrow_Up_Masked">
+		<layer group="system" image="15"/>
+		<layer src="arrow_up_mask" mask="alpha"/>
+	</image>
+	<image id="Arrow_Down_Masked">
+		<layer group="system" image="17"/>
+		<layer src="arrow_down_mask" mask="alpha"/>
+	</image>
+	<image id="Filter_Icon" width="24" height="24">
+		<layer src="filter_icon" x="0" y="0"/>
+	</image>
+	<image id="Sorting_Icon" width="24" height="24">
+		<layer src="sorting_icon" x="0" y="0"/>
 	</image>
 </assetlist>

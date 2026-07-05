@@ -794,7 +794,7 @@ static int handle_input_video(const mouse *m_dialog, const lang_message *msg, co
     if (image_buttons_handle_mouse(m_dialog, data.x + 372, data.y + 410, &image_button_close, 1, 0)) {
         return 1;
     }
-    if (complex_button_handle_mouse(m_dialog, &complex_button_dispatch_request)) {
+    if (complex_button_handle_mouse(&complex_button_dispatch_request, m_dialog)) {
         return 1;
     }
     if (is_event_message(msg)) {
@@ -821,7 +821,7 @@ static int handle_input_normal(const mouse *m_dialog, const lang_message *msg)
         return 1;
     }
     if (msg->type == TYPE_MESSAGE) {
-        if (complex_button_handle_mouse(m_dialog, &complex_button_dispatch_request)) {
+        if (complex_button_handle_mouse(&complex_button_dispatch_request, m_dialog)) {
             return 1;
         }
         if (image_buttons_handle_mouse(
