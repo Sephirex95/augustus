@@ -35,7 +35,8 @@
     * Resource picker - dropdown as placeholder,
     *       > think about a grid selector for the future - could be used with other things, like roadblock styles
     * Sell/Buy/Any - cycling or dropdown? test both.
-* Still need to make a history asset for the dropdown
+* Still need to make a history asset for the dropdown - maybe not? maybe use the date plain: 'AD 122' with no anchor
+* Trade History - just goes on a small button in the bottom corner?
 * Should also fit RESET button somewhere :
 *   > add a hover on the filter icon that overlays a small red X over it- when pressed, reset filters
 */
