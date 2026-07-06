@@ -1518,15 +1518,6 @@
 	<!-- Note: Empire Map sidebar corner (for drag-able side) -->
 	<image id="Empire_Panel_02" src="Empire_Panel_02"/>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
-	<image id="Button_Menu_Panel_left_top_corner" width="16" height="16">
-		<layer group="15" image="0" width="16" height="16"/>
-	</image>
-	<image id="Button_Menu_Panel_middle_top_border" width="16" height="16">
-		<layer group="15" image="1" width="16" height="16"/>
-	</image>
-	<image id="Button_Menu_Panel_right_top_corner" width="16" height="16">
-		<layer group="15" image="2" width="16" height="16"/>
-	</image>
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>
 		<layer src="mm_left_section_panel_mask" mask="alpha" x ="-3" y="-3"/>
