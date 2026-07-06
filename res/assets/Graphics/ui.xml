@@ -45,7 +45,6 @@
 	<image id="Panth M2 Icon" src="Pantheon_Temple_Complex_Module2_Banner"/>
 	<image id="Venus M Icon" src="Venus_Temple_Complex_Module_Banner"/>
 	<image id="Venus M2 Icon" src="Venus_Temple_Complex_Module2_Banner"/>
-
 	<!-- Note: Banner images for Construction Sites -->
 	<image id="Construction_Banner_01" src="Construction_Banner_01"/>
 	<image id="Construction_Banner_02" src="Construction_Banner_02"/>
@@ -1479,7 +1478,7 @@
 		<layer group="20" image="11"/>
 		<layer src="reservoir_range_mask" mask="alpha"/>
 	</image>
-	<!-- Editor animal flag and lair buttons -->
+	<!-- Note: Editor animal flag and lair buttons -->
 	<image id="Button_AnimalFlag_Idle" src="Button_AnimalFlag_Idle"/>
 	<image id="Button_AnimalFlag_Hover" src="Button_AnimalFlag_Hover"/>
 	<image id="Button_AnimalFlag_Click" src="Button_AnimalFlag_Click"/>
@@ -1511,4 +1510,11 @@
 	<image id="Sorting_Icon" width="24" height="24">
 		<layer src="sorting_icon" x="0" y="0"/>
 	</image>
+	<!-- Note: Empire Map panel background -->
+	<image id="Empire_Panel_01" width="70" height="40">
+		<layer group="172" image="3" x="0" y="0"/>
+		<layer src="Empire_Panel_01" x="0" y="0"/>
+	</image>
+	<!-- Note: Empire Map sidebar corner (for drag-able side) -->
+	<image id="Empire_Panel_02" src="Empire_Panel_02"/>
 </assetlist>
