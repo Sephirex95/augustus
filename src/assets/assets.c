@@ -92,6 +92,21 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_EMP_PANEL_HOR] = assets_get_image_id("UI", "Empire_Panel_01"); // horizontal panel
     data.asset_lookup[ASSET_UI_EMP_PANEL_VER] = assets_get_image_id("UI", "Empire_Panel_01b"); // vertical panel
     data.asset_lookup[ASSET_UI_EMP_PANEL_XBAR_DRAG] = assets_get_image_id("UI", "Empire_Panel_02"); // crossbar
+    data.asset_lookup[ASSET_UI_BTN_MENU_LEFT_PANEL] = assets_get_image_id("UI", "Button_Menu_Left_Panel");
+    data.asset_lookup[ASSET_UI_BTN_MENU_MIDDLE_PANEL] = assets_get_image_id("UI", "Button_Menu_Middle_Panel");
+    data.asset_lookup[ASSET_UI_BTN_MENU_RIGHT_PANEL] = assets_get_image_id("UI", "Button_Menu_Right_Panel");
+    data.asset_lookup[ASSET_UI_BTN_MENU_LEFT_PANEL_MIRROR_V] = assets_get_image_id("UI", "Button_Menu_Left_Panel_Mirror_V");
+    data.asset_lookup[ASSET_UI_BTN_MENU_MIDDLE_PANEL_MIRROR_V] = assets_get_image_id("UI", "Button_Menu_Middle_Panel_Mirror_V");
+    data.asset_lookup[ASSET_UI_BTN_MENU_RIGHT_PANEL_MIRROR_V] = assets_get_image_id("UI", "Button_Menu_Right_Panel_Mirror_V");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_01] = assets_get_image_id("UI", "Button_Menu_Frame_01");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_02] = assets_get_image_id("UI", "Button_Menu_Frame_02");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_03] = assets_get_image_id("UI", "Button_Menu_Frame_03");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_04] = assets_get_image_id("UI", "Button_Menu_Frame_04");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_06] = assets_get_image_id("UI", "Button_Menu_Frame_06");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_07] = assets_get_image_id("UI", "Button_Menu_Frame_07");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_08] = assets_get_image_id("UI", "Button_Menu_Frame_08");
+    data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_09] = assets_get_image_id("UI", "Button_Menu_Frame_09");
+    
 
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
