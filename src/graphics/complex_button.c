@@ -54,9 +54,9 @@ font_t complex_button_font_for_style(complex_button_style style)
         case COMPLEX_BUTTON_STYLE_DEFAULT_WOOD:
             return FONT_NORMAL_BROWN;
         case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
+        case COMPLEX_BUTTON_STYLE_DEFAULT_GRAY:
             return FONT_NORMAL_GREEN;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
-        case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_COLORFUL:
         default:
             return FONT_NORMAL_BLACK;
@@ -72,9 +72,10 @@ color_t complex_button_color_for_style(complex_button_style style)
             return COLOR_MASK_PASTEL_BROWN2;
         case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
             return COLOR_MASK_PASTEL_BROWN4;
+        case COMPLEX_BUTTON_STYLE_DEFAULT_GRAY:
+            return COLOR_MASK_PASTEL_GRAY;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
-        case COMPLEX_BUTTON_STYLE_GRAY:
         default:
             return COLOR_MASK_NONE;
     }
@@ -99,8 +100,13 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
     int height_blocks = button->height / BLOCK_SIZE;
-    unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1, height_blocks + 1,
-        label_color);
+    if (button->style == COMPLEX_BUTTON_STYLE_DEFAULT_GRAY) {
+        inner_panel_draw_colored(button->x, button->y, button->width, button->height, label_color);
+    } else {
+        unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1, height_blocks + 1,
+            label_color);
+    }
+
     int draw_red_border = !button->is_disabled ? button->is_focused : 0;    // Only draw border if enabled
     if (button->flush_with_background) {
         button_border_draw_colored_flush(button->x, button->y, button->width, button->height, draw_red_border, label_color);
@@ -223,10 +229,7 @@ void complex_button_draw(const complex_button *button)
     color_t base_color = complex_button_color_for_style(button->style);
     font_t base_font = complex_button_font_for_style(button->style);
     switch (button->style) {
-        case COMPLEX_BUTTON_STYLE_GRAY:
-            draw_grey_style(button);
-            break;
-        default: // all others use the default function 
+        default: // all other variants housed in the default function 
             draw_default_style(button, base_font, base_color);
     }
 }

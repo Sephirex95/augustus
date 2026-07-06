@@ -1517,4 +1517,70 @@
 	</image>
 	<!-- Note: Empire Map sidebar corner (for drag-able side) -->
 	<image id="Empire_Panel_02" src="Empire_Panel_02"/>
+	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
+	<image id="Button_Menu_Panel_left_top_corner" width="16" height="16">
+		<layer group="15" image="0" width="16" height="16"/>
+	</image>
+	<image id="Button_Menu_Panel_middle_top_border" width="16" height="16">
+		<layer group="15" image="1" width="16" height="16"/>
+	</image>
+	<image id="Button_Menu_Panel_right_top_corner" width="16" height="16">
+		<layer group="15" image="2" width="16" height="16"/>
+	</image>
+	<image id="Button_Menu_Left_Panel" width="13" height="19">
+		<layer group="15" image="0" x ="-3" y="-3"/>
+		<layer src="mm_left_section_panel_mask" mask="alpha" x ="-3" y="-3"/>
+	</image>
+	<image id="Button_Menu_Middle_Panel" width="16" height="19">
+		<layer group="15" image="1" y="-3"/>
+		<layer src="mm_mid_section_panel_mask" mask="alpha" y="-3"/>
+	</image>
+	<image id="Button_Menu_Right_Panel" width="13" height="19">
+		<layer group="15" image="2" y="-3"/>
+		<layer src="mm_right_section_panel_mask" mask="alpha" y="-3"/>
+	</image>
+	<image id="Button_Menu_Left_Panel_Mirror_V">
+		<layer group="this" image="Button_Menu_Left_Panel" invert="vertical"/>
+	</image>
+	<image id="Button_Menu_Middle_Panel_Mirror_V">
+		<layer group="this" image="Button_Menu_Middle_Panel" invert="vertical"/>
+	</image>
+	<image id="Button_Menu_Right_Panel_Mirror_V">
+		<layer group="this" image="Button_Menu_Right_Panel" invert="vertical"/>
+	</image>
+	<image id="Button_Menu_Frame_01" width="16" height="16">
+		<layer group="15" image="0"/>
+		<layer src="mm_left_section_frame_mask" mask="alpha"/>
+	</image>
+	<image id="Button_Menu_Frame_02" width="16" height="16">
+		<layer group="15" image="1"/>
+		<layer src="mm_mid_section_frame_mask" mask="alpha"/>
+	</image>
+	<image id="Button_Menu_Frame_03" width="16" height="16">
+		<layer group="15" image="2"/>
+		<layer src="mm_right_section_frame_mask" mask="alpha"/>
+	</image>
+	<image id="Button_Menu_Frame_04" width="16" height="16">
+		<layer group="15" image="0" y="-3"/>
+		<layer src="mm_left_section_frame_mask" y="-3" mask="alpha"/>
+	</image>
+	<!-- <image id="Button_Menu_Frame_05" width="16" height="16"> -->
+	<!--Missing on purpose - 5th isnt used for frame-only draw-->
+	<!-- </image> -->
+	<image id="Button_Menu_Frame_06" width="16" height="16">
+		<layer group="15" image="2" y="-3"/>
+		<layer src="mm_right_section_frame_mask" y="-3" mask="alpha"/>
+	</image>
+	<image id="Button_Menu_Frame_07" width="16" height="16">
+		<layer group="15" image="0" y="-9"/>
+		<layer src="mm_left_section_frame_mask" y="-9" mask="alpha"/>
+	</image>
+	<image id="Button_Menu_Frame_08" width="16" height="16">
+		<layer group="15" image="1" y="-9"/>
+		<layer src="mm_mid_section_frame_mask" y="-9" mask="alpha"/>
+	</image>
+		<image id="Button_Menu_Frame_09" width="16" height="16">
+		<layer group="15" image="2" y="-9"/>
+		<layer src="mm_right_section_frame_mask" y="-9" mask="alpha"/>
+	</image>
 </assetlist>

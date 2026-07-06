@@ -12,9 +12,9 @@
 
 typedef enum {
     COMPLEX_BUTTON_STYLE_DEFAULT,  // Basic style: white/red border, transparent fill - inherited from background
-    COMPLEX_BUTTON_STYLE_DEFAULT_SMALL, // like default but small font and less padding
-    COMPLEX_BUTTON_STYLE_GRAY,     // main-menu-like style
-    COMPLEX_BUTTON_STYLE_DEFAULT_WOOD, // wood-like style
+    COMPLEX_BUTTON_STYLE_DEFAULT_SMALL,    // like default but small font and less padding
+    COMPLEX_BUTTON_STYLE_DEFAULT_GRAY,     // main-menu-like style
+    COMPLEX_BUTTON_STYLE_DEFAULT_WOOD,     // wood-like style
     COMPLEX_BUTTON_STYLE_LIGHT_WOOD,
     COMPLEX_BUTTON_STYLE_COLORFUL,  // colorful style with gradient background
     COMPLEX_BUTTON_STYLE_CUSTOM // custom style - bypasses the default selection of colors/fonts
