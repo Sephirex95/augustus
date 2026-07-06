@@ -285,6 +285,32 @@ void large_label_draw(int x, int y, int width_blocks, int type)
     }
 }
 
+void large_label_draw_custom(int x, int y, int width, int height)
+{
+    if (width <= 32 || height <= 16) {
+        return; // cant draw that mate
+    }
+    // middle panel is 16x19, left and right are 13x19
+    // since panels are 19px high, a 'block' is 38px high - stacking two panels on top of each other,
+    // with a mirrored version overlapping them halfway to mask the seam
+    int panel_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_LEFT_PANEL);
+    int panel_mirror_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_LEFT_PANEL_MIRROR_V);
+    int frame_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_FRAME_01);
+    graphics_set_clip_rectangle(x, y, width, height);
+    int h_blocks = height / 38;
+    int w_middle_blocks = (width - (2 * 13)) / 16;
+    int op_x = x;
+    int op_y = y;
+    for (int i = 0; i < h_blocks; i++) { // height loop
+        image_draw(panel_base, x, y + 19 * i, COLOR_MASK_NONE, SCALE_NONE);
+        for (int j = 0; j < w_middle_blocks; j++) { // width loop
+            //finish this tomorrow - my brain is fried
+        }
+    }
+
+    graphics_reset_clip_rectangle();
+}
+
 int top_menu_black_panel_draw(int x, int y, int width)
 {
     int blocks = ((width + BLACK_PANEL_BLOCK_WIDTH - 1) / BLACK_PANEL_BLOCK_WIDTH) - 2;

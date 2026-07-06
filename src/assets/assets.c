@@ -106,7 +106,7 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_07] = assets_get_image_id("UI", "Button_Menu_Frame_07");
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_08] = assets_get_image_id("UI", "Button_Menu_Frame_08");
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_09] = assets_get_image_id("UI", "Button_Menu_Frame_09");
-    
+
 
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
