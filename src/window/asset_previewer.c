@@ -71,7 +71,7 @@ static void select_asset(unsigned int index, int unused);
 static void handle_tooltip(const list_box_item *item, tooltip_context *c);
 static void button_top(const generic_button *button);
 static void button_toggle_animation_frames(const generic_button *button);
-static void draw_bounds_checkbox_clicked(const checkbox_button *button);
+static void draw_bounds_checkbox_clicked(checkbox_button *button);
 static void draw_selected_asset_metrics(void);
 
 static generic_button buttons[NUM_BUTTONS] = {
@@ -725,7 +725,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     checkbox_button_handle_mouse(&draw_bounds_checkbox, m);
 }
 
-static void draw_bounds_checkbox_clicked(const checkbox_button *button)
+static void draw_bounds_checkbox_clicked( checkbox_button *button)
 {
     data.draw_bounds = button->is_checked;
     window_invalidate();
