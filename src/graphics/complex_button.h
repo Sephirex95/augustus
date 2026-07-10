@@ -11,14 +11,24 @@
 #define MAX_CYCLE_BUTTON_STATES 10 // arbitrary
 
 typedef enum {
-    COMPLEX_BUTTON_STYLE_DEFAULT,  // Basic style: white/red border, transparent fill - inherited from background
+    COMPLEX_BUTTON_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
     COMPLEX_BUTTON_STYLE_DEFAULT_SMALL,    // like default but small font and less padding
-    COMPLEX_BUTTON_STYLE_DEFAULT_GRAY,     // main-menu-like style
-    COMPLEX_BUTTON_STYLE_DEFAULT_WOOD,     // wood-like style
-    COMPLEX_BUTTON_STYLE_LIGHT_WOOD,
-    COMPLEX_BUTTON_STYLE_COLORFUL,  // colorful style with gradient background
-    COMPLEX_BUTTON_STYLE_CUSTOM // custom style - bypasses the default selection of colors/fonts
+    COMPLEX_BUTTON_STYLE_NO_FILL,          // No fill background, only border
+    COMPLEX_BUTTON_STYLE_GRAY,             // main-menu-like style
+    COMPLEX_BUTTON_STYLE_GRAY_NO_FILL,     // mainmenu border, but no fill background
+    COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
+    COMPLEX_BUTTON_STYLE_LIGHT_WOOD,       // X - not implemented
+    COMPLEX_BUTTON_STYLE_COLORFUL,         // X - not implemented
+    COMPLEX_BUTTON_STYLE_CUSTOM            // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
+
+typedef enum {
+    CYCLING_BUTTON_STYLE_DEFAULT,            // Basic: white/red border, default plain background fill
+    CYCLING_BUTTON_STYLE_DEFAULT_SMALL,      // like default but small font and less padding
+    CYCLING_BUTTON_STYLE_NO_FILL,            // No fill background, only border
+    CYCLING_BUTTON_STYLE_GRAY,               // main-menu-like style
+    CYCLING_BUTTON_STYLE_GRAY_NO_FILL,       // mainmenu border, but no fill background
+} cycling_button_style;
 
 typedef enum {
     SEQUENCE_POSITION_TOP_LEFT = 1,      /*         ┌───┬───┬───┐         */
@@ -28,7 +38,7 @@ typedef enum {
     SEQUENCE_POSITION_CENTER = 5,        /*         ├───┼───┼───┤         */
     SEQUENCE_POSITION_CENTER_RIGHT = 6,  /*         │ 7 │ 8 │ 9 │         */
     SEQUENCE_POSITION_BOTTOM_LEFT = 7,   /*         └───┴───┴───┘         */
-    SEQUENCE_POSITION_BOTTOM_CENTER = 8, /*    mirroring phone keypad     */
+    SEQUENCE_POSITION_BOTTOM_CENTER = 8, /*    just like phone keypad     */
     SEQUENCE_POSITION_BOTTOM_RIGHT = 9,  /*  OOB values will be centered  */
 } sequence_positioning;
 
@@ -100,6 +110,7 @@ typedef struct cycling_button {
     short height;
     short is_hovered;
     short fill_bg; // 1 = fill background, 0 = transparent
+    cycling_button_style style;
     void (*left_click_handler)(struct cycling_button *button);
     void (*right_click_handler)(struct cycling_button *button);
     void (*hover_handler)(struct cycling_button *button);

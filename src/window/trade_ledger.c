@@ -146,7 +146,7 @@ static void trade_ledger_init(void)
     }
 
     selected_year_index = 0;
-    dropdown_button_init_simple(580, 430, dd_fragments, 9, &ledger_year_dropdown, COMPLEX_BUTTON_STYLE_LIGHT_WOOD);
+    dropdown_button_init_simple(580, 430, 0, 0, dd_fragments, 9, &ledger_year_dropdown, DD_BUTTON_STYLE_DEFAULT);
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
 
@@ -241,7 +241,7 @@ static int handle_trade_tab_mouse(const mouse *m, void *user_data)
     if (tab_view_get_active_tab(&ledger_tabs) != 0) {
         return 0;
     }
-    if (dropdown_button_handle_mouse(m, &ledger_year_dropdown)) {
+    if (dropdown_button_handle_mouse(&ledger_year_dropdown, m)) {
         return 1;
     }
     if (checkbox_button_handle_mouse(&hide_irrelevant_checkbox, m)) {

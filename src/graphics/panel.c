@@ -285,29 +285,78 @@ void large_label_draw(int x, int y, int width_blocks, int type)
     }
 }
 
-void large_label_draw_custom(int x, int y, int width, int height)
+void large_label_draw_custom_size(int x, int y, int width, int height)
 {
-    if (width <= 32 || height <= 16) {
-        return; // cant draw that mate
+    if (width < 32 || height < 16) {
+        return;
     }
-    // middle panel is 16x19, left and right are 13x19
-    // since panels are 19px high, a 'block' is 38px high - stacking two panels on top of each other,
-    // with a mirrored version overlapping them halfway to mask the seam
+    large_label_draw_bg(x, y, width, height);
+    large_label_draw_border(x, y, width, height);
+}
+
+void large_label_draw_bg(int x, int y, int width, int height)
+{
+    graphics_set_clip_rectangle(x, y, width, height);
+    const int panel_width_left = 13;
+    const int panel_width_middle = 16;
+    const int panel_height = 19;
+
     int panel_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_LEFT_PANEL);
     int panel_mirror_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_LEFT_PANEL_MIRROR_V);
-    int frame_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_FRAME_01);
-    graphics_set_clip_rectangle(x, y, width, height);
-    int h_blocks = height / 38;
-    int w_middle_blocks = (width - (2 * 13)) / 16;
-    int op_x = x;
-    int op_y = y;
-    for (int i = 0; i < h_blocks; i++) { // height loop
-        image_draw(panel_base, x, y + 19 * i, COLOR_MASK_NONE, SCALE_NONE);
-        for (int j = 0; j < w_middle_blocks; j++) { // width loop
-            //finish this tomorrow - my brain is fried
+
+    int panel_rows = (height + panel_height - 1) / panel_height;
+    int panel_middle_blocks = (width - 2 * panel_width_left + panel_width_middle - 1) / panel_width_middle;
+
+
+    // Draw normal panel rows.
+    for (int i = 0; i < panel_rows; i++) {
+        int row_y = y + i * panel_height;
+
+        image_draw(panel_base, x, row_y, COLOR_MASK_NONE, SCALE_NONE);
+        for (int j = 0; j < panel_middle_blocks; j++) {
+            image_draw(panel_base + 1, x + panel_width_left + j * panel_width_middle, row_y, COLOR_MASK_NONE, SCALE_NONE);
         }
+        image_draw(panel_base + 2, x + width - panel_width_left, row_y, COLOR_MASK_NONE, SCALE_NONE);
     }
 
+    // Draw a mirrored half-opacity row across each seam.
+    for (int i = 1; i < panel_rows; i++) {
+        int row_y = y + i * panel_height - panel_height / 2;
+
+        image_draw(panel_mirror_base, x, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+        for (int j = 0; j < panel_middle_blocks; j++) {
+            image_draw(panel_mirror_base + 1, x + panel_width_left + j * panel_width_middle, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+        }
+        image_draw(panel_mirror_base + 2, x + width - panel_width_left, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+    }
+    graphics_reset_clip_rectangle();
+}
+
+void large_label_draw_border(int x, int y, int width, int height)
+{
+    graphics_set_clip_rectangle(x, y, width, height);
+    const int frame_size = 16;
+    int frame_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_FRAME_01);
+    int frame_middle_blocks = (width - 2 * frame_size + frame_size - 1) / frame_size;
+    // Top frame: 1, 2..., 3.
+    image_draw(frame_base, x, y, COLOR_MASK_NONE, SCALE_NONE);
+    for (int j = 0; j < frame_middle_blocks; j++) {
+        image_draw(frame_base + 1, x + frame_size + j * frame_size,
+            y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+    image_draw(frame_base + 2, x + width - frame_size, y, COLOR_MASK_NONE, SCALE_NONE);
+
+    // Side frame: 4 and 6. Frame 5 does not exist.
+    image_draw(frame_base + 3, x, y + frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(frame_base + 4, x + width - frame_size,
+        y + frame_size, COLOR_MASK_NONE, SCALE_NONE);
+
+    // Bottom frame: 7, 8..., 9.
+    image_draw(frame_base + 5, x, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    for (int j = 0; j < frame_middle_blocks; j++) {
+        image_draw(frame_base + 6, x + frame_size + j * frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    }
+    image_draw(frame_base + 7, x + width - frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
     graphics_reset_clip_rectangle();
 }
 

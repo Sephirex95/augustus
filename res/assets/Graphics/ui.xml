@@ -1506,6 +1506,12 @@
 	<image id="Sorting_Icon" width="24" height="24">
 		<layer src="sorting_icon" x="0" y="0"/>
 	</image>
+	<image id="Filter_Icon_Hover" width="24" height="24">
+		<layer src="filter_icon_reset" x="0" y="0"/>
+	</image>
+	<image id="Sorting_Icon_Hover" width="24" height="24">
+		<layer src="sorting_icon_reset" x="0" y="0"/>
+	</image>
 	<!-- Note: Empire Map panel background -->
 	<image id="Empire_Panel_01" width="70" height="40">
 		<layer group="172" image="3" x="0" y="0"/>

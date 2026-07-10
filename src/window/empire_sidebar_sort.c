@@ -20,25 +20,22 @@
 #define WIDTH_BORDER 16
 
 /* Next time start here:
-* In dropdown button/complex button styles:
-    *add a style for the inner_panel draw as the background
-    *add a style that mimicks the main menu buttons
-* Remove the sorting button draw and replace it completely with a standard dropdown button.
+INVESTIGATE: Why does tradebuysell dropdown swallow mouse when expanded but sorting dd doesnt?
+when sorting dd is expanded, you can still click other buttons. Unacceptable REEEEEEE!!!!!!!!!!!!!!!!
+
+Fix the hover logic directly in complex_button.c code - if not hovered, return original properties.
+styling - add complex_button_style for no border no fill - test for sort and filter resets.
+grid box - measure the height of the grid_box and screen to determine how many items to show.
+consider adjusting the height of items to fill the gridbox. Dont want the empty space below entries.
 * Dropdown button for sorting:
-    * icon before text
     * if sorting selected, leave only selected text + icon before, no 'Sort by' text
-* Move arrow button to it's own border, next to the sorting dropdown. Use the new cutout arrow asset.
-* Filter section - draw the static filter icon and border for the entire section.
 * In filter section:
-    * Open/closed cycling button - X / Y / Nothing + tooltip
-    * Sea/Land cycling button - just add tooltip
     * Resource picker - dropdown as placeholder,
     *       > think about a grid selector for the future - could be used with other things, like roadblock styles
-    * Sell/Buy/Any - cycling or dropdown? test both.
-* Still need to make a history asset for the dropdown - maybe not? maybe use the date plain: 'AD 122' with no anchor
-* Trade History - just goes on a small button in the bottom corner?
-* Should also fit RESET button somewhere :
-*   > add a hover on the filter icon that overlays a small red X over it- when pressed, reset filters
+* Trade history button and year dropdown go under the grid_box.
+* if time allows, move out everything relating to the sidebar to this file, rename it to empire_sidebar.c
+* complex_button.c should be split into separate files for cycling and checkbox buttons
+* then all of them including dropdown_button should be moved to widget folder for clarity and simplicty
 */
 
 
@@ -311,145 +308,46 @@ int window_empire_sidebar_sort_city_matches_current_filter(const empire_city *ci
 void window_empire_sidebar_sort_draw_simple_button(int x, int y, int width, int height, int is_focused, int group1, int number1,
      int group2, int number2, int button_type, int image_id)
 {
-    graphics_set_clip_rectangle(x, y, width, height);
-    int height_blocks = height / BLOCK_SIZE;
-    //unbordered_panel_draw(x, y, width / BLOCK_SIZE + 1, height_blocks);
-    inner_panel_draw(x, y, width / BLOCK_SIZE + 1, height_blocks);
-    graphics_reset_clip_rectangle();
-    int margin = 8;
-    button_border_draw(x, y, width, height, is_focused);
-    int font_height = font_definition_for(FONT_NORMAL_GREEN)->line_height;
-    int y_text_offset = y + (height / 2) - (font_height / 2);
-    int cursor_x = 0, text_x = 0, available_width = 0, image_width = 0, content_width = 0;
-    if (image_id > 0) {
-        const image *img = image_get(image_id);
-        image_width = img->width;
-    }
-    // Calculate total text width for centering and account for image width if present
-    int text1_width = lang_text_get_width(group1, number1, FONT_NORMAL_GREEN);
-    int text2_width = (number2 >= 0) ? lang_text_get_width(group2, number2, FONT_NORMAL_GREEN) : 0;
-    int total_text_width = text1_width + text2_width;
-    available_width = width - 2 * margin;
-    content_width = total_text_width + image_width;
-    text_x = x + margin + (available_width - content_width) / 2; // Center horizontally
-    cursor_x = text_x + lang_text_draw(group1, number1, text_x, y_text_offset, FONT_NORMAL_GREEN);
-    if (number2 >= 0) {
-        cursor_x += lang_text_draw(group2, number2, cursor_x, y_text_offset, FONT_NORMAL_GREEN);
-    }
-    if (image_id > 0) {
-        const image *img = image_get(image_id);
-        int img_y_offset = y + (height - img->height) / 2;
-        image_draw(image_id, cursor_x + 4, img_y_offset, COLOR_MASK_NONE, SCALE_NONE); // 4px spacing
-    }
-
-    window_empire_sidebar_sort_register_sorting_button(x, y, width, height, button_type);
+    (void) x;
+    (void) y;
+    (void) width;
+    (void) height;
+    (void) is_focused;
+    (void) group1;
+    (void) number1;
+    (void) group2;
+    (void) number2;
+    (void) button_type;
+    (void) image_id;
 }
 
 void window_empire_sidebar_sort_draw_sorting_arrow_button(int button_x, int button_y, int button_width, int button_height)
 {
-    int margin = 10; // Margin from right edge to keep arrow fully inside
-    sorting_arrow_button.is_down = window_empire_sidebar_sort_get_sorting_reversed() ? 0 : 1; // Down when not reversed
-    int image_id = sorting_arrow_button.is_down ? 17 : 15; // 17 for down, 15 for up
-
-    // Update arrow button info for hit detection
-    sorting_arrow_button.x = button_x + button_width - image_get(image_id)->width - margin;
-    sorting_arrow_button.y = button_y + (button_height - image_get(image_id)->height) / 2; // Center vertically
-    sorting_arrow_button.width = image_get(image_id)->width;
-    sorting_arrow_button.height = image_get(image_id)->height;
-    if (sorting_arrow_focused) {
-        button_border_draw(sorting_arrow_button.x - 3, sorting_arrow_button.y - 3,
-             sorting_arrow_button.width + 5, sorting_arrow_button.height + 5, sorting_arrow_focused);
-        // -3 + 5 to account for the 1px innate border of the button 
-    }
-    image_draw(image_id, sorting_arrow_button.x, sorting_arrow_button.y, COLOR_MASK_NONE, SCALE_NONE);
+    sorting_arrow_button.is_down = window_empire_sidebar_sort_get_sorting_reversed() ? 0 : 1;
+    (void) button_x;
+    (void) button_y;
+    (void) button_width;
+    (void) button_height;
 }
 
 void window_empire_sidebar_sort_draw_expanding_buttons(int sidebar_x_min, int sidebar_y_min, int sidebar_width, int has_scrollbar)
 {
-    int button_height = 2 * BLOCK_SIZE;
-    int v_margin = 4; // 4px universal vertical margin 
-    int button_v_spacing = button_height + v_margin; // 4px standard spacing
-    int button_h_spacing = 10; // 10px horizontal spacing between buttons
-    int available_width = sidebar_width - (has_scrollbar ? 4 * BLOCK_SIZE : WIDTH_BORDER); // 4 *blocksize for scrollbar
-    int button_width = (available_width - 2 * button_h_spacing) / 3; // Three sections for buttons
-    int base_x = sidebar_x_min + button_h_spacing;
-    int base_y = sidebar_y_min + v_margin; // small margin from the top
-
-    // Sort main button
-    int x_sort = base_x;
     window_empire_sidebar_sort_reset_sorting_button_count(); // Reset count for sorting buttons
-
-    // Sort main button with current selection displayed
-    window_empire_sidebar_sort_draw_simple_button(x_sort, base_y, button_width, button_height,
-        window_empire_sidebar_sort_get_hovered_sorting_button() == BUTTON_INDEX_SORT_MAIN && !sorting_arrow_focused,
-        CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT, // Base text: "Sort by:"
-        CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT_BY_NAME + window_empire_sidebar_sort_get_current_sorting(), 0, 0);
-    window_empire_sidebar_sort_draw_sorting_arrow_button(x_sort, base_y, button_width, button_height);
-
-    if (window_empire_sidebar_sort_get_expanded_main() == 0) {
-        for (int i = 0; i < MAX_SORTING_KEY; ++i) {
-            int button_type = BUTTON_INDEX_FIRST_SORT_METHOD + i;  // Children start at 2
-            int y = base_y + v_margin + button_height + i * button_v_spacing;
-            window_empire_sidebar_sort_draw_simple_button(x_sort, y, button_width, button_height,
-                window_empire_sidebar_sort_get_hovered_sorting_button() == button_type, //hovered state
-                CUSTOM_TRANSLATION, TR_EMPIRE_SIDE_BAR_SORT_BY_NAME + i, -1, -1, button_type, 0);
-        }
-    }
+    sorting_arrow_focused = 0;
+    sorting_arrow_button.is_down = window_empire_sidebar_sort_get_sorting_reversed() ? 0 : 1;
+    (void) sidebar_x_min;
+    (void) sidebar_y_min;
+    (void) sidebar_width;
+    (void) has_scrollbar;
 }
 
 int window_empire_sidebar_sort_handle_expanding_buttons_input(const mouse *m)
 {
-    window_empire_sidebar_sort_set_hovered_sorting_button(NO_POSITION); // Reset hovered button
-    sorting_arrow_focused = 0; // Reset arrow focus
-
-    // Check if mouse is over the arrow button first (highest priority)
-    if (m->x >= sorting_arrow_button.x && m->x < sorting_arrow_button.x + sorting_arrow_button.width &&
-        m->y >= sorting_arrow_button.y && m->y < sorting_arrow_button.y + sorting_arrow_button.height) {
-        sorting_arrow_focused = 1; // Take focus away from main button
-        if (m->left.went_up) {
-            // Toggle sorting order
-            window_empire_sidebar_sort_set_sorting_reversed(!window_empire_sidebar_sort_get_sorting_reversed());
-            return 1; // Block further input
-        }
-        return 1; // Block further input when hovering over arrow
-    }
-
-    // If right-clicked and something is expanded: collapse it and exit
-    if (m->right.went_up && window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) {
-        window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-        return 1; // Block further input
-    }
-
-    for (int i = 0; i < window_empire_sidebar_sort_get_sorting_button_count(); ++i) {
-        const sorting_button *btn = window_empire_sidebar_sort_get_sorting_button(i);
-
-        if (m->x >= btn->x && m->x < btn->x + btn->width &&
-            m->y >= btn->y && m->y < btn->y + btn->height) {
-            window_empire_sidebar_sort_set_hovered_sorting_button(btn->button_type);
-            // Only handle left clicks here
-            if (m->left.went_up) {
-                if (btn->button_type == BUTTON_INDEX_SORT_MAIN) {
-                    window_empire_sidebar_sort_set_expanded_main((window_empire_sidebar_sort_get_expanded_main() == BUTTON_INDEX_SORT_MAIN) ?
-                     NO_POSITION : BUTTON_INDEX_SORT_MAIN);
-                    return 1;
-                } else if (btn->button_type >= BUTTON_INDEX_FIRST_SORT_METHOD &&
-                           btn->button_type < BUTTON_INDEX_FIRST_SORT_METHOD + MAX_SORTING_KEY) {
-                    window_empire_sidebar_sort_set_current_sorting(btn->button_type - BUTTON_INDEX_FIRST_SORT_METHOD);
-                    window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-                    return 1;
-                }
-                window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-                return 1; //clicked away
-            }
-            break;
-        }
-    }
-    if (m->left.went_up && window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) {
-        // If left-clicked outside any button, collapse the expanded section
-        window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-        return 1; // Block further input
-    }
-    return (window_empire_sidebar_sort_get_expanded_main() != NO_POSITION) ? 1 : 0;
+    window_empire_sidebar_sort_set_hovered_sorting_button(NO_POSITION);
+    window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
+    sorting_arrow_focused = 0;
+    (void) m;
+    return 0;
 }
 
 int window_empire_sidebar_sort_get_sorting_arrow_focused(void)

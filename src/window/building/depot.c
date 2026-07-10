@@ -342,7 +342,7 @@ static void window_building_depot_init_tooltip_style_dropdown(building_info_cont
     int dropdown_x = c->x_offset + (c->width_blocks * BLOCK_SIZE) / 2 - btn_width / 2; // Center the button
     int dropdown_y = window_building_get_vertical_offset(c, 28) + 28 * BLOCK_SIZE - 16 - SMALL_ICON_SIDE;
     tooltip_style_dropdown_button.width = btn_width;
-    dropdown_button_init_simple(dropdown_x, dropdown_y, frags, 4, &tooltip_style_dropdown_button, 0);
+    dropdown_button_init_simple(dropdown_x, dropdown_y, 0, 0, frags, 4, &tooltip_style_dropdown_button, 0);
     tooltip_style_dropdown_button.selected_callback = tooltip_style_changed; // Set the callback function
 }
 
@@ -864,7 +864,7 @@ static int handle_mouse_depot_select_source_destination(const mouse *m, building
     if (scrollbar_handle_mouse(&scrollbar, m, 1)) {
         return 1;
     }
-    if (dropdown_button_handle_mouse(m, &tooltip_style_dropdown_button)) {
+    if (dropdown_button_handle_mouse(&tooltip_style_dropdown_button, m)) {
         return 1;
     }
     int y_offset = window_building_get_vertical_offset(c, 28);

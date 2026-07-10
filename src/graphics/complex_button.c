@@ -51,13 +51,9 @@ font_t complex_button_font_for_style(complex_button_style style)
     switch (style) {
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
             return FONT_SMALL_PLAIN;
-        case COMPLEX_BUTTON_STYLE_DEFAULT_WOOD:
-            return FONT_NORMAL_BROWN;
         case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
-        case COMPLEX_BUTTON_STYLE_DEFAULT_GRAY:
+        case COMPLEX_BUTTON_STYLE_GRAY:
             return FONT_NORMAL_GREEN;
-        case COMPLEX_BUTTON_STYLE_DEFAULT:
-        case COMPLEX_BUTTON_STYLE_COLORFUL:
         default:
             return FONT_NORMAL_BLACK;
     }
@@ -68,103 +64,96 @@ color_t complex_button_color_for_style(complex_button_style style)
     switch (style) {
         case COMPLEX_BUTTON_STYLE_COLORFUL:
             return COLOR_MASK_PASTEL_TURQUOISE;
-        case COMPLEX_BUTTON_STYLE_DEFAULT_WOOD:
-            return COLOR_MASK_PASTEL_BROWN2;
         case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
             return COLOR_MASK_PASTEL_BROWN4;
-        case COMPLEX_BUTTON_STYLE_DEFAULT_GRAY:
-            return COLOR_MASK_PASTEL_GRAY;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_NO_FILL:
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
+        case COMPLEX_BUTTON_STYLE_GRAY:
         default:
             return COLOR_MASK_NONE;
     }
 }
 
-static void draw_default_style(const complex_button *button, font_t base_font, color_t label_color)
+static int sequence_position_is_centered(sequence_positioning position)
 {
-    font_t font;
-    const int inner_margin = 2; // small horizontal margin for text/images
-    switch (base_font) { // this bit just changes fonts for disabled buttons. It should be moved out of the drawing fnc
-        case FONT_NORMAL_BLACK:
-            font = !button->is_disabled ? FONT_NORMAL_BLACK : FONT_NORMAL_WHITE;
-            break;
-        case FONT_SMALL_PLAIN:
-        case FONT_NORMAL_BROWN:
+    switch (position) {
+        case SEQUENCE_POSITION_TOP_CENTER:
+        case SEQUENCE_POSITION_CENTER:
+        case SEQUENCE_POSITION_BOTTOM_CENTER:
+            return 1;
         default:
-            font = base_font;
-            break;
+            return 0;
     }
-    const color_t f_color = button->is_disabled ? COLOR_FONT_GRAY : COLOR_MASK_NONE;
-    label_color = label_color ? label_color : COLOR_MASK_NONE;
-    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+}
 
-    int height_blocks = button->height / BLOCK_SIZE;
-    if (button->style == COMPLEX_BUTTON_STYLE_DEFAULT_GRAY) {
-        inner_panel_draw_colored(button->x, button->y, button->width, button->height, label_color);
-    } else {
-        unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1, height_blocks + 1,
-            label_color);
-    }
-
-    int draw_red_border = !button->is_disabled ? button->is_focused : 0;    // Only draw border if enabled
-    if (button->flush_with_background) {
-        button_border_draw_colored_flush(button->x, button->y, button->width, button->height, draw_red_border, label_color);
-    } else {
-        button_border_draw_colored(button->x, button->y, button->width, button->height, draw_red_border, label_color);
-    }
-    sequence_positioning pos = (!button->sequence_position) ? SEQUENCE_POSITION_CENTER : button->sequence_position;
-    // Y offset based on positioning enum (row: top, center, bottom)
+static int sequence_y_offset(const complex_button *button, sequence_positioning position, font_t font)
+{
+    const int inner_margin = 2;
     int text_height = font_definition_for(font)->line_height;
-    int sequence_y_offset = 0;
-    switch (pos) {
+
+    switch (position) {
         case SEQUENCE_POSITION_TOP_LEFT:
         case SEQUENCE_POSITION_TOP_CENTER:
         case SEQUENCE_POSITION_TOP_RIGHT:
-            sequence_y_offset = button->y + inner_margin;
-            break;
+            return button->y + inner_margin;
+
+        case SEQUENCE_POSITION_BOTTOM_LEFT:
+        case SEQUENCE_POSITION_BOTTOM_CENTER:
+        case SEQUENCE_POSITION_BOTTOM_RIGHT:
+            return button->y + button->height - text_height - inner_margin;
+
         case SEQUENCE_POSITION_CENTER_LEFT:
         case SEQUENCE_POSITION_CENTER:
         case SEQUENCE_POSITION_CENTER_RIGHT:
         default:
-            sequence_y_offset = button->y + (button->height - text_height) / 2;
-            break;
-        case SEQUENCE_POSITION_BOTTOM_LEFT:
-        case SEQUENCE_POSITION_BOTTOM_CENTER:
-        case SEQUENCE_POSITION_BOTTOM_RIGHT:
-            sequence_y_offset = button->y + button->height - text_height - inner_margin;
-            break;
+            return button->y + (button->height - text_height) / 2;
     }
+}
 
-    // Pre-calc widths
-    int seq_width = lang_text_get_sequence_width(button->sequence, button->sequence_size, font);
-    seq_width = seq_width % 2 ? seq_width - 1 : seq_width; // even up for better centering
-    int img_before_w = 0, img_after_w = 0;
-    const image *img_before = NULL, *img_after = NULL;
+static void draw_button_contents(const complex_button *button, font_t font)
+{
+    const int inner_margin = 2;
+    const color_t font_color = button->is_disabled ? COLOR_FONT_GRAY : COLOR_MASK_NONE;
+    const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
+
+    sequence_positioning position = button->sequence_position ?
+        button->sequence_position : SEQUENCE_POSITION_CENTER;
+
+    int text_y = sequence_y_offset(button, position, font);
+    int sequence_width = lang_text_get_sequence_width(button->sequence, button->sequence_size, font);
+    sequence_width -= sequence_width % 2;
+
+    const image *image_before = NULL;
+    const image *image_after = NULL;
+    int image_before_width = 0;
+    int image_after_width = 0;
 
     if (button->image_before > 0) {
-        img_before = image_get(button->image_before);
-        img_before_w = img_before->width + inner_margin;
+        image_before = image_get(button->image_before);
+        image_before_width = image_before->width + inner_margin;
     }
     if (button->image_after > 0) {
-        img_after = image_get(button->image_after);
-        img_after_w = img_after->width + inner_margin;
+        image_after = image_get(button->image_after);
+        image_after_width = image_after->width + inner_margin;
     }
 
-    int total_width = img_before_w + seq_width + img_after_w;
+    int total_width = image_before_width + sequence_width + image_after_width;
+    int cursor_x;
 
-    int cursor_x = 0;
-    switch (pos) {
+    switch (position) {
         case SEQUENCE_POSITION_TOP_RIGHT:
         case SEQUENCE_POSITION_CENTER_RIGHT:
         case SEQUENCE_POSITION_BOTTOM_RIGHT:
             cursor_x = button->x + button->width - inner_margin - total_width;
             break;
+
         case SEQUENCE_POSITION_TOP_LEFT:
         case SEQUENCE_POSITION_CENTER_LEFT:
         case SEQUENCE_POSITION_BOTTOM_LEFT:
             cursor_x = button->x + inner_margin;
             break;
+
         case SEQUENCE_POSITION_TOP_CENTER:
         case SEQUENCE_POSITION_CENTER:
         case SEQUENCE_POSITION_BOTTOM_CENTER:
@@ -173,41 +162,101 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
             break;
     }
 
-    // Draw before-image if present
-    color_t mask = !button->is_disabled ? COLOR_MASK_NONE : COLOR_MASK_GRAY;
-    if (img_before) {
-        int img_y = button->y + (button->height - img_before->height) / 2;
-        image_draw(button->image_before, cursor_x, img_y, mask, SCALE_NONE);
-        cursor_x += img_before->width + inner_margin;
+    if (image_before) {
+        int image_y = button->y + (button->height - image_before->height) / 2;
+        image_draw(button->image_before, cursor_x, image_y, image_mask, SCALE_NONE);
+        cursor_x += image_before->width + inner_margin;
     }
 
-    // Draw sequence (centered version if enum is 2,5,8)
     int was_ellipsized = 0;
     if (button->sequence && button->sequence_size > 0) {
-        if (pos == SEQUENCE_POSITION_TOP_CENTER || pos == SEQUENCE_POSITION_CENTER ||
-             pos == SEQUENCE_POSITION_BOTTOM_CENTER) {
-            lang_text_draw_sequence_centered_ellipsized(button->sequence, button->sequence_size, button->x,
-                sequence_y_offset, button->width, font, f_color, &was_ellipsized);
+        if (sequence_position_is_centered(position)) {
+            lang_text_draw_sequence_centered_ellipsized(button->sequence, button->sequence_size,
+                button->x, text_y, button->width, font, font_color, &was_ellipsized);
         } else {
-            cursor_x += lang_text_draw_sequence_ellipsized(button->sequence, button->sequence_size, cursor_x,
-                sequence_y_offset, button->width, font, f_color, &was_ellipsized);
+            cursor_x += lang_text_draw_sequence_ellipsized(button->sequence, button->sequence_size,
+                cursor_x, text_y, button->width, font, font_color, &was_ellipsized);
         }
     }
-    complex_button_ellipsized((complex_button *) button, was_ellipsized); //de-constant button to set ellipsized flag
 
-    // Draw after-image if present
-    if (img_after) {
-        int img_y = button->y + (button->height - img_after->height) / 2;
-        image_draw(button->image_after, cursor_x + inner_margin, img_y, mask, SCALE_NONE);
+    complex_button_ellipsized((complex_button *) button, was_ellipsized);
+
+    if (image_after) {
+        int image_y = button->y + (button->height - image_after->height) / 2;
+        image_draw(button->image_after, cursor_x + inner_margin, image_y, image_mask, SCALE_NONE);
+    }
+}
+
+static font_t get_button_font(const complex_button *button, font_t base_font)
+{
+    if (!button->is_disabled) {
+        return base_font;
+    }
+    switch (base_font) {
+        case FONT_NORMAL_BLACK:
+            return FONT_NORMAL_WHITE;
+
+        case FONT_SMALL_PLAIN:
+        case FONT_NORMAL_BROWN:
+        default:
+            return base_font;
+    }
+}
+
+static void draw_default_style(const complex_button *button, font_t base_font, color_t label_color)
+{
+    font_t font = get_button_font(button, base_font);
+    label_color = label_color ? label_color : COLOR_MASK_NONE;
+
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+
+    int height_blocks = button->height / BLOCK_SIZE;
+    switch (button->style) {
+        case COMPLEX_BUTTON_STYLE_NO_FILL:
+            break; // no bg fill
+        case COMPLEX_BUTTON_STYLE_BROWN:
+            inner_panel_draw_colored(button->x, button->y, button->width, button->height, label_color);
+            break;
+        default:
+            unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
+                height_blocks + 1, label_color);
+            break;
     }
 
+    int draw_red_border = !button->is_disabled && button->is_focused;
+    if (button->flush_with_background) {
+        button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
+            draw_red_border, label_color);
+    } else {
+        button_border_draw_colored(button->x, button->y, button->width, button->height,
+            draw_red_border, label_color);
+    }
+
+    draw_button_contents(button, font);
     graphics_reset_clip_rectangle();
 }
 
-static void draw_grey_style(const complex_button *button)
+static void draw_main_menu_style(const complex_button *button, font_t base_font, color_t label_color)
 {
+    font_t font = get_button_font(button, base_font);
+
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-    // hold the place for the placeholder
+    switch (button->style) {
+        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
+            break; // no bg fill
+        default:
+        case COMPLEX_BUTTON_STYLE_GRAY:
+            large_label_draw_bg(button->x, button->y, button->width, button->height);
+            break;
+    }
+
+    if (!button->is_disabled && button->is_focused) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+    }
+
+    draw_button_contents(button, font);
+    large_label_draw_border(button->x, button->y, button->width, button->height);
+    graphics_reset_clip_rectangle();
 }
 
 static void complex_button_ellipsized(complex_button *button, int was_ellipsized)
@@ -229,7 +278,10 @@ void complex_button_draw(const complex_button *button)
     color_t base_color = complex_button_color_for_style(button->style);
     font_t base_font = complex_button_font_for_style(button->style);
     switch (button->style) {
-        default: // all other variants housed in the default function 
+        case COMPLEX_BUTTON_STYLE_GRAY:
+            draw_main_menu_style(button, base_font, base_color);
+            break;
+        default: // all other variants housed in the default style draw function 
             draw_default_style(button, base_font, base_color);
     }
 }
@@ -328,21 +380,32 @@ void checkbox_button_array_draw(const checkbox_button *buttons, unsigned int num
     }
 }
 
-void cycling_button_draw(const cycling_button *button)
+color_t cycling_button_color_for_style(cycling_button_style style)
 {
-    if (!button) {
-        return;
+    // Cycling buttons inherit color from state, but this selector allows future style variations
+    switch (style) {
+        case CYCLING_BUTTON_STYLE_GRAY:
+        default:
+            return COLOR_MASK_NONE;
     }
+}
 
-    const cycling_button_state *state = cycling_button_get_state(button);
-    if (!state) {
-        return;
+font_t cycling_button_font_for_style(cycling_button_style style)
+{
+    // Cycling buttons inherit font from state, but this selector allows future style variations
+    switch (style) {
+        case CYCLING_BUTTON_STYLE_GRAY:
+            return FONT_NORMAL_GREEN;
+        default:
+            return FONT_NORMAL_BLACK;
     }
+}
 
+static void draw_cycling_button_contents(const cycling_button *button, const cycling_button_state *state, font_t font)
+{
     const int inner_margin = 2;
-    font_t font = state->font ? state->font : FONT_NORMAL_BLACK;
-    color_t text_color = state->color_mask ? state->color_mask : COLOR_MASK_NONE;
-    color_t image_color = COLOR_MASK_NONE;
+    const color_t text_color = state->color_mask ? state->color_mask : COLOR_MASK_NONE;
+    const color_t image_color = COLOR_MASK_NONE;
 
     int img_before_w = 0;
     int img_after_w = 0;
@@ -376,10 +439,6 @@ void cycling_button_draw(const cycling_button *button)
     }
     int text_y = button->y + (button->height - font_definition_for(font)->line_height) / 2;
 
-    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-    if (button->fill_bg) {
-        unbordered_panel_draw_px(button->x, button->y, button->width, button->height);
-    }
     if (img_before) {
         int img_y = button->y + (button->height - img_before->height) / 2;
         image_draw(state->image_before, cursor_x, img_y, image_color, SCALE_NONE);
@@ -395,8 +454,65 @@ void cycling_button_draw(const cycling_button *button)
         int img_y = button->y + (button->height - img_after->height) / 2;
         image_draw(state->image_after, cursor_x + inner_margin, img_y, image_color, SCALE_NONE);
     }
+}
+
+void cycling_button_draw_default_style(const cycling_button *button)
+{
+    if (!button) {
+        return;
+    }
+
+    const cycling_button_state *state = cycling_button_get_state(button);
+    if (!state) {
+        return;
+    }
+
+    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
+
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+    if (button->fill_bg) {
+        unbordered_panel_draw_px(button->x, button->y, button->width, button->height);
+    }
+
+    draw_cycling_button_contents(button, state, font);
     button_border_draw(button->x, button->y, button->width, button->height, button->is_hovered);
     graphics_reset_clip_rectangle();
+}
+
+void cycling_button_draw_gray_style(const cycling_button *button)
+{
+    if (!button) {
+        return;
+    }
+
+    const cycling_button_state *state = cycling_button_get_state(button);
+    if (!state) {
+        return;
+    }
+
+    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
+    if (button->style == CYCLING_BUTTON_STYLE_GRAY_NO_FILL) {
+        large_label_draw_border(button->x, button->y, button->width, button->height);
+    } else {
+        large_label_draw_bg(button->x, button->y, button->width, button->height);
+    }
+    if (button->is_hovered) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+    }
+    draw_cycling_button_contents(button, state, font);
+    large_label_draw_border(button->x, button->y, button->width, button->height);
+}
+
+void cycling_button_draw(const cycling_button *button)
+{
+    switch (button->style) {
+        case CYCLING_BUTTON_STYLE_GRAY:
+        case CYCLING_BUTTON_STYLE_GRAY_NO_FILL:
+            cycling_button_draw_gray_style(button);
+            break;
+        default:
+            cycling_button_draw_default_style(button);
+    }
 }
 
 void cycling_button_array_draw(const cycling_button *buttons, unsigned int num_buttons)

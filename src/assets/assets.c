@@ -60,6 +60,7 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_OX] = assets_get_image_id("Walkers", "Ox_Portrait");
     data.asset_lookup[ASSET_UI_RISKS] = assets_get_image_id("UI", "Risk_Widget_Collapse");
     data.asset_lookup[ASSET_UI_SELECTION_CHECKMARK] = assets_get_image_id("UI", "Selection_Checkmark");
+    data.asset_lookup[ASSET_UI_SELECTION_CROSS] = assets_get_image_id("UI", "Denied_Walker_Checkmark");
     data.asset_lookup[ASSET_UI_GEAR_ICON] = assets_get_image_id("UI", "gear_icon");
     data.asset_lookup[ASSET_UI_COPY_ICON] = assets_get_image_id("UI", "copy_icon");
     data.asset_lookup[ASSET_UI_PASTE_ICON] = assets_get_image_id("UI", "paste_icon");
@@ -106,8 +107,12 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_07] = assets_get_image_id("UI", "Button_Menu_Frame_07");
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_08] = assets_get_image_id("UI", "Button_Menu_Frame_08");
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_09] = assets_get_image_id("UI", "Button_Menu_Frame_09");
-
-
+    data.asset_lookup[ASSET_UI_SORTING_ICON] = assets_get_image_id("UI", "Sorting_Icon");
+    data.asset_lookup[ASSET_UI_FILTER_ICON] = assets_get_image_id("UI", "Filter_Icon");
+    data.asset_lookup[ASSET_UI_SORTING_ICON_HOVER] = assets_get_image_id("UI", "Sorting_Icon_Hover");
+    data.asset_lookup[ASSET_UI_FILTER_ICON_HOVER] = assets_get_image_id("UI", "Filter_Icon_Hover");
+    data.asset_lookup[ASSET_UI_ARROW_MASKED_UP] = assets_get_image_id("UI", "Arrow_Up_Masked");
+    data.asset_lookup[ASSET_UI_ARROW_MASKED_DOWN] = assets_get_image_id("UI", "Arrow_Down_Masked");
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
     data.font_lookup[ASSET_FONT_SQ_BRACKET_RIGHT] = assets_get_image_id("UI", "rightbracket_white_l");

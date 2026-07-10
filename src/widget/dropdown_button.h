@@ -9,6 +9,12 @@
 #define DROPDOWN_BUTTON_MAX_WIDTH 400
 #define DROPDOWN_BUTTON_MAX_COUNT 32 // arbitrary limit to limit memory print of dropdowns
 
+typedef enum {
+    DD_BUTTON_STYLE_DEFAULT,            // Basic: white/red border, default plain background fill
+    DD_BUTTON_STYLE_DEFAULT_SMALL,      // like default but small font and less padding
+    DD_BUTTON_STYLE_GRAY,               // main-menu-like style
+} dropdown_button_style;
+
 typedef struct dropdown_button dropdown_button;  // forward declaration
 
 /**
@@ -31,6 +37,7 @@ struct dropdown_button {
     short show_origin;                     /**< 1 = show anchor[0] button on no selection, or while expanded */
     /**< 0 = always show selected index if present, instead of the origin button */
 /* Layout configuration */
+    int height;                            /**< Dropdown height: 0 = auto (based on font line height + padding) */
     int width;                             /**< Dropdown width: 0 = auto (based on longest text) */
     int spacing;                           /**< Vertical spacing between option buttons (px) */
     int padding;                           /**< Horizontal padding added to text width (px) */
@@ -52,7 +59,7 @@ struct dropdown_button {
  * @param padding      Horizontal padding in px applied around text for auto-width.
  */
 void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
-    unsigned int num_buttons, int width, int spacing, int padding);
+    unsigned int num_buttons, int width, int height, int spacing, int padding);
 
 /**
  * @brief Simplified initialization: only x, y, fragment list, and count required.
@@ -68,8 +75,16 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
  * @param dd     Pointer to dropdown_button to initialize
  * @param style  Style to apply to all buttons, 0 for default
  */
-void dropdown_button_init_simple(int x, int y, const lang_fragment *frags,
-    unsigned int count, dropdown_button *dd, complex_button_style style);
+void dropdown_button_init_simple(int x, int y, int width, int height, const lang_fragment *frags,
+    unsigned int count, dropdown_button *dd, dropdown_button_style style);
+
+/**
+ * @brief Update dropdown geometry only (position and size for origin and options).
+ *
+ * Does not modify callbacks, style, selection, visibility, or other non-geometry state.
+ * Width/height values <= 0 keep the current calculated dimensions.
+ */
+void dropdown_button_update_dimensions(int x, int y, int width, int height, dropdown_button *dd);
 
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c);
 
@@ -86,11 +101,11 @@ void dropdown_button_draw(const dropdown_button *dd);
  * Processes input for the origin button and, if expanded, all option buttons.
  * Updates expanded state and selected option index.
  *
- * @param m  Pointer to mouse state.
  * @param dd Pointer to dropdown_button to process.
+ * @param m  Pointer to mouse state.
  * @return 1 if any button handled input, 0 otherwise.
  */
-int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd);
+int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m);
 
 /**
  * @brief Default click handler for dropdown options.
