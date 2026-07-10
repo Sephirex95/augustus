@@ -225,7 +225,7 @@ static int is_sidebar_border(const mouse *m);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
-static int route_type_filter_button_click(const cycling_button *button);
+static void route_type_filter_button_click(cycling_button *button);
 
 //buttons position registrators to enable dynamic positioning
 static void register_resource_button(int x, int y, int width, int height, resource_type r, int highlight);
@@ -2018,7 +2018,7 @@ void handle_sidebar_dragging(const mouse *m)
     data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
 }
 
-static int route_type_filter_button_click(const cycling_button *button)
+static void route_type_filter_button_click(cycling_button *button)
 {
     filter_method filters = window_empire_sidebar_sort_get_current_filtering();
 
@@ -2039,7 +2039,6 @@ static int route_type_filter_button_click(const cycling_button *button)
 
     window_empire_sidebar_sort_set_current_filtering(filters);
     window_request_refresh();
-    return 1;
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)
