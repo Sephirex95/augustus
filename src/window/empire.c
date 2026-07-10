@@ -227,6 +227,10 @@ static void button_open_trade_by_route(int route_id);
 static void button_open_trade_ledger(int param1, int param2);
 static void route_type_filter_button_click(const cycling_button *button);
 static void route_open_filter_button_click(const cycling_button *button);
+static void sorting_direction_button_click(cycling_button *button);
+static void sort_dropdown_selected(dropdown_button *dd);
+static void reset_sort_click(const complex_button *button);
+static void reset_filter_click(const complex_button *button);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -382,6 +386,7 @@ static void setup_filter_and_sort_buttons(void)
         trade_sort, 6, &trade_sort_dd, DD_BUTTON_STYLE_GRAY); // 0,0 for x,y because update runs every frame
 
     trade_sort_dd.selected_index = 1; // default to "Name"
+    trade_sort_dd.selected_callback = sort_dropdown_selected;
 
 
     reset_sort_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
@@ -389,6 +394,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_sort_btn.image_before = sort_icon;
     reset_sort_btn.style = COMPLEX_BUTTON_STYLE_GRAY;
     reset_sort_btn.hover_handler = reset_sort_hover;
+    reset_sort_btn.left_click_handler = reset_sort_click;
 
     sorting_direction_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     sorting_direction_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
@@ -396,6 +402,8 @@ static void setup_filter_and_sort_buttons(void)
     sorting_direction_btn.state_count = 2;
     sorting_direction_btn.states[0].image_before = arrow_down_icon;
     sorting_direction_btn.states[1].image_before = arrow_up_icon;
+    sorting_direction_btn.left_click_handler = sorting_direction_button_click;
+    sorting_direction_btn.state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     // filtering section
     reset_filter_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
@@ -403,6 +411,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_filter_btn.image_before = filter_icon;
     reset_filter_btn.style = COMPLEX_BUTTON_STYLE_GRAY;
     reset_filter_btn.hover_handler = reset_filter_hover;
+    reset_filter_btn.left_click_handler = reset_filter_click;
 
     route_type_filter_btn.width = SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
     route_type_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
@@ -470,6 +479,30 @@ static void setup_sidebar(void)
 
 static void refresh_filter_and_sort_buttons(void)
 {
+    int sorting = window_empire_sidebar_sort_get_current_sorting();
+    if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
+        trade_sort_dd.selected_index = sorting + 1;
+    }
+
+    filter_method filters = window_empire_sidebar_sort_get_current_filtering();
+    if (filters & FILTER_BY_LAND) {
+        route_type_filter_btn.state_index = 1;
+    } else if (filters & FILTER_BY_SEA) {
+        route_type_filter_btn.state_index = 2;
+    } else {
+        route_type_filter_btn.state_index = 0;
+    }
+
+    if (filters & FILTER_BY_OPEN) {
+        route_open_filter_btn.state_index = 1;
+    } else if (filters & FILTER_BY_CLOSED) {
+        route_open_filter_btn.state_index = 2;
+    } else {
+        route_open_filter_btn.state_index = 0;
+    }
+
+    sorting_direction_btn.state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
+
     int sort_x = data.sidebar.sort_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int filter_x = data.sidebar.filter_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int y = data.sidebar.y_min + SIDEBAR_MARGIN_VERTICAL;
@@ -560,7 +593,7 @@ static void refresh_sidebar_gridbox(void)
     }
 
     sidebar_grid_box.x = data.sidebar.x_min + data.sidebar.margin_left;
-    sidebar_grid_box.y = data.sidebar.y_min + data.sidebar.margin_top;
+    sidebar_grid_box.y = data.sidebar.y_min + data.sidebar.margin_top + SIDEBAR_HEADER_BUTTON_V_MARGIN;
     sidebar_grid_box.width = data.sidebar.width - data.sidebar.margin_right - data.sidebar.margin_left;
     sidebar_grid_box.height = data.sidebar.y_max - data.sidebar.y_min - data.sidebar.margin_top - data.sidebar.margin_bottom;
     sidebar_grid_box.item_height = SIDEBAR_ENTRY_HEIGHT;
@@ -2166,6 +2199,45 @@ static void route_open_filter_button_click(const cycling_button *button)
     }
 
     window_empire_sidebar_sort_set_current_filtering(filters);
+    window_request_refresh();
+}
+
+static void sorting_direction_button_click(cycling_button *button)
+{
+    int reversed = (button->state_index != 0);
+    window_empire_sidebar_sort_set_sorting_reversed(reversed);
+    window_request_refresh();
+}
+
+static void sort_dropdown_selected(dropdown_button *dd)
+{
+    if (!dd) {
+        return;
+    }
+
+    int selected = dd->selected_index;
+    if (selected < 1 || selected > MAX_SORTING_KEY) {
+        return;
+    }
+
+    window_empire_sidebar_sort_set_current_sorting(selected - 1);
+    window_request_refresh();
+}
+
+static void reset_sort_click(const complex_button *button)
+{
+    window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME);
+    window_empire_sidebar_sort_set_sorting_reversed(0);
+    trade_sort_dd.selected_index = SORT_BY_NAME + 1;
+    sorting_direction_btn.state_index = 0;
+    window_request_refresh();
+}
+
+static void reset_filter_click(const complex_button *button)
+{
+    window_empire_sidebar_sort_set_current_filtering(FILTER_NONE);
+    route_type_filter_btn.state_index = 0;
+    route_open_filter_btn.state_index = 0;
     window_request_refresh();
 }
 

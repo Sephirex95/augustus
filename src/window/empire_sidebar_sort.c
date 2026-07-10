@@ -20,25 +20,22 @@
 #define WIDTH_BORDER 16
 
 /* Next time start here:
-* In dropdown button/complex button styles:
-    *add a style for the inner_panel draw as the background - done
-    *add a style that mimicks the main menu buttons - done
-* Remove the sorting button draw and replace it completely with a standard dropdown button.
+INVESTIGATE: Why does tradebuysell dropdown swallow mouse when expanded but sorting dd doesnt?
+when sorting dd is expanded, you can still click other buttons. Unacceptable REEEEEEE!!!!!!!!!!!!!!!!
+
+Fix the hover logic directly in complex_button.c code - if not hovered, return original properties.
+styling - add complex_button_style for no border no fill - test for sort and filter resets.
+grid box - measure the height of the grid_box and screen to determine how many items to show.
+consider adjusting the height of items to fill the gridbox. Dont want the empty space below entries.
 * Dropdown button for sorting:
-    * icon before text
     * if sorting selected, leave only selected text + icon before, no 'Sort by' text
-* Move arrow button to it's own border, next to the sorting dropdown. Use the new cutout arrow asset.
-* Filter section - draw the static filter icon and border for the entire section.
 * In filter section:
-    * Open/closed cycling button - X / Y / Nothing + tooltip
-    * Sea/Land cycling button - just add tooltip
     * Resource picker - dropdown as placeholder,
     *       > think about a grid selector for the future - could be used with other things, like roadblock styles
-    * Sell/Buy/Any - cycling or dropdown? test both.
-* Still need to make a history asset for the dropdown - maybe not? maybe use the date plain: 'AD 122' with no anchor
-* Trade History - just goes on a small button in the bottom corner?
-* Should also fit RESET button somewhere :
-*   > add a hover on the filter icon that overlays a small red X over it- when pressed, reset filters
+* Trade history button and year dropdown go under the grid_box.
+* if time allows, move out everything relating to the sidebar to this file, rename it to empire_sidebar.c
+* complex_button.c should be split into separate files for cycling and checkbox buttons
+* then all of them including dropdown_button should be moved to widget folder for clarity and simplicty
 */
 
 
