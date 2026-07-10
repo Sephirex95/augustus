@@ -297,36 +297,27 @@ static struct {
         int x_max;
     } panel;
     struct {
-        int x_min, x_max, y_min, y_max;
-        int margin_left, margin_right, margin_top, margin_bottom;
+        int x_min, x_max, y_min, y_max; // inside the borders - borders are drawn outside of these bounds
+        int margin_left, margin_right, margin_top, margin_bottom; // content margins inside the sidebar
         int width, height;
         int scroll;
         int scroll_max;
-        short initialised;
-        short buttons_initialised;
-        uint8_t width_percent; // sidebar width as percentage of map width (0-100)
-        int dragging; // is sidebar being dragged
-        uint8_t dragging_width; // width during dragging (0-100)
-        uint8_t previous_width; // used to restore the width when dragging ends (0-100)
+        char initialised;
+        char buttons_initialised;
+        char dragging; // is sidebar being dragged
+        unsigned char width_percent; // sidebar width as percentage of map width (0-100)
+        unsigned char dragging_width; // width during dragging (0-100)
+        unsigned char previous_width; // used to restore the width when dragging ends (0-100)
         struct {
-            int x_min;
-            int x_max;
-            int y_min;
-            int y_max;
-            int is_collapsed;
-            int is_hovered;
+            int x_min, x_max, y_min, y_max;
+            char is_hovered;
+            char is_collapsed;
         } border_btn;
         struct {
-            int x_min;
-            int x_max;
-            int y_min;
-            int y_max;
+            int x_min, x_max, y_min, y_max;
         } filter_section;
         struct {
-            int x_min;
-            int x_max;
-            int y_min;
-            int y_max;
+            int x_min, x_max, y_min, y_max;
         }sorting_section;
     } sidebar;
     int trade_route_anim_start;
@@ -340,65 +331,20 @@ static void init(void)
 {
     data.selected_button = NO_POSITION; // no button selected
     data.trade_route_anim_start = 0;
-    window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
-    if (!data.sidebar.initialised) {
-        window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME); // default sorting method
-        window_empire_sidebar_sort_set_current_filtering(FILTER_NONE); // default to no filtering
-        window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE); // no resource selected
-    }
-    window_empire_sidebar_sort_set_hovered_sorting_button(NO_POSITION);
-
-    data.sidebar.width_percent = config_get(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH); // default sidebar width (25%)
-    data.sidebar.dragging = 0; // not dragging initially
-    data.sidebar.dragging_width = 0;
-    data.sidebar.previous_width = 0;
-    data.sidebar.border_btn.is_hovered = 0; // not hovered initially
-    data.sidebar.initialised = 1;
     process_selection();
     data.focus_button_id = 0;
     window_empire_collect_trade_edges();
     data.trade_route_anim_start = time_get_millis();
-}
-
-static void setup_sidebar(void)
-{
-    // Calculate sidebar bounds
     int s_width = screen_width();
     int s_height = screen_height();
     int map_width, map_height;
     empire_get_map_size(&map_width, &map_height);
-
     int max_width = map_width + WIDTH_BORDER;
     int max_height = map_height + HEIGHT_BORDER;
-
     data.x_min = s_width <= max_width ? 0 : (s_width - max_width) / 2;
     data.x_max = s_width <= max_width ? s_width : data.x_min + max_width;
     data.y_min = s_height <= max_height ? 0 : (s_height - max_height) / 2;
     data.y_max = s_height <= max_height ? s_height : data.y_min + max_height;
-
-    int map_draw_x_min = data.x_min + WIDTH_BORDER;
-    int map_draw_x_max = data.x_max - WIDTH_BORDER;
-    int map_draw_y_min = data.y_min + WIDTH_BORDER;
-    int map_draw_y_max = data.y_max - BOTTOM_PANEL_HEIGHT;
-
-    data.sidebar.margin_left = 3; //margins between sidebar and gridbox
-    data.sidebar.margin_right = 3;
-    data.sidebar.margin_top = 2 * BLOCK_SIZE + 6; //space for sorting buttons
-    data.sidebar.margin_bottom = 6;
-    data.usable_map_width = map_draw_x_max - map_draw_x_min;
-
-    // Use only one width source - prefer dragging width when actively dragging
-    uint8_t active_width_percent = data.sidebar.dragging ? data.sidebar.dragging_width : data.sidebar.width_percent;
-    int raw = (data.usable_map_width * active_width_percent) / 100;
-    data.sidebar.width = ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE + data.sidebar.margin_left + data.sidebar.margin_right;
-    //ensure that the inner panels draw predictably
-
-    data.sidebar.height = map_draw_y_max - map_draw_y_min;
-
-    data.sidebar.x_min = map_draw_x_max - data.sidebar.width;
-    data.sidebar.x_max = map_draw_x_max;
-    data.sidebar.y_min = map_draw_y_min;
-    data.sidebar.y_max = map_draw_y_max;
 }
 
 static void setup_route_type_filter_buttons(void)
@@ -456,18 +402,61 @@ static void setup_route_type_filter_buttons(void)
     data.sidebar.buttons_initialised = 1;
 }
 
+static void setup_sidebar(void)
+{
+    window_empire_sidebar_sort_set_expanded_main(NO_POSITION);
+    if (!data.sidebar.initialised) {
+        window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME); // default sorting method
+        window_empire_sidebar_sort_set_current_filtering(FILTER_NONE); // default to no filtering
+        window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE); // no resource selected
+    }
+    window_empire_sidebar_sort_set_hovered_sorting_button(NO_POSITION);
+
+    data.sidebar.width_percent = config_get(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH); // default sidebar width (25%)
+    data.sidebar.dragging = 0; // not dragging initially
+    data.sidebar.dragging_width = 0;
+    data.sidebar.previous_width = 0;
+    data.sidebar.border_btn.is_hovered = 0; // not hovered initially
+    // Calculate sidebar bounds
+    int map_draw_x_min = data.x_min + WIDTH_BORDER;
+    int map_draw_x_max = data.x_max - WIDTH_BORDER;
+    int map_draw_y_min = data.y_min + WIDTH_BORDER;
+    int map_draw_y_max = data.y_max - BOTTOM_PANEL_HEIGHT;
+
+    data.sidebar.margin_left = 3; //margins between sidebar and gridbox
+    data.sidebar.margin_right = 3;
+    data.sidebar.margin_top = 2 * BLOCK_SIZE + 6; //space for sorting buttons
+    data.sidebar.margin_bottom = 6;
+    data.usable_map_width = map_draw_x_max - map_draw_x_min;
+
+    // Use only one width source - prefer dragging width when actively dragging
+    uint8_t active_width_percent = data.sidebar.dragging ? data.sidebar.dragging_width : data.sidebar.width_percent;
+    int raw = (data.usable_map_width * active_width_percent) / 100;
+    data.sidebar.width = ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE + data.sidebar.margin_left + data.sidebar.margin_right;
+
+
+    data.sidebar.height = map_draw_y_max - map_draw_y_min;
+    data.sidebar.x_min = map_draw_x_max - data.sidebar.width;
+    data.sidebar.x_max = map_draw_x_max;
+    data.sidebar.y_min = map_draw_y_min;
+    data.sidebar.y_max = map_draw_y_max;
+
+    setup_route_type_filter_buttons();
+
+    data.sidebar.initialised = 1; // dimensions set up
+}
+
 static void setup_sidebar_gridbox(void)
 {
     // setup runs every frame, to ensure sorting and filtering are applied and gridbox is updated
-    if (data.sidebar.width_percent < 1) {
-        return;
+    // should be changed - one init, and refresh function that runs every frame.
+    if (data.sidebar.width_percent < 5) {
+        return; // won't fit
     }
 
     int y = data.sidebar.y_min + data.sidebar.margin_top;
     sidebar_city_count = 0;
-    if (!data.sidebar.buttons_initialised) {
-        setup_route_type_filter_buttons();
-    }
+
     for (int i = 1; i < empire_city_get_array_size(); i++) { // skip "no city" entry
         empire_city *city = empire_city_get(i);
         if (!city->in_use || city->type != EMPIRE_CITY_TRADE) continue;
@@ -510,7 +499,7 @@ static void setup_sidebar_gridbox(void)
     sidebar_grid_box.on_click = on_sidebar_city_click;
     sidebar_grid_box.handle_tooltip = NULL;
     sidebar_grid_box.offset_scrollbar_x = grid_box_has_scrollbar(&sidebar_grid_box) ? -14 : 0;
-    sidebar_grid_box.offset_scrollbar_y = grid_box_has_scrollbar(&sidebar_grid_box) ? -20 : 0;
+    sidebar_grid_box.offset_scrollbar_y = 0; // grid_box_has_scrollbar(&sidebar_grid_box) ? -20 : 0;
     grid_box_set_bounds(&sidebar_grid_box, sidebar_grid_box.x, sidebar_grid_box.y, sidebar_grid_box.width, sidebar_grid_box.height);
 }
 
@@ -1474,8 +1463,6 @@ static void draw_background(void)
         image_draw_blurred_fullscreen(image_group(GROUP_EMPIRE_MAP), 3);
         graphics_shade_rect(0, 0, screen_width(), screen_height(), 7);
     }
-    setup_sidebar();
-
 }
 
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,

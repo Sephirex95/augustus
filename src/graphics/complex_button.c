@@ -494,11 +494,13 @@ void cycling_button_draw_gray_style(const cycling_button *button)
     if (button->style == CYCLING_BUTTON_STYLE_GRAY_NO_FILL) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     } else {
-        large_label_draw_custom_size(button->x, button->y, button->width, button->height);
+        large_label_draw_bg(button->x, button->y, button->width, button->height);
     }
-    // graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+    if (button->is_hovered) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+    }
     draw_cycling_button_contents(button, state, font);
-    // graphics_reset_clip_rectangle();
+    large_label_draw_border(button->x, button->y, button->width, button->height);
 }
 
 void cycling_button_draw(const cycling_button *button)
