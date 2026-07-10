@@ -15,6 +15,22 @@ static int calculate_text_width(const complex_button *btn, font_t font)
     return lang_text_get_sequence_width(btn->sequence, btn->sequence_size, font);
 }
 
+static complex_button_style dropdown_button_style_to_complex_style(dropdown_button_style style)
+{
+    // Dropdown button can't have no fill - otherwise the options buttons would break.
+    // In order to continue using complex button styles in init_simple, simple mapping:
+    switch (style) {
+        case DD_BUTTON_STYLE_DEFAULT:
+            return COMPLEX_BUTTON_STYLE_DEFAULT;
+        case DD_BUTTON_STYLE_DEFAULT_SMALL:
+            return COMPLEX_BUTTON_STYLE_DEFAULT_SMALL;
+        case DD_BUTTON_STYLE_GRAY:
+            return COMPLEX_BUTTON_STYLE_GRAY;
+        default:
+            return COMPLEX_BUTTON_STYLE_DEFAULT;
+    }
+}
+
 /* --- Helper to set anchor visual parameters to match selected option --- */
 static void update_anchor(dropdown_button *dd)
 {
@@ -109,7 +125,7 @@ static void dropdown_cancel(const complex_button *btn)
 }
 
 void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
-    unsigned int num_buttons, int width, int spacing, int padding)
+    unsigned int num_buttons, int width, int height, int spacing, int padding)
 {
     memcpy(dd->buttons, buttons, sizeof(complex_button) * num_buttons);
     //dd->buttons = buttons;
@@ -117,6 +133,7 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     dd->expanded = 0;
     dd->selected_index = -1;
 
+    dd->height = height;
     dd->width = width;
     dd->spacing = spacing;
     dd->padding = padding;
@@ -148,7 +165,7 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     }
     // --- Determine height ---
     dd->calculated_width = calc_width;
-    dd->calculated_height = origin->height;
+    dd->calculated_height = height ? height : origin->height;
     // --- Apply geometry ---
     origin->width = calc_width;
     for (unsigned int i = 1; i < num_buttons; i++) {
@@ -159,8 +176,8 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     }
 }
 
-void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsigned int count,
-     dropdown_button *dd, complex_button_style style)
+void dropdown_button_init_simple(int x, int y, int width, int height, const lang_fragment *frags, unsigned int count,
+     dropdown_button *dd, dropdown_button_style dd_style)
 {
     if (count == 0 || count > DROPDOWN_BUTTON_MAX_COUNT) {
         memset(dd, 0, sizeof(*dd));
@@ -170,16 +187,16 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
     dd->expanded = 0;
     dd->selected_index = dd->selected_index > 0 ? dd->selected_index : 0; // show the sequence of the origin by default
     dd->selected_value = -1;
-    int buttons_width = dd->width ? dd->width : 0;
+    int buttons_width = width ? width : 0;
     dd->spacing = 2;
     dd->padding = 10;
-
+    complex_button_style style = dropdown_button_style_to_complex_style(dd_style);
     font_t style_font = complex_button_font_for_style(style); // ensure font is set for style
     // Setup origin (button 0)
     complex_button *origin = &dd->buttons[0];
     origin->x = x;
     origin->y = y;
-    origin->height = font_definition_for(style_font)->line_height + 8;
+    origin->height = height ? height : font_definition_for(style_font)->line_height + 8;
     origin->width = buttons_width;
     origin->style = style;
     origin->is_hidden = 0;
@@ -211,7 +228,7 @@ void dropdown_button_init_simple(int x, int y, const lang_fragment *frags, unsig
     }
 
     // Finalize layout
-    dropdown_button_init(dd, dd->buttons, count, buttons_width, dd->spacing, dd->padding);
+    dropdown_button_init(dd, dd->buttons, count, buttons_width, dd->height, dd->spacing, dd->padding);
 }
 
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c)
@@ -249,7 +266,7 @@ static void unfocus_all(dropdown_button *dd)
     }
 }
 
-int dropdown_button_handle_mouse(const mouse *m, dropdown_button *dd)
+int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m)
 {
     int handled = 0; // indicator if returning 1 - means rest of the input handling should stop
     if (dd->num_buttons == 0) {

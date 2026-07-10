@@ -34,6 +34,7 @@
 #include "input/cursor.h"
 #include "scenario/empire.h"
 #include "scenario/invasion.h"
+#include "widget/dropdown_button.h"
 #include "window/advisors.h"
 #include "window/city.h"
 #include "window/empire_sidebar_sort.h"
@@ -211,6 +212,8 @@ static void button_show_prices(int param1, int param2);
 static void button_show_resource_window(int resource_button_index);
 static void button_open_trade_by_route(int route_id);
 static void button_open_trade_ledger(int param1, int param2);
+static void route_type_filter_button_click(const cycling_button *button);
+static void route_open_filter_button_click(const cycling_button *button);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -225,7 +228,6 @@ static int is_sidebar_border(const mouse *m);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
-static int route_type_filter_button_click(const cycling_button *button);
 
 //buttons position registrators to enable dynamic positioning
 static void register_resource_button(int x, int y, int width, int height, resource_type r, int highlight);
@@ -238,7 +240,8 @@ static resource_button resource_buttons[MAX_RESOURCE_BUTTONS];
 static int resource_button_count = 0;
 static cycling_button route_type_filter_btn;
 static cycling_button route_open_filter_btn;
-static complex_button filter_placeholder_btn;
+static dropdown_button trade_buy_sell_dd;
+
 
 //sidebar-related arrays and variables
 static scrollbar_type sidebar_scrollbar;
@@ -299,7 +302,8 @@ static struct {
         int width, height;
         int scroll;
         int scroll_max;
-        int initialised;
+        short initialised;
+        short buttons_initialised;
         uint8_t width_percent; // sidebar width as percentage of map width (0-100)
         int dragging; // is sidebar being dragged
         uint8_t dragging_width; // width during dragging (0-100)
@@ -312,6 +316,18 @@ static struct {
             int is_collapsed;
             int is_hovered;
         } border_btn;
+        struct {
+            int x_min;
+            int x_max;
+            int y_min;
+            int y_max;
+        } filter_section;
+        struct {
+            int x_min;
+            int x_max;
+            int y_min;
+            int y_max;
+        }sorting_section;
     } sidebar;
     int trade_route_anim_start;
 } data = { 0, 1 , 0 };
@@ -396,40 +412,62 @@ static void setup_route_type_filter_buttons(void)
     int land_trade_icon = assets_get_image_id("UI", "Land_Trade_Icon_Centered");
     int both_trade_icon = assets_get_image_id("UI", "Both_Trade_Icons");
 
+    data.sidebar.filter_section.x_min = x;
+    data.sidebar.filter_section.x_max = data.sidebar.x_max;
+    data.sidebar.filter_section.y_min = data.sidebar.y_min + 2;
+    data.sidebar.filter_section.y_max = data.sidebar.y_min + 37;
+
     route_type_filter_btn.x = x;
     route_type_filter_btn.y = y;
     route_type_filter_btn.width = width;
     route_type_filter_btn.height = height;
     route_type_filter_btn.left_click_handler = route_type_filter_button_click;
     route_type_filter_btn.state_count = 3;
+    route_type_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
     route_type_filter_btn.states[0].image_before = both_trade_icon; // All
     route_type_filter_btn.states[1].image_before = land_trade_icon; // Land
     route_type_filter_btn.states[2].image_before = sea_trade_icon;  // Sea
 
-    x += width + 5; // placeholders for everyone
-    static lang_fragment placeholder[1] = { 0 };
-    placeholder[0] = (lang_fragment) {
-        .type = LANG_FRAG_TEXT,
-        .text = (const uint8_t *) "Placeholder"
-    };
-    filter_placeholder_btn.x = x;
-    filter_placeholder_btn.y = y;
-    filter_placeholder_btn.width = 120;
-    filter_placeholder_btn.height = height;
-    filter_placeholder_btn.sequence = placeholder;
-    filter_placeholder_btn.sequence_size = 1;
-    filter_placeholder_btn.style = COMPLEX_BUTTON_STYLE_DEFAULT_GRAY;
+    x += width + 5;
+
+    route_open_filter_btn.x = x;
+    route_open_filter_btn.y = y;
+    route_open_filter_btn.width = height; // square button
+    route_open_filter_btn.height = height;
+    route_open_filter_btn.left_click_handler = route_open_filter_button_click;
+    route_open_filter_btn.state_count = 3;
+    route_open_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
+    route_open_filter_btn.states[1].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK);
+    route_open_filter_btn.states[2].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CROSS);
+
+    x += height + 5;
+
+    // frag, count, pointer, style
+    static lang_fragment trade_buy_sell[4];
+    for (int i = 0; i < 4; i++) {
+        trade_buy_sell[i].type = LANG_FRAG_LABEL;
+        trade_buy_sell[i].text_group = CUSTOM_TRANSLATION;
+    }
+    trade_buy_sell[1].text_id = TR_UI_TRADE_LEDGER_TRADES;
+    trade_buy_sell[2].text_id = TR_UI_TRADE_LEDGER_BUYS;
+    trade_buy_sell[3].text_id = TR_UI_TRADE_LEDGER_SELLS;
+    dropdown_button_init_simple(x, y, 84, height, trade_buy_sell, 4, &trade_buy_sell_dd, DD_BUTTON_STYLE_GRAY);
+    trade_buy_sell_dd.selected_index = 1; // default to "All"
+    data.sidebar.buttons_initialised = 1;
 }
 
 static void setup_sidebar_gridbox(void)
 {
+    // setup runs every frame, to ensure sorting and filtering are applied and gridbox is updated
     if (data.sidebar.width_percent < 1) {
         return;
     }
 
     int y = data.sidebar.y_min + data.sidebar.margin_top;
     sidebar_city_count = 0;
-    setup_route_type_filter_buttons();
+    if (!data.sidebar.buttons_initialised) {
+        setup_route_type_filter_buttons();
+    }
     for (int i = 1; i < empire_city_get_array_size(); i++) { // skip "no city" entry
         empire_city *city = empire_city_get(i);
         if (!city->in_use || city->type != EMPIRE_CITY_TRADE) continue;
@@ -1786,7 +1824,9 @@ static void draw_sidebar_grid_box(void)
     if (data.sidebar.width_percent > 25 && (!data.sidebar.dragging || data.sidebar.dragging_width > 5)) {
         window_empire_sidebar_sort_draw_expanding_buttons(data.sidebar.x_min, data.sidebar.y_min, data.sidebar.width, grid_box_has_scrollbar(&sidebar_grid_box));
         cycling_button_draw(&route_type_filter_btn);
-        complex_button_draw(&filter_placeholder_btn);
+        cycling_button_draw(&route_open_filter_btn);
+        dropdown_button_draw(&trade_buy_sell_dd);
+        //complex_button_draw(&filter_placeholder_btn);
     }
 
     graphics_reset_clip_rectangle();
@@ -2018,7 +2058,7 @@ void handle_sidebar_dragging(const mouse *m)
     data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
 }
 
-static int route_type_filter_button_click(const cycling_button *button)
+static void route_type_filter_button_click(const cycling_button *button)
 {
     filter_method filters = window_empire_sidebar_sort_get_current_filtering();
 
@@ -2039,7 +2079,27 @@ static int route_type_filter_button_click(const cycling_button *button)
 
     window_empire_sidebar_sort_set_current_filtering(filters);
     window_request_refresh();
-    return 1;
+}
+
+static void route_open_filter_button_click(const cycling_button *button)
+{
+    filter_method filters = window_empire_sidebar_sort_get_current_filtering();
+
+    filters &= ~(FILTER_BY_OPEN | FILTER_BY_CLOSED);
+
+    switch (button->state_index) {
+        case 0: // All
+            break;
+        case 1: // Open
+            filters |= FILTER_BY_OPEN;
+            break;
+        case 2: // Closed
+            filters |= FILTER_BY_CLOSED;
+            break;
+    }
+
+    window_empire_sidebar_sort_set_current_filtering(filters);
+    window_request_refresh();
 }
 
 static void handle_input(const mouse *m, const hotkeys *h)
@@ -2061,7 +2121,10 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (cycling_button_handle_mouse(&route_type_filter_btn, m)) {
             return;
         }
-        if (complex_button_handle_mouse(&filter_placeholder_btn, m)) {
+        if (cycling_button_handle_mouse(&route_open_filter_btn, m)) {
+            return;
+        }
+        if (dropdown_button_handle_mouse(&trade_buy_sell_dd, m)) {
             return;
         }
         grid_box_handle_input(&sidebar_grid_box, m, 1);

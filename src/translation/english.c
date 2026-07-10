@@ -2123,7 +2123,13 @@ static translation_string all_strings[] = {
     { TR_UI_YEAR_AGO, " year ago" },
     { TR_UI_YEARS_AGO, " Years ago " },
     { TR_UI_LAST_YEAR, "Last Year " },
-    { TR_UI_SELECT_TRADE_LEDGER_YEAR, "Select Year"},
+    { TR_UI_SELECT_TRADE_LEDGER_YEAR, "Select Year" },
+    { TR_UI_TRADE_LEDGER_OPEN, "Open" },
+    { TR_UI_TRADE_LEDGER_CLOSED, "Closed" },
+    { TR_UI_TRADE_LEDGER_BOTH, "Opened/closed" },
+    { TR_UI_TRADE_LEDGER_TRADES, "Trades" },
+    { TR_UI_TRADE_LEDGER_BUYS, "Buys" },
+    { TR_UI_TRADE_LEDGER_SELLS, "Sells" },
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

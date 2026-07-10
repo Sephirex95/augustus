@@ -64,11 +64,9 @@ static complex_button_style button_style_for_tab_style(tab_view_style style)
 {
     switch (style) {
         case TAB_VIEW_STYLE_GRAY:
-            return COMPLEX_BUTTON_STYLE_DEFAULT_GRAY;
+            return COMPLEX_BUTTON_STYLE_GRAY;
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
             return COMPLEX_BUTTON_STYLE_DEFAULT_SMALL;
-        case TAB_VIEW_STYLE_WOOD:
-            return COMPLEX_BUTTON_STYLE_DEFAULT_WOOD;
         default:
             return COMPLEX_BUTTON_STYLE_DEFAULT;
     }

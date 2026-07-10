@@ -21,8 +21,8 @@
 
 /* Next time start here:
 * In dropdown button/complex button styles:
-    *add a style for the inner_panel draw as the background
-    *add a style that mimicks the main menu buttons
+    *add a style for the inner_panel draw as the background - done
+    *add a style that mimicks the main menu buttons - done
 * Remove the sorting button draw and replace it completely with a standard dropdown button.
 * Dropdown button for sorting:
     * icon before text
