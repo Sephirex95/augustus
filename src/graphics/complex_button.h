@@ -56,7 +56,7 @@ typedef struct complex_button {
     short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
     void (*left_click_handler)(const struct complex_button *button);
     void (*right_click_handler)(const struct complex_button *button);
-    void (*hover_handler)(const struct complex_button *button);
+    void (*hover_handler)(struct complex_button *button); // not const - hover fnc should be able to modify properties
     tooltip_context tooltip_c;
     const lang_fragment *sequence;     // sequence of text to draw on button
     sequence_positioning sequence_position;

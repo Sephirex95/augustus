@@ -78,6 +78,14 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
 void dropdown_button_init_simple(int x, int y, int width, int height, const lang_fragment *frags,
     unsigned int count, dropdown_button *dd, dropdown_button_style style);
 
+/**
+ * @brief Update dropdown geometry only (position and size for origin and options).
+ *
+ * Does not modify callbacks, style, selection, visibility, or other non-geometry state.
+ * Width/height values <= 0 keep the current calculated dimensions.
+ */
+void dropdown_button_update_dimensions(int x, int y, int width, int height, dropdown_button *dd);
+
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c);
 
 /**

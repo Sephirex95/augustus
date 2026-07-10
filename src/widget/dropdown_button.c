@@ -231,6 +231,35 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     dropdown_button_init(dd, dd->buttons, count, buttons_width, dd->height, dd->spacing, dd->padding);
 }
 
+void dropdown_button_update_dimensions(int x, int y, int width, int height, dropdown_button *dd)
+{
+    if (!dd || dd->num_buttons == 0) {
+        return;
+    }
+
+    complex_button *origin = &dd->buttons[0];
+
+    // Geometry-only updates: keep layout config/state untouched.
+    const int new_width = width > 0 ? width : (dd->calculated_width > 0 ? dd->calculated_width : origin->width);
+    const int new_height = height > 0 ? height : (dd->calculated_height > 0 ? dd->calculated_height : origin->height);
+
+    origin->x = x;
+    origin->y = y;
+    origin->width = new_width;
+    origin->height = new_height;
+
+    dd->calculated_width = new_width;
+    dd->calculated_height = new_height;
+
+    for (unsigned int i = 1; i < dd->num_buttons; i++) {
+        complex_button *opt = &dd->buttons[i];
+        opt->x = x;
+        opt->y = y + new_height + (i - 1) * (new_height + dd->spacing);
+        opt->width = new_width;
+        opt->height = new_height;
+    }
+}
+
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c)
 {
     if (dd->num_buttons == 0) {
