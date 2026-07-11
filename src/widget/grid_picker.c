@@ -57,8 +57,7 @@ void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, in
     anchor->sequence_size = sequence_size;
     anchor->sequence_position = SEQUENCE_POSITION_CENTER;
     if (tooltip_c) {
-        memcpy(&anchor->tooltip_c, tooltip_c, sizeof(tooltip_context));
-        // can use memcpy since it's init, and runs only once
+        tooltip_copy_context(&anchor->tooltip_c, tooltip_c);
     }
 }
 

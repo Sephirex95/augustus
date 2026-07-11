@@ -423,12 +423,12 @@ static void setup_filter_and_sort_buttons(void)
         trade_sort[i].text_id = TR_EMPIRE_SIDE_BAR_SORT + i;
     }
 
-
     dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
-        trade_sort, 6, &trade_sort_dd, DD_BUTTON_STYLE_GRAY); // 0,0 for x,y because update runs every frame
+        trade_sort, 6, &trade_sort_dd, DD_BUTTON_STYLE_GRAY); // 0,0 for x,y because geometry update runs every frame
 
     trade_sort_dd.selected_index = 1; // default to "Name"
     trade_sort_dd.selected_callback = sort_dropdown_selected;
+    trade_sort_dd.buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_SORTING;
 
 
     reset_sort_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
@@ -437,6 +437,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_sort_btn.style = COMPLEX_BUTTON_STYLE_RAW;
     reset_sort_btn.hover_handler = reset_sort_hover;
     reset_sort_btn.left_click_handler = reset_sort_click;
+    reset_sort_btn.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
 
     sorting_direction_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     sorting_direction_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
@@ -444,6 +445,8 @@ static void setup_filter_and_sort_buttons(void)
     sorting_direction_btn.state_count = 2;
     sorting_direction_btn.states[0].image_before = arrow_down_icon;
     sorting_direction_btn.states[1].image_before = arrow_up_icon;
+    sorting_direction_btn.states[0].tooltip_c.translation_key = TR_TOOLTIP_DESCENDING_ORDER;
+    sorting_direction_btn.states[1].tooltip_c.translation_key = TR_TOOLTIP_ASCENDING_ORDER;
     sorting_direction_btn.left_click_handler = sorting_direction_button_click;
     sorting_direction_btn.state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
@@ -454,6 +457,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_filter_btn.style = COMPLEX_BUTTON_STYLE_RAW;
     reset_filter_btn.hover_handler = reset_filter_hover;
     reset_filter_btn.left_click_handler = reset_filter_click;
+    reset_filter_btn.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_FILTERS;
 
     route_type_filter_btn.width = SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
     route_type_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
@@ -461,17 +465,25 @@ static void setup_filter_and_sort_buttons(void)
     route_type_filter_btn.state_count = 3;
     route_type_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
     route_type_filter_btn.states[0].image_before = both_trade_icon; // All
+    route_type_filter_btn.states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_ALL_ROUTE_TYPES;
     route_type_filter_btn.states[1].image_before = land_trade_icon; // Land
+    route_type_filter_btn.states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_LAND_ROUTES;
     route_type_filter_btn.states[2].image_before = sea_trade_icon;  // Sea
+    route_type_filter_btn.states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_SEA_ROUTES;
 
     route_open_filter_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     route_open_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     route_open_filter_btn.left_click_handler = route_open_filter_button_click;
 
+
     route_open_filter_btn.state_count = 3;
     route_open_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
+    //route_open_filter_btn.states[0].image_before = ??
+    route_open_filter_btn.states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_AND_CLOSED_ROUTES;
     route_open_filter_btn.states[1].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK);
+    route_open_filter_btn.states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_ROUTES;
     route_open_filter_btn.states[2].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CROSS);
+    route_open_filter_btn.states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_CLOSED_ROUTES;
 
     static lang_fragment trade_buy_sell[4];
     for (int i = 0; i < 4; i++) {
@@ -484,7 +496,7 @@ static void setup_filter_and_sort_buttons(void)
     dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
         trade_buy_sell, 4, &trade_buy_sell_dd, DD_BUTTON_STYLE_GRAY); //0,0 for x,y because update runs every frame
     trade_buy_sell_dd.selected_index = 1; // default to "All"
-
+    trade_buy_sell_dd.buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE;
     setup_resource_picker();
     data.sidebar.buttons_initialised = 1;
 }

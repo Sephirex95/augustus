@@ -2131,7 +2131,17 @@ static translation_string all_strings[] = {
     { TR_UI_TRADE_LEDGER_BUYS, "Buys" },
     { TR_UI_TRADE_LEDGER_SELLS, "Sells" },
     { TR_UI_TOOLTIP_CLEAR_SELECTION, "Clear Selection" },
-    { TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER , "Select Resource" }
+    { TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER , "Select Resource" },
+    { TR_UI_TOOLTIP_RESET_SORTING, "Reset Sorting" },
+    { TR_UI_TOOLTIP_SELECT_SORTING, "Select Sorting" },
+    { TR_UI_TOOLTIP_RESET_FILTERS, "Reset Filters" },
+    { TR_UI_TOOLTIP_SHOW_ALL_ROUTE_TYPES, "Show All Route Types" },
+    { TR_UI_TOOLTIP_SHOW_LAND_ROUTES, "Show Land Routes" },
+    { TR_UI_TOOLTIP_SHOW_SEA_ROUTES, "Show Sea Routes" },
+    { TR_UI_TOOLTIP_SHOW_OPEN_AND_CLOSED_ROUTES, "Show Open and Closed" },
+    { TR_UI_TOOLTIP_SHOW_OPEN_ROUTES, "Show Open Routes" },
+    { TR_UI_TOOLTIP_SHOW_CLOSED_ROUTES, "Show Closed Routes" },
+    { TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE, "Select City Resource Filter" },
 };
 
 void translation_english(const translation_string **strings, int *num_strings)
