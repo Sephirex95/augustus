@@ -42,7 +42,7 @@ static resource_list filtered_resources;
 static grid_box_type resource_table;
 static dropdown_button ledger_year_dropdown;
 static int selected_year_index = 0;
-static int hide_irrelevant = 0;
+static int hide_irrelevant = 1; //default to hide
 
 static const lang_fragment hide_irrelevant_sequence[] = {
     {.type = LANG_FRAG_LABEL, .text_group = CUSTOM_TRANSLATION, .text_id = TR_UI_HIDE_IRRELEVANT_RESOURCES},
@@ -168,8 +168,8 @@ static void trade_ledger_init(void)
     resources = city_resource_get_available();
     filtered_resources = *resources;
     hide_irrelevant_checkbox.is_checked = hide_irrelevant;
+    refresh_irrelevant_resources();
     if (hide_irrelevant) {
-        refresh_irrelevant_resources();
         grid_box_init(&resource_table, filtered_resources.size);
     } else {
         grid_box_init(&resource_table, resources->size);

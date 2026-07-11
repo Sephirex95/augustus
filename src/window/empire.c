@@ -3,6 +3,7 @@
 #include "assets/assets.h"
 #include "building/menu.h"
 #include "city/military.h"
+#include "city/resource.h"
 #include "city/warning.h"
 #include "core/calc.h"
 #include "core/config.h"
@@ -14,8 +15,8 @@
 #include "empire/trade_route.h"
 #include "empire/trade_prices.h"
 #include "empire/type.h"
-#include "game/tutorial.h"
 #include "game/system.h"
+#include "game/tutorial.h"
 #include "graphics/arrow_button.h"
 #include "graphics/complex_button.h"
 #include "graphics/generic_button.h"
@@ -266,8 +267,8 @@ static complex_button reset_filter_btn;
 static cycling_button sorting_direction_btn;
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
-static grid_picker_cell resource_picker_cells[16]; //test
-
+static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
+static const resource_list *potential_resources;
 static void reset_filter_hover(complex_button *button);
 static void reset_sort_hover(complex_button *button);
 
@@ -367,6 +368,29 @@ static void init(void)
     refresh_screen_geometry();
 }
 
+static void setup_resource_picker(void)
+{
+    city_resource_determine_available(1);
+    potential_resources = city_resource_get_potential();
+    int potential_count = potential_resources->size;
+
+    for (int i = 0; i < potential_count; i++) {
+        resource_type r = potential_resources->items[i];
+        resource_data *r_data = resource_get_data(r);
+        const uint8_t *text = r_data->text;
+        int img_id = r_data->image.icon;
+        resource_picker_cells[i].image = img_id;
+        resource_picker_cells[i].tooltip_c.precomposed_text = text;
+    }
+    int column_count = potential_count <= 16 ? 4 : 5;
+    int row_count = (potential_count + column_count - 1) / column_count; // round up
+    int cell_side = 32; // square cells
+    int cell_spacing = 4; // space between cells
+    grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT,
+         NULL, 0, COMPLEX_BUTTON_STYLE_GRAY);
+    grid_picker_init(&resource_picker_anchor, &resource_picker, (const grid_picker_cell *) resource_picker_cells,
+         potential_count, column_count, row_count, cell_side, cell_side, cell_spacing, GRID_PICKER_STYLE_GRAY); // no cells yet
+}
 
 static void setup_filter_and_sort_buttons(void)
 {
@@ -448,15 +472,7 @@ static void setup_filter_and_sort_buttons(void)
         trade_buy_sell, 4, &trade_buy_sell_dd, DD_BUTTON_STYLE_GRAY); //0,0 for x,y because update runs every frame
     trade_buy_sell_dd.selected_index = 1; // default to "All"
 
-    static lang_fragment resource_pick;
-    resource_pick.type = LANG_FRAG_TEXT;
-    resource_pick.text = (const uint8_t *) "Res";
-
-    grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT, &resource_pick, 1);
-    grid_picker_cells_init(16, resource_picker_cells, NULL, NULL); // no cells yet
-    grid_picker_init(&resource_picker_anchor, &resource_picker, &resource_picker_cells,
-         16, 4, 4, 32, 32, 4); // no cells yet
-
+    setup_resource_picker();
     data.sidebar.buttons_initialised = 1;
 }
 
@@ -540,7 +556,6 @@ static void refresh_filter_and_sort_buttons(void)
     filter_x += SIDEBAR_HEADER_BUTTON_WIDE_WIDTH;
     resource_picker.anchor.x = filter_x;
     resource_picker.anchor.y = y;
-    grid_picker_refresh_geometry(&resource_picker);
 }
 
 static void refresh_screen_geometry(void)
@@ -2425,6 +2440,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
 }
 
+
 static void get_tooltip_trade_route_type(tooltip_context *c)
 {
     int selected_object = empire_selected_object();
@@ -2575,6 +2591,8 @@ static void get_tooltip(tooltip_context *c)
     } else if (get_city_name_tooltip(c)) {
         return;
     } else if (get_city_name_tooltip_sidebar(c)) {
+        return;
+    } else if (grid_picker_handle_tooltip(&resource_picker, c)) {
         return;
     } else {
         get_tooltip_trade_route_type(c);

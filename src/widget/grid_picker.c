@@ -2,9 +2,13 @@
 
 #include "graphics/button.h"
 #include "graphics/complex_button.h"
+#include "graphics/graphics.h"
 #include "graphics/panel.h"
 #include "graphics/window.h"
 #include <string.h>
+
+int grid_picker_row_column_to_index(grid_picker *picker, int row, int column);
+int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column);
 
 static int debug_shader = 2;
 
@@ -21,7 +25,8 @@ static void grid_picker_cell_click(const complex_button *button)
     }
 }
 
-void grid_picker_cells_init(int count, grid_picker_cell *cells, int *images, lang_fragment *sequence)
+void grid_picker_cells_init(int count, grid_picker_cell *cells, int *images, lang_fragment *sequence, int sequence_size,
+    tooltip_context *tooltip_c)
 {
     memset(cells, 0, sizeof(*cells) * count);
 
@@ -29,11 +34,13 @@ void grid_picker_cells_init(int count, grid_picker_cell *cells, int *images, lan
         cells[i].index = i;
         cells[i].image = images ? images[i] : -1;
         cells[i].sequence = sequence ? &sequence[i] : NULL;
+        cells[i].sequence_size = sequence_size;
+        memcpy(&cells[i].tooltip_c, tooltip_c ? &tooltip_c[i] : &(tooltip_context) { 0 }, sizeof(tooltip_context));
     }
 }
 
 void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, int height,
-    const lang_fragment *sequence, int sequence_size)
+    const lang_fragment *sequence, int sequence_size, complex_button_style style)
 {
     if (!anchor) {
         return;
@@ -44,6 +51,7 @@ void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, in
     anchor->y = y;
     anchor->width = width;
     anchor->height = height;
+    anchor->style = style;
     anchor->sequence = sequence;
     anchor->sequence_size = sequence_size;
     anchor->sequence_position = SEQUENCE_POSITION_CENTER;
@@ -73,17 +81,10 @@ static void grid_picker_geometry(grid_picker *picker)
         cell->y = picker->grid_y + picker->margin + row * (picker->cell_height + picker->spacing_v);
     }
 }
-void grid_picker_refresh_geometry(grid_picker *picker)
-{
-    if (!picker) {
-        return;
-    }
-    grid_picker_geometry(picker);
-}
 
 // simple init should set picker_y_offset to like 5 or smth for base
 void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_picker_cell *cells, unsigned int cell_count,
-    int columns, int rows, int cell_width, int cell_height, int spacing)
+    int columns, int rows, int cell_width, int cell_height, int spacing, grid_picker_style style)
 {
     if (!picker || !cells || !anchor || cell_count == 0 || cell_count > GRID_PICKER_MAX_OPTIONS) {
         return;
@@ -112,6 +113,7 @@ void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_pi
     picker->selected_index = -1;
     picker->hovered_index = -1;
     picker->margin = 10;
+    picker->style = style;
 
     for (unsigned int i = 0; i < cell_count; i++) {
         int row = (int) i / columns;
@@ -127,8 +129,119 @@ void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_pi
     grid_picker_geometry(picker);
 }
 
+static font_t grid_picker_font_for_style(grid_picker_style style)
+{
+    switch (style) {
+        case GRID_PICKER_STYLE_GRAY:
+            return FONT_NORMAL_GREEN;
+        default:
+            return FONT_NORMAL_BLACK;
+    }
+}
+
+static color_t grid_picker_color_for_style(grid_picker_style style)
+{
+    switch (style) {
+        default:
+            return COLOR_MASK_NONE;
+    }
+}
+
+static void grid_picker_draw_cell_contents(const grid_picker *picker, const grid_picker_cell *cell)
+{
+    const int inner_margin = 2;
+    font_t font = grid_picker_font_for_style(picker->style);
+    color_t color = grid_picker_color_for_style(picker->style);
+    int image_before_width = 0;
+    int image_after_width = 0;
+    int sequence_width = 0;
+    graphics_set_clip_rectangle(cell->x, cell->y, picker->cell_width, picker->cell_height);
+
+    // if main image ->no other content
+    if (cell->image > 0) {
+        int x = cell->x + cell->image_x_offset;
+        int y = cell->y + cell->image_y_offset;
+        image_draw(cell->image, x, y, COLOR_MASK_NONE, SCALE_NONE);
+        graphics_reset_clip_rectangle();
+        return;
+    }
+
+    if (cell->image_before > 0) {
+        image_before_width = (image_get(cell->image_before)->original.width) + inner_margin;
+    }
+    if (cell->image_after > 0) {
+        image_after_width = (image_get(cell->image_after)->original.width) + inner_margin;
+    }
+
+    int text_max_width = picker->cell_width - 2 * inner_margin - image_before_width - image_after_width;
+
+    if (cell->sequence && cell->sequence_size > 0) {
+        sequence_width = lang_text_get_sequence_width(cell->sequence, cell->sequence_size, font);
+
+        if (sequence_width > text_max_width) {
+            sequence_width = text_max_width;
+        }
+    }
+
+    int total_width = image_before_width + sequence_width + image_after_width;
+    int cursor_x = cell->x + (picker->cell_width - total_width) / 2;
+    int text_y = cell->y + (picker->cell_height - font_definition_for(font)->line_height) / 2;
+
+    if (cell->image_before > 0) {
+        int image_y = cell->y + (picker->cell_height - image_get(cell->image_before)->original.height) / 2;
+        image_draw(cell->image_before, cursor_x, image_y, COLOR_MASK_NONE, SCALE_NONE);
+        cursor_x += image_before_width;
+    }
+    if (cell->sequence && cell->sequence_size > 0) {
+        cursor_x += lang_text_draw_sequence_ellipsized(
+            cell->sequence, cell->sequence_size, cursor_x, text_y, text_max_width, font, color, NULL);
+    }
+
+    if (cell->image_after > 0) {
+        int image_y = cell->y + (picker->cell_height - image_get(cell->image_after)->original.height) / 2;
+        image_draw(cell->image_after, cursor_x + inner_margin, image_y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+
+    graphics_reset_clip_rectangle();
+}
+
+static void grid_picker_draw_default_style(grid_picker *picker)
+{
+
+    bordered_panel_draw_colored(picker->grid_x, picker->grid_y, picker->calculated_width, picker->calculated_height,
+        0, COLOR_MASK_NONE, COLOR_MASK_NONE);
+
+    for (unsigned int i = 0; i < picker->cell_count; i++) {
+        int row = (int) i / picker->columns;
+        int column = (int) i % picker->columns;
+        grid_picker_cell *cell = &picker->cells[row][column];
+        grid_picker_draw_cell_contents(picker, cell);
+        int has_focus = cell->index == picker->hovered_index;
+        button_border_draw_colored(cell->x, cell->y, picker->cell_width, picker->cell_height, has_focus, 0);
+    }
+}
+
+static void grid_picker_draw_gray_style(grid_picker *picker)
+{
+
+    large_label_draw_custom_size(picker->grid_x, picker->grid_y, picker->calculated_width, picker->calculated_height);
+
+    for (unsigned int i = 0; i < picker->cell_count; i++) {
+        int row = (int) i / picker->columns;
+        int column = (int) i % picker->columns;
+        grid_picker_cell *cell = &picker->cells[row][column];
+        int has_focus = cell->index == picker->hovered_index;
+        grid_picker_draw_cell_contents(picker, cell);
+        large_label_draw_border(cell->x, cell->y, picker->cell_width, picker->cell_height);
+        if (has_focus) {
+            graphics_shade_rect(cell->x, cell->y, picker->cell_width, picker->cell_height, debug_shader);
+        }
+    }
+}
+
 void grid_picker_draw(grid_picker *picker)
 {
+    grid_picker_geometry(picker); // recalc before drawing
     if (!picker) {
         return;
     }
@@ -142,47 +255,6 @@ void grid_picker_draw(grid_picker *picker)
             break;
         default:
             grid_picker_draw_default_style(picker);
-    }
-}
-
-static void grid_picker_draw_default_style(grid_picker *picker)
-{
-
-    bordered_panel_draw_colored(picker->grid_x, picker->grid_y, picker->calculated_width, picker->calculated_height,
-        0, COLOR_MASK_NONE, COLOR_MASK_NONE);
-
-    for (unsigned int i = 0; i < picker->cell_count; i++) {
-        int row = (int) i / picker->columns;
-        int column = (int) i % picker->columns;
-        grid_picker_cell *cell = &picker->cells[row][column];
-
-        int has_focus = cell->index == picker->hovered_index;
-        button_border_draw_colored(cell->x, cell->y, picker->cell_width, picker->cell_height, has_focus, 0);
-
-    }
-}
-
-static void grid_picker_draw_gray_style(grid_picker *picker)
-{
-
-    large_label_draw_custom_size(picker->grid_x, picker->grid_y, picker->calculated_width, picker->calculated_height);
-
-    for (unsigned int i = 0; i < picker->cell_count; i++) {
-        int row = (int) i / picker->columns;
-        int column = (int) i % picker->columns;
-        grid_picker_cell *cell = &picker->cells[row][column];
-
-        int has_focus = cell->index == picker->hovered_index;
-        if (cell->image) {
-            int x = cell->x + cell->image_x_offset;
-            int y = cell->y + cell->image_y_offset;
-            image_draw(cell->image, x, y, COLOR_MASK_NONE, SCALE_NONE);
-        }
-        large_label_draw_border(cell->x, cell->y, picker->cell_width, picker->cell_height);
-        if (has_focus) {
-            graphics_shade_rect(cell->x, cell->y, picker->cell_width, picker->cell_height, debug_shader);
-        }
-
     }
 }
 
@@ -212,25 +284,30 @@ int grid_picker_handle_mouse(grid_picker *picker, const mouse *m)
             handled = 1;
 
         }
-        for (unsigned int i = 0; i < picker->rows; i++) {
-            for (unsigned int j = 0; j < picker->columns; j++) {
-                int x = picker->cells[i][j].x;
-                int y = picker->cells[i][j].y;
-                int inside_cell = (m->x >= x && m->x < x + picker->cell_width &&
-                    m->y >= y && m->y < y + picker->cell_height);
-                if (inside_cell) {
-                    picker->hovered_index = picker->cells[i][j].index;
-                    if (m->left.went_up) {
-                        picker->selected_index = picker->cells[i][j].index;
-                        if (picker->selected_callback) {
-                            picker->selected_callback(picker);
-                        }
-                        picker->is_expanded = 0;
+        for (unsigned int i = 0; i < picker->cell_count; i++) {
+            int row = (int) i / picker->columns;
+            int column = (int) i % picker->columns;
+            grid_picker_cell *cell = &picker->cells[row][column];
+
+            int inside_cell = m->x >= cell->x && m->x < cell->x + picker->cell_width &&
+                m->y >= cell->y && m->y < cell->y + picker->cell_height;
+
+            if (inside_cell) {
+                picker->hovered_index = cell->index;
+
+                if (m->left.went_up) {
+                    picker->selected_index = cell->index;
+                    if (picker->selected_callback) {
+                        picker->selected_callback(picker);
                     }
-                    if (picker->hover_callback) {
-                        picker->hover_callback(picker);
-                    }
+                    picker->is_expanded = 0;
+                    window_request_refresh();
                 }
+                if (picker->hover_callback) {
+                    picker->hover_callback(picker);
+                }
+                handled = 1;
+                break;
             }
         }
     }
@@ -240,7 +317,52 @@ int grid_picker_handle_mouse(grid_picker *picker, const mouse *m)
 
 int grid_picker_handle_tooltip(grid_picker *picker, tooltip_context *c)
 {
+    if (picker->is_expanded && picker->hovered_index >= 0) {
+        int row;
+        int column;
+        if (grid_picker_index_to_row_column(picker, picker->hovered_index, &row, &column) < 0) {
+            return 0;
+        }
+        grid_picker_cell *cell = &picker->cells[row][column];
+        c->type = cell->tooltip_c.type;
+        c->precomposed_text = cell->tooltip_c.precomposed_text;
+        return 1;
+    }
+    return 0;
+}
 
+int grid_picker_row_column_to_index(grid_picker *picker, int row, int column)
+{
+    if (!picker) {
+        return -1;
+    }
 
-    return 1;
+    if (row < 0 || row >= picker->rows ||
+        column < 0 || column >= picker->columns) {
+        return -1;
+    }
+
+    int index = row * picker->columns + column;
+
+    if (index >= (int) picker->cell_count) {
+        return -1;
+    }
+
+    return index;
+}
+
+int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column)
+{
+    if (!picker || !row || !column) {
+        return -1;
+    }
+
+    if (index < 0 || index >= (int) picker->cell_count) {
+        return -1;
+    }
+
+    *row = index / picker->columns;
+    *column = index % picker->columns;
+
+    return 0;
 }

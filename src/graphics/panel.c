@@ -337,26 +337,31 @@ void large_label_draw_border(int x, int y, int width, int height)
     graphics_set_clip_rectangle(x, y, width, height);
     const int frame_size = 16;
     int frame_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_FRAME_01);
-    int frame_middle_blocks = (width - 2 * frame_size + frame_size - 1) / frame_size;
-    // Top frame: 1, 2..., 3.
-    image_draw(frame_base, x, y, COLOR_MASK_NONE, SCALE_NONE);
-    for (int j = 0; j < frame_middle_blocks; j++) {
-        image_draw(frame_base + 1, x + frame_size + j * frame_size,
-            y, COLOR_MASK_NONE, SCALE_NONE);
-    }
-    image_draw(frame_base + 2, x + width - frame_size, y, COLOR_MASK_NONE, SCALE_NONE);
 
-    // Side frame: 4 and 6. Frame 5 does not exist.
-    image_draw(frame_base + 3, x, y + frame_size, COLOR_MASK_NONE, SCALE_NONE);
-    image_draw(frame_base + 4, x + width - frame_size,
-        y + frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    int horizontal_blocks = (width - 2 * frame_size + frame_size - 1) / frame_size;
+    int vertical_blocks = (height - 2 * frame_size + frame_size - 1) / frame_size;
 
-    // Bottom frame: 7, 8..., 9.
-    image_draw(frame_base + 5, x, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
-    for (int j = 0; j < frame_middle_blocks; j++) {
-        image_draw(frame_base + 6, x + frame_size + j * frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    // Top
+    image_draw(frame_base, x, y, COLOR_MASK_NONE, SCALE_NONE); // left
+    for (int i = 0; i < horizontal_blocks; i++) {
+        image_draw(frame_base + 1, x + frame_size + i * frame_size, y, COLOR_MASK_NONE, SCALE_NONE); // mid
     }
-    image_draw(frame_base + 7, x + width - frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(frame_base + 2, x + width - frame_size, y, COLOR_MASK_NONE, SCALE_NONE); // right
+
+    // Sides
+    for (int i = 0; i < vertical_blocks; i++) {
+        int frame_y = y + frame_size + i * frame_size;
+        image_draw(frame_base + 3, x, frame_y, COLOR_MASK_NONE, SCALE_NONE); // left
+        image_draw(frame_base + 4, x + width - frame_size, frame_y, COLOR_MASK_NONE, SCALE_NONE); // right
+    }
+
+    // Bottom
+    image_draw(frame_base + 5, x, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // left
+    for (int i = 0; i < horizontal_blocks; i++) {
+        image_draw(frame_base + 6, x + frame_size + i * frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // mid
+    }
+    image_draw(frame_base + 7, x + width - frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // right
+
     graphics_reset_clip_rectangle();
 }
 

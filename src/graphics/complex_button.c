@@ -745,9 +745,6 @@ int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context 
         return 0;
     }
 
-    c->type = state->tooltip_c.type;
-    c->precomposed_text = state->tooltip_c.precomposed_text;
-
     if (c->type || c->precomposed_text) {
         return 1;
     }
@@ -790,8 +787,6 @@ int complex_button_array_handle_mouse(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
 {
     if (button->is_focused) {
-        c->type = button->tooltip_c.type;
-        c->precomposed_text = button->tooltip_c.precomposed_text;
         return 1;
     }
     return 0;

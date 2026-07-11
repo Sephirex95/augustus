@@ -16,6 +16,7 @@ typedef enum {
 typedef struct {
     int index;
     lang_fragment *sequence;
+    int sequence_size;
     int x; // all cells have the same size, so no need for width/height here, just the position
     int y;
     int image; // if specified, will be drawn INSTEAD of text
@@ -58,13 +59,14 @@ typedef struct grid_picker {
 
 } grid_picker;
 
-void grid_picker_cells_init(int count, grid_picker_cell *cells, int *images, lang_fragment *sequence);
+int grid_picker_row_column_to_index(grid_picker *picker, int row, int column);
+int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column);
 
-void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, int height, const lang_fragment *sequence, int sequence_size);
+void grid_picker_cells_init(int count, grid_picker_cell *cells, int *images, lang_fragment *sequence, int sequence_size, tooltip_context *tooltip_c);
 
-void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_picker_cell *cells, unsigned int cell_count,
-     int columns, int rows, int cell_width, int cell_height, int spacing);
-void grid_picker_refresh_geometry(grid_picker *picker);
+void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, int height, const lang_fragment *sequence, int sequence_size, complex_button_style style);
+
+void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_picker_cell *cells, unsigned int cell_count, int columns, int rows, int cell_width, int cell_height, int spacing, grid_picker_style style);
 // call this if you change the anchor position or size, or the picker offsets
 
 void grid_picker_draw(grid_picker *picker);

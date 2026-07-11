@@ -376,9 +376,7 @@ int lang_text_draw_sequence_multiline(const lang_fragment *seq, int count, int x
     return current_y - y + line_height; // Return total height used
 }
 
-int lang_text_draw_sequence_centered(
-
-    const lang_fragment *seq, int count, int x, int y, int box_width, font_t font, color_t color)
+int lang_text_draw_sequence_centered(const lang_fragment *seq, int count, int x, int y, int box_width, font_t font, color_t color)
 {
     int total_width = lang_text_get_sequence_width(seq, count, font);
     int start_x = x + (box_width - total_width) / 2;
