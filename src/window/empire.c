@@ -35,6 +35,7 @@
 #include "scenario/empire.h"
 #include "scenario/invasion.h"
 #include "widget/dropdown_button.h"
+#include "widget/grid_picker.h"
 #include "window/advisors.h"
 #include "window/city.h"
 #include "window/empire_sidebar_sort.h"
@@ -262,6 +263,9 @@ static dropdown_button trade_sort_dd;
 static complex_button reset_sort_btn;
 static complex_button reset_filter_btn;
 static cycling_button sorting_direction_btn;
+static grid_picker resource_picker;
+static complex_button resource_picker_anchor;
+static grid_picker_cell resource_picker_cells[16]; //test
 
 static void reset_filter_hover(complex_button *button);
 static void reset_sort_hover(complex_button *button);
@@ -392,7 +396,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_sort_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     reset_sort_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     reset_sort_btn.image_before = sort_icon;
-    reset_sort_btn.style = COMPLEX_BUTTON_STYLE_GRAY;
+    reset_sort_btn.style = COMPLEX_BUTTON_STYLE_RAW;
     reset_sort_btn.hover_handler = reset_sort_hover;
     reset_sort_btn.left_click_handler = reset_sort_click;
 
@@ -409,7 +413,7 @@ static void setup_filter_and_sort_buttons(void)
     reset_filter_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     reset_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     reset_filter_btn.image_before = filter_icon;
-    reset_filter_btn.style = COMPLEX_BUTTON_STYLE_GRAY;
+    reset_filter_btn.style = COMPLEX_BUTTON_STYLE_RAW;
     reset_filter_btn.hover_handler = reset_filter_hover;
     reset_filter_btn.left_click_handler = reset_filter_click;
 
@@ -443,6 +447,14 @@ static void setup_filter_and_sort_buttons(void)
         trade_buy_sell, 4, &trade_buy_sell_dd, DD_BUTTON_STYLE_GRAY); //0,0 for x,y because update runs every frame
     trade_buy_sell_dd.selected_index = 1; // default to "All"
 
+    static lang_fragment resource_pick;
+    resource_pick.type = LANG_FRAG_TEXT;
+    resource_pick.text = (const uint8_t *) "Res";
+
+    grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT, &resource_pick, 1);
+    grid_picker_cells_init(16, resource_picker_cells, NULL, NULL); // no cells yet
+    grid_picker_init(&resource_picker_anchor, &resource_picker, &resource_picker_cells,
+         16, 4, 4, 32, 32, 4); // no cells yet
 
     data.sidebar.buttons_initialised = 1;
 }
@@ -525,6 +537,9 @@ static void refresh_filter_and_sort_buttons(void)
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
     dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT, &trade_buy_sell_dd);
     filter_x += SIDEBAR_HEADER_BUTTON_WIDE_WIDTH;
+    resource_picker.anchor.x = filter_x;
+    resource_picker.anchor.y = y;
+    grid_picker_refresh_geometry(&resource_picker);
 }
 
 static void refresh_screen_geometry(void)
@@ -1918,7 +1933,7 @@ static void draw_sidebar_grid_box(void)
         x = data.sidebar.filter_section.x_min;
         width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
         large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_BUTTON_HEIGHT + 8);
-
+        grid_picker_draw(&resource_picker);
         cycling_button_draw(&route_type_filter_btn);
         cycling_button_draw(&route_open_filter_btn);
         cycling_button_draw(&sorting_direction_btn);
@@ -1926,6 +1941,7 @@ static void draw_sidebar_grid_box(void)
         complex_button_draw(&reset_filter_btn);
         dropdown_button_draw(&trade_buy_sell_dd);
         dropdown_button_draw(&trade_sort_dd);
+
     }
 
     graphics_reset_clip_rectangle();
@@ -2254,16 +2270,20 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!data.sidebar.border_btn.is_collapsed) {
-        if (cycling_button_handle_mouse(&route_type_filter_btn, m)) {
-            return;
-        }
-        if (cycling_button_handle_mouse(&route_open_filter_btn, m)) {
-            return;
-        }
+        // since we have multiple buttons of same type, they should be array'd to call array input handlers
         if (dropdown_button_handle_mouse(&trade_buy_sell_dd, m)) {
             return;
         }
         if (dropdown_button_handle_mouse(&trade_sort_dd, m)) {
+            return;
+        }
+        if (grid_picker_handle_mouse(&resource_picker, m)) {
+            return;
+        }
+        if (cycling_button_handle_mouse(&route_type_filter_btn, m)) {
+            return;
+        }
+        if (cycling_button_handle_mouse(&route_open_filter_btn, m)) {
             return;
         }
         if (complex_button_handle_mouse(&reset_sort_btn, m)) {
@@ -2275,6 +2295,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (cycling_button_handle_mouse(&sorting_direction_btn, m)) {
             return;
         }
+
         grid_box_handle_input(&sidebar_grid_box, m, 1);
     }
 

@@ -19,6 +19,7 @@ typedef enum {
     COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
     COMPLEX_BUTTON_STYLE_LIGHT_WOOD,       // X - not implemented
     COMPLEX_BUTTON_STYLE_COLORFUL,         // X - not implemented
+    COMPLEX_BUTTON_STYLE_RAW,              // No border, no fill. Content-only.
     COMPLEX_BUTTON_STYLE_CUSTOM            // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
 
@@ -27,6 +28,7 @@ typedef enum {
     CYCLING_BUTTON_STYLE_DEFAULT_SMALL,      // like default but small font and less padding
     CYCLING_BUTTON_STYLE_NO_FILL,            // No fill background, only border
     CYCLING_BUTTON_STYLE_GRAY,               // main-menu-like style
+    CYCLING_BUTTON_STYLE_RAW,                // No border, no fill. Content-only.
     CYCLING_BUTTON_STYLE_GRAY_NO_FILL,       // mainmenu border, but no fill background
 } cycling_button_style;
 
@@ -56,14 +58,14 @@ typedef struct complex_button {
     short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
     void (*left_click_handler)(const struct complex_button *button);
     void (*right_click_handler)(const struct complex_button *button);
-    void (*hover_handler)(struct complex_button *button); // not const - hover fnc should be able to modify properties
+    void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
     tooltip_context tooltip_c;
     const lang_fragment *sequence;     // sequence of text to draw on button
     sequence_positioning sequence_position;
     int sequence_size;
     int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
-    int image_before;
-    int image_after;
+    int image_before; //img id
+    int image_after; //img id
     int flush_with_background; // if set, bottom border is not drawn
     color_t color_mask;
     font_t font;

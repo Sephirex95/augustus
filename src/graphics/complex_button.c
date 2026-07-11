@@ -128,14 +128,18 @@ static void draw_button_contents(const complex_button *button, font_t font)
     const image *image_after = NULL;
     int image_before_width = 0;
     int image_after_width = 0;
+    int image_before_margin_x = inner_margin;
 
     if (button->image_before > 0) {
         image_before = image_get(button->image_before);
-        image_before_width = image_before->width + inner_margin;
+        if (image_before->original.width >= button->width) {
+            image_before_margin_x = 0;
+        }
+        image_before_width = image_before->original.width + image_before_margin_x;
     }
     if (button->image_after > 0) {
         image_after = image_get(button->image_after);
-        image_after_width = image_after->width + inner_margin;
+        image_after_width = image_after->original.width + inner_margin;
     }
 
     int total_width = image_before_width + sequence_width + image_after_width;
@@ -163,9 +167,12 @@ static void draw_button_contents(const complex_button *button, font_t font)
     }
 
     if (image_before) {
-        int image_y = button->y + (button->height - image_before->height) / 2;
-        image_draw(button->image_before, cursor_x, image_y, image_mask, SCALE_NONE);
-        cursor_x += image_before->width + inner_margin;
+        int image_x = image_before->original.width >= button->width ? button->x : cursor_x;
+        int image_y = image_before->original.height >= button->height
+            ? button->y
+            : button->y + (button->height - image_before->original.height) / 2;
+        image_draw(button->image_before, image_x, image_y, image_mask, SCALE_NONE);
+        cursor_x += image_before->original.width + image_before_margin_x;
     }
 
     int was_ellipsized = 0;
@@ -182,7 +189,7 @@ static void draw_button_contents(const complex_button *button, font_t font)
     complex_button_ellipsized((complex_button *) button, was_ellipsized);
 
     if (image_after) {
-        int image_y = button->y + (button->height - image_after->height) / 2;
+        int image_y = button->y + (button->height - image_after->original.height) / 2;
         image_draw(button->image_after, cursor_x + inner_margin, image_y, image_mask, SCALE_NONE);
     }
 }
@@ -213,6 +220,7 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
     int height_blocks = button->height / BLOCK_SIZE;
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_NO_FILL:
+        case COMPLEX_BUTTON_STYLE_RAW:
             break; // no bg fill
         case COMPLEX_BUTTON_STYLE_BROWN:
             inner_panel_draw_colored(button->x, button->y, button->width, button->height, label_color);
@@ -228,10 +236,11 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
         button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
             draw_red_border, label_color);
     } else {
-        button_border_draw_colored(button->x, button->y, button->width, button->height,
-            draw_red_border, label_color);
+        if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
+            button_border_draw_colored(button->x, button->y, button->width, button->height,
+                draw_red_border, label_color);
+        }
     }
-
     draw_button_contents(button, font);
     graphics_reset_clip_rectangle();
 }
@@ -243,6 +252,7 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
+        case COMPLEX_BUTTON_STYLE_RAW:
             break; // no bg fill
         default:
         case COMPLEX_BUTTON_STYLE_GRAY:
@@ -255,7 +265,9 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     }
 
     draw_button_contents(button, font);
-    large_label_draw_border(button->x, button->y, button->width, button->height);
+    if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
+        large_label_draw_border(button->x, button->y, button->width, button->height);
+    }
     graphics_reset_clip_rectangle();
 }
 
@@ -409,16 +421,20 @@ static void draw_cycling_button_contents(const cycling_button *button, const cyc
 
     int img_before_w = 0;
     int img_after_w = 0;
+    int img_before_margin_x = inner_margin;
     const image *img_before = NULL;
     const image *img_after = NULL;
 
     if (state->image_before > 0) {
         img_before = image_get(state->image_before);
-        img_before_w = img_before->width + inner_margin;
+        if (img_before->original.width >= button->width) {
+            img_before_margin_x = 0;
+        }
+        img_before_w = img_before->original.width + img_before_margin_x;
     }
     if (state->image_after > 0) {
         img_after = image_get(state->image_after);
-        img_after_w = img_after->width + inner_margin;
+        img_after_w = img_after->original.width + inner_margin;
     }
 
     int text_max_width = button->width - 2 * inner_margin - img_before_w - img_after_w;
@@ -440,8 +456,11 @@ static void draw_cycling_button_contents(const cycling_button *button, const cyc
     int text_y = button->y + (button->height - font_definition_for(font)->line_height) / 2;
 
     if (img_before) {
-        int img_y = button->y + (button->height - img_before->height) / 2;
-        image_draw(state->image_before, cursor_x, img_y, image_color, SCALE_NONE);
+        int img_x = img_before->original.width >= button->width ? button->x : cursor_x;
+        int img_y = img_before->original.height >= button->height
+            ? button->y
+            : button->y + (button->height - img_before->original.height) / 2;
+        image_draw(state->image_before, img_x, img_y, image_color, SCALE_NONE);
         cursor_x += img_before_w;
     }
 
@@ -451,7 +470,7 @@ static void draw_cycling_button_contents(const cycling_button *button, const cyc
     }
 
     if (img_after) {
-        int img_y = button->y + (button->height - img_after->height) / 2;
+        int img_y = button->y + (button->height - img_after->original.height) / 2;
         image_draw(state->image_after, cursor_x + inner_margin, img_y, image_color, SCALE_NONE);
     }
 }
@@ -470,12 +489,16 @@ void cycling_button_draw_default_style(const cycling_button *button)
     font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
 
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+
     if (button->fill_bg) {
         unbordered_panel_draw_px(button->x, button->y, button->width, button->height);
     }
 
     draw_cycling_button_contents(button, state, font);
-    button_border_draw(button->x, button->y, button->width, button->height, button->is_hovered);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        button_border_draw(button->x, button->y, button->width, button->height, button->is_hovered);
+
+    }
     graphics_reset_clip_rectangle();
 }
 
@@ -491,16 +514,20 @@ void cycling_button_draw_gray_style(const cycling_button *button)
     }
 
     font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
-    if (button->style == CYCLING_BUTTON_STYLE_GRAY_NO_FILL) {
-        large_label_draw_border(button->x, button->y, button->width, button->height);
-    } else {
-        large_label_draw_bg(button->x, button->y, button->width, button->height);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        if (button->style == CYCLING_BUTTON_STYLE_GRAY_NO_FILL) {
+            large_label_draw_border(button->x, button->y, button->width, button->height);
+        } else {
+            large_label_draw_bg(button->x, button->y, button->width, button->height);
+        }
     }
     if (button->is_hovered) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
     }
     draw_cycling_button_contents(button, state, font);
-    large_label_draw_border(button->x, button->y, button->width, button->height);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        large_label_draw_border(button->x, button->y, button->width, button->height);
+    }
 }
 
 void cycling_button_draw(const cycling_button *button)
@@ -540,9 +567,15 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
 
     int inside = (m->x >= left && m->x < right && m->y >= top && m->y < bottom);
     if (btn->is_focused != inside) {
+        btn->is_focused = inside;
+        if (btn->hover_handler) {
+            btn->hover_handler(btn); // run the hover handler on hover state change
+        }
         window_request_refresh(); // redraw to show focus change
+    } else {
+        btn->is_focused = inside;
     }
-    btn->is_focused = inside;
+
     if (btn->is_ellipsized && btn->is_focused) { //if the button is ellipsized, show tooltip
         static uint8_t tooltip_text[512];
         lang_text_concatenate_sequence(btn->sequence, btn->sequence_size, tooltip_text, 512);
@@ -551,12 +584,6 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
     }
 
     if (inside) {
-
-        if (btn->hover_handler) {
-            btn->hover_handler(btn);
-            // hover handler does not consume the event, but it doesn't request refresh either
-            // if needed, the handler should call window_request_refresh() or window_invalidate()
-        }
 
         // --- Left click ---
 

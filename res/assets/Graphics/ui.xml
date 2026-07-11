@@ -1492,25 +1492,25 @@
 		<layer src="Advisor_Button_H" x="5" y="4"/>
 		<layer src="Trade_Ledger_H" x="0" y="0"/>
 	</image>
-	<image id="Arrow_Up_Masked">
-		<layer group="system" image="15"/>
-		<layer src="arrow_up_mask" mask="alpha"/>
+	<image id="Arrow_Up_Masked" width="32" height="32">
+		<layer group="system" image="15" x="4" y="3"/>
+		<layer src="arrow_up_mask" mask="alpha" x="4" y="3"/>
 	</image>
-	<image id="Arrow_Down_Masked">
-		<layer group="system" image="17"/>
-		<layer src="arrow_down_mask" mask="alpha"/>
+	<image id="Arrow_Down_Masked" width="32" height="32">
+		<layer group="system" image="17" x="4" y="5"/>
+		<layer src="arrow_down_mask" mask="alpha" x="4" y="5"/>
 	</image>
-	<image id="Filter_Icon" width="24" height="24">
-		<layer src="filter_icon" x="0" y="0"/>
+	<image id="Filter_Icon" width="32" height="32">
+		<layer src="filter_icon2" x="0" y="0"/>
 	</image>
-	<image id="Sorting_Icon" width="24" height="24">
-		<layer src="sorting_icon" x="0" y="0"/>
+	<image id="Sorting_Icon" width="32" height="32">
+		<layer src="sorting_icon2" x="0" y="0"/>
 	</image>
-	<image id="Filter_Icon_Hover" width="24" height="24">
-		<layer src="filter_icon_reset" x="0" y="0"/>
+	<image id="Filter_Icon_Hover" width="32" height="32">
+		<layer src="filter_icon2_reset" x="0" y="0"/>
 	</image>
-	<image id="Sorting_Icon_Hover" width="24" height="24">
-		<layer src="sorting_icon_reset" x="0" y="0"/>
+	<image id="Sorting_Icon_Hover" width="32" height="32">
+		<layer src="sorting_icon2_reset" x="0" y="0"/>
 	</image>
 	<!-- Note: Empire Map panel background -->
 	<image id="Empire_Panel_01" width="70" height="40">
