@@ -8,6 +8,8 @@
 #include "graphics/window.h"
 #include <string.h>
 
+#define NO_POSITION ((unsigned int) -1) //used as an alterntive to 0 for some of new pointers
+
 int grid_picker_row_column_to_index(grid_picker *picker, int row, int column);
 int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column);
 
@@ -124,8 +126,8 @@ void grid_picker_init(complex_button *anchor, grid_picker *picker, const grid_pi
     picker->cell_height = cell_height;
     picker->spacing_h = spacing;
     picker->spacing_v = spacing;
-    picker->selected_index = -1;
-    picker->hovered_index = -1;
+    picker->selected_index = NO_POSITION;
+    picker->hovered_index = NO_POSITION;
     picker->margin = 10;
     picker->style = style;
 
@@ -313,7 +315,7 @@ void update_anchor(grid_picker *picker)
 int grid_picker_handle_mouse(grid_picker *picker, const mouse *m)
 {
     int handled = 0; // if input is handled, return 1 to stop further input processing
-    picker->hovered_index = -1; // reset hovered index each frame, will be set if mouse is over a cell
+    picker->hovered_index = NO_POSITION; // reset hovered index each frame, will be set if mouse is over a cell
     complex_button *anchor_btn = &picker->anchor;
     if (complex_button_handle_mouse(anchor_btn, m)) {
         if (anchor_btn->is_clicked) {
@@ -385,18 +387,18 @@ int grid_picker_handle_tooltip(grid_picker *picker, tooltip_context *c)
 int grid_picker_row_column_to_index(grid_picker *picker, int row, int column)
 {
     if (!picker) {
-        return -1;
+        return NO_POSITION;
     }
 
     if (row < 0 || row >= picker->rows ||
         column < 0 || column >= picker->columns) {
-        return -1;
+        return NO_POSITION;
     }
 
     int index = row * picker->columns + column;
 
     if (index >= (int) picker->cell_count) {
-        return -1;
+        return NO_POSITION;
     }
 
     return index;
@@ -405,11 +407,11 @@ int grid_picker_row_column_to_index(grid_picker *picker, int row, int column)
 int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column)
 {
     if (!picker || !row || !column) {
-        return -1;
+        return NO_POSITION;
     }
 
     if (index < 0 || index >= (int) picker->cell_count) {
-        return -1;
+        return NO_POSITION;
     }
 
     *row = index / picker->columns;

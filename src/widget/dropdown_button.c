@@ -15,6 +15,35 @@ static int calculate_text_width(const complex_button *btn, font_t font)
     return lang_text_get_sequence_width(btn->sequence, btn->sequence_size, font);
 }
 
+static int tooltip_context_has_content(const tooltip_context *tooltip_c)
+{
+    if (!tooltip_c) {
+        return 0;
+    }
+
+    return tooltip_c->precomposed_text
+        || tooltip_c->translation_key
+        || tooltip_c->text_group
+        || tooltip_c->text_id
+        || tooltip_c->has_numeric_prefix
+        || tooltip_c->num_extra_values
+        || tooltip_c->num_extra_texts;
+}
+
+static int dropdown_button_copy_hovered_tooltip(const complex_button *button, tooltip_context *c)
+{
+    if (!button || !c || !button->is_focused) {
+        return 0;
+    }
+    if (!tooltip_context_has_content(&button->tooltip_c)) {
+        return 0;
+    }
+
+    tooltip_copy_context(c, &button->tooltip_c);
+    c->type = TOOLTIP_BUTTON;
+    return 1;
+}
+
 static complex_button_style dropdown_button_style_to_complex_style(dropdown_button_style style)
 {
     // Dropdown button can't have no fill - otherwise the options buttons would break.
@@ -265,7 +294,22 @@ int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c
     if (!dd || dd->num_buttons == 0) {
         return 0;
     }
-    return complex_button_handle_tooltip_array(dd->buttons, c, dd->num_buttons);
+
+    if (dropdown_button_copy_hovered_tooltip(&dd->buttons[0], c)) {
+        return 1;
+    }
+
+    if (!dd->expanded) {
+        return 0;
+    }
+
+    for (unsigned int i = 1; i < dd->num_buttons; i++) {
+        if (dropdown_button_copy_hovered_tooltip(&dd->buttons[i], c)) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 int dropdown_button_handle_tooltip_array(const dropdown_button *dds, tooltip_context *c, unsigned int num_dropdowns)
