@@ -113,7 +113,7 @@ int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m);
  * and updates the origin button's text to match the selected option.
  * @param btn Pointer to the clicked complex_button (option).
  */
-void dropdown_button_default_option_click(const complex_button *btn);
+void dropdown_button_default_option_click(complex_button *btn);
 
 /**
  * @brief Exposing internal helper for non-simple init users

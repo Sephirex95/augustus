@@ -32,7 +32,7 @@ static color_t active_item_border = COLOR_WHITE;
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
-static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn);
+static void hide_irrelevant_checkbox_clicked(checkbox_button *btn);
 static void refresh_irrelevant_resources(void);
 
 static tab_view ledger_tabs;
@@ -79,7 +79,7 @@ static complex_button header_buttons[6] = { 0 }; //header buttons with sorting i
 
 static void trade_draw_content(tab_view *view, tab *active_tab);
 static void draw_resource_row(const grid_box_item *item);
-static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn);
+static void hide_irrelevant_checkbox_clicked(checkbox_button *btn);
 static int handle_resource_table_mouse(const mouse *m, void *user_data);
 static int handle_trade_tab_mouse(const mouse *m, void *user_data);
 
@@ -97,7 +97,7 @@ static void dropdown_selected_callback(dropdown_button *dd)
     window_invalidate();
 }
 
-static void hide_irrelevant_checkbox_clicked(const checkbox_button *btn)
+static void hide_irrelevant_checkbox_clicked(checkbox_button *btn)
 {
     hide_irrelevant = btn->is_checked;
     refresh_irrelevant_resources();

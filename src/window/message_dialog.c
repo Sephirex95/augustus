@@ -45,7 +45,7 @@ static void button_close(int param1, int param2);
 static void button_help(int param1, int param2);
 static void button_advisor(int advisor, int param2);
 static void button_go_to_problem(int param1, int param2);
-static void button_dispatch_request(const complex_button *button);
+static void button_dispatch_request(complex_button *button);
 
 static image_button image_button_back = {
     0, 0, 31, 20, IB_NORMAL, GROUP_MESSAGE_ICON, 8, button_back, button_none, 0, 0, 1
@@ -137,7 +137,7 @@ static struct {
     int use_popup;
 } player_message;
 
-static void button_dispatch_request(const complex_button *button)
+static void button_dispatch_request(complex_button *button)
 {
     int request_id = button->parameters[0];
     scenario_request_dispatch(request_id);

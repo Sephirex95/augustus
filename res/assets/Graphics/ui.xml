@@ -1517,12 +1517,47 @@
 		<layer group="172" image="3" x="0" y="0"/>
 		<layer src="Empire_Panel_01" x="0" y="0"/>
 	</image>
-		<!-- Note: Empire background texture, vertical version -->
+	<!-- Note: Empire background texture, vertical version -->
 	<image id="Empire_Panel_01b">
 		<layer group="this" image="Empire_Panel_01" rotate="90" x="0" y="0" width="70" height="40"/>
 	</image>
 	<!-- Note: Empire Map sidebar corner (for drag-able side) -->
 	<image id="Empire_Panel_02" src="Empire_Panel_02"/>
+	<!-- Note: Scrollbar/slider buttons -->
+	<image id="Scrollbar_Down_01" src="Scrollbar_Down_01"/>
+	<image id="Scrollbar_Down_02" src="Scrollbar_Down_02"/>
+	<image id="Scrollbar_Down_03" src="Scrollbar_Down_03"/>
+	<image id="Scrollbar_Down_04" src="Scrollbar_Down_04"/>
+	<image id="Scrollbar_Up_01" src="Scrollbar_Up_01"/>
+	<image id="Scrollbar_Up_02" src="Scrollbar_Up_02"/>
+	<image id="Scrollbar_Up_03" src="Scrollbar_Up_03"/>
+	<image id="Scrollbar_Up_04" src="Scrollbar_Up_04"/>
+	<image id="Scrollbar_Middle_01" src="Scrollbar_Middle_01"/>
+	<image id="Scrollbar_Middle_02" src="Scrollbar_Middle_02"/>
+	<image id="Scrollbar_Middle_03" src="Scrollbar_Middle_03"/>
+	<image id="Scrollbar_Middle_04" src="Scrollbar_Middle_04"/>
+	<image id="Scrollbar_Middle_01b">
+		<layer group="this" image="Scrollbar_Middle_01" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Middle_02b">
+		<layer group="this" image="Scrollbar_Middle_02" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Middle_03b">
+		<layer group="this" image="Scrollbar_Middle_03" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Middle_04b">
+		<layer group="this" image="Scrollbar_Middle_04" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Minus_01" src="Scrollbar_Minus_01"/>
+	<image id="Scrollbar_Minus_02" src="Scrollbar_Minus_02"/>
+	<image id="Scrollbar_Minus_03" src="Scrollbar_Minus_03"/>
+	<image id="Scrollbar_Minus_04" src="Scrollbar_Minus_04"/>
+	<image id="Scrollbar_Plus_01" src="Scrollbar_Plus_01"/>
+	<image id="Scrollbar_Plus_02" src="Scrollbar_Plus_02"/>
+	<image id="Scrollbar_Plus_03" src="Scrollbar_Plus_03"/>
+	<image id="Scrollbar_Plus_04" src="Scrollbar_Plus_04"/>
+	<image id="Scrollbar_Dark_End" src="Scrollbar_Dark_End"/>
+	<image id="Scrollbar_Dark_Mid" src="Scrollbar_Dark_Mid"/>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>

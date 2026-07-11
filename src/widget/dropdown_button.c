@@ -100,7 +100,7 @@ void dropdown_button_advanced_save_anchor(dropdown_button *dd)
 }
 
 /* --- Default left click handler for dropdown options --- */
-void dropdown_button_default_option_click(const complex_button *btn)
+void dropdown_button_default_option_click(complex_button *btn)
 {
     dropdown_button *dd = (dropdown_button *) btn->user_data;
     dd->selected_value = btn->parameters[0]; // free value carrier
@@ -110,14 +110,14 @@ void dropdown_button_default_option_click(const complex_button *btn)
     update_anchor(dd);
 }
 
-void dropdown_button_default_origin_click(const complex_button *btn)
+void dropdown_button_default_origin_click(complex_button *btn)
 {
     dropdown_button *dd = (dropdown_button *) btn->user_data;
     dd->expanded = !dd->expanded;
     window_request_refresh();
 }
 
-static void dropdown_cancel(const complex_button *btn)
+static void dropdown_cancel(complex_button *btn)
 {
     dropdown_button *dd = (dropdown_button *) btn->user_data;
     dd->expanded = 0;

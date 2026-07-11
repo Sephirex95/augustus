@@ -226,12 +226,12 @@ static void button_show_prices(int param1, int param2);
 static void button_show_resource_window(int resource_button_index);
 static void button_open_trade_by_route(int route_id);
 static void button_open_trade_ledger(int param1, int param2);
-static void route_type_filter_button_click(const cycling_button *button);
-static void route_open_filter_button_click(const cycling_button *button);
+static void route_type_filter_button_click(cycling_button *button);
+static void route_open_filter_button_click(cycling_button *button);
 static void sorting_direction_button_click(cycling_button *button);
 static void sort_dropdown_selected(dropdown_button *dd);
-static void reset_sort_click(const complex_button *button);
-static void reset_filter_click(const complex_button *button);
+static void reset_sort_click(complex_button *button);
+static void reset_filter_click(complex_button *button);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -246,6 +246,7 @@ static int is_sidebar_border(const mouse *m);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
+static void route_type_filter_button_click(cycling_button *button);
 
 //buttons position registrators to enable dynamic positioning
 static void register_resource_button(int x, int y, int width, int height, resource_type r, int highlight);
@@ -2174,7 +2175,7 @@ void handle_sidebar_dragging(const mouse *m)
     data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
 }
 
-static void route_type_filter_button_click(const cycling_button *button)
+static void route_type_filter_button_click(cycling_button *button)
 {
     filter_method filters = window_empire_sidebar_sort_get_current_filtering();
 
@@ -2197,7 +2198,7 @@ static void route_type_filter_button_click(const cycling_button *button)
     window_request_refresh();
 }
 
-static void route_open_filter_button_click(const cycling_button *button)
+static void route_open_filter_button_click(cycling_button *button)
 {
     filter_method filters = window_empire_sidebar_sort_get_current_filtering();
 
@@ -2240,7 +2241,7 @@ static void sort_dropdown_selected(dropdown_button *dd)
     window_request_refresh();
 }
 
-static void reset_sort_click(const complex_button *button)
+static void reset_sort_click(complex_button *button)
 {
     window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME);
     window_empire_sidebar_sort_set_sorting_reversed(0);
@@ -2249,7 +2250,7 @@ static void reset_sort_click(const complex_button *button)
     window_request_refresh();
 }
 
-static void reset_filter_click(const complex_button *button)
+static void reset_filter_click(complex_button *button)
 {
     window_empire_sidebar_sort_set_current_filtering(FILTER_NONE);
     route_type_filter_btn.state_index = 0;

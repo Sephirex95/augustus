@@ -56,8 +56,8 @@ typedef struct complex_button {
     short is_disabled;            // 1 = disabled, 0 = enabled
     short state;                  // special parameter for custom behaviours
     short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
-    void (*left_click_handler)(const struct complex_button *button);
-    void (*right_click_handler)(const struct complex_button *button);
+    void (*left_click_handler)(struct complex_button *button);
+    void (*right_click_handler)(struct complex_button *button);
     void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
     tooltip_context tooltip_c;
     const lang_fragment *sequence;     // sequence of text to draw on button
@@ -82,8 +82,8 @@ typedef struct checkbox_button {
     short is_hovered;
     short is_checked;
     short fill_bg; // 1 = fill background, 0 = transparent
-    void (*left_click_handler)(const struct checkbox_button *button);
-    void (*hover_handler)(const struct checkbox_button *button);
+    void (*left_click_handler)(struct checkbox_button *button);
+    void (*hover_handler)(struct checkbox_button *button);
     tooltip_context tooltip_c;
     font_t font; // font of the text next to the checkbox, the checkbox font is fixed
     short box_on_right; // box on right side of text/image instead of left

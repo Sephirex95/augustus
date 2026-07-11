@@ -273,7 +273,7 @@ void window_building_draw_burning_ruin(building_info_context *c)
         BLOCK_SIZE * (c->width_blocks - 4), FONT_NORMAL_BLACK);
 }
 
-static void trigger_building_repair(const complex_button *button)
+static void trigger_building_repair(complex_button *button)
 {
     building_repair_at(button->parameters[0]);
     window_invalidate();

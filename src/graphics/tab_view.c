@@ -121,7 +121,7 @@ static color_t color_for_tab_background(tab_view_style style)
 
 }
 
-static void tab_click_handler(const complex_button *btn)
+static void tab_click_handler(complex_button *btn)
 {
     tab_view *view = (tab_view *) btn->user_data;
     if (!view) {
