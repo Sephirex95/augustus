@@ -283,7 +283,6 @@ static complex_button complex_buttons[RESET_BTN_COUNT];
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
 static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
-static int resource_picker_cell_count = 0;
 static const resource_list *potential_resources;
 static void reset_filter_hover(complex_button *button);
 static void reset_sort_hover(complex_button *button);
@@ -572,9 +571,7 @@ static void refresh_filter_and_sort_buttons(void)
     } else {
         cycling_buttons[BTN_ROUTE_OPEN].state_index = 0;
     }
-    if (resource_picker.selected_index == resource_picker_cell_count - 1) { // 0-based
-        resource_picker.selected_index = NO_POSITION; // reset to no selection. if it doesnt work i need selection handler
-    }
+
     cycling_buttons[BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     int sort_x = data.sidebar.sort_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
