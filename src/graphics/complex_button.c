@@ -316,7 +316,7 @@ void complex_button_draw(const complex_button *button)
     }
 }
 
-void complex_button_array_draw(const complex_button *buttons, unsigned int num_buttons)
+void complex_button_draw_array(const complex_button *buttons, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         complex_button_draw(&buttons[i]);
@@ -403,7 +403,7 @@ void checkbox_button_draw(const checkbox_button *button)
     graphics_reset_clip_rectangle();
 }
 
-void checkbox_button_array_draw(const checkbox_button *buttons, unsigned int num_buttons)
+void checkbox_button_draw_array(const checkbox_button *buttons, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         checkbox_button_draw(&buttons[i]);
@@ -560,7 +560,7 @@ void cycling_button_draw(const cycling_button *button)
     }
 }
 
-void cycling_button_array_draw(const cycling_button *buttons, unsigned int num_buttons)
+void cycling_button_draw_array(const cycling_button *buttons, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         cycling_button_draw(&buttons[i]);
@@ -663,7 +663,7 @@ int checkbox_button_handle_mouse(checkbox_button *btn, const mouse *m)
     return 0;
 }
 
-int checkbox_button_array_handle_mouse(checkbox_button *buttons, const mouse *m, unsigned int num_buttons)
+int checkbox_button_handle_mouse_array(checkbox_button *buttons, const mouse *m, unsigned int num_buttons)
 {
     int handled = 0;
 
@@ -719,7 +719,7 @@ int cycling_button_handle_mouse(cycling_button *btn, const mouse *m)
     return handled;
 }
 
-int cycling_button_array_handle_mouse(cycling_button *buttons, const mouse *m, unsigned int num_buttons)
+int cycling_button_handle_mouse_array(cycling_button *buttons, const mouse *m, unsigned int num_buttons)
 {
     int handled = 0;
 
@@ -741,7 +741,7 @@ int checkbox_button_handle_tooltip(const checkbox_button *button, tooltip_contex
     return 0;
 }
 
-int checkbox_button_array_handle_tooltip(const checkbox_button *buttons, tooltip_context *c, unsigned int num_buttons)
+int checkbox_button_handle_tooltip_array(const checkbox_button *buttons, tooltip_context *c, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         if (checkbox_button_handle_tooltip(&buttons[i], c)) {
@@ -762,19 +762,12 @@ int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context 
         return 0;
     }
 
-    if (c->type || c->precomposed_text) {
-        return 1;
-    }
-
-    if (state->sequence && state->sequence_size > 0) {
-        tooltip_copy_context(c, &state->tooltip_c);
-        return 1;
-    }
-
-    return 0;
+    tooltip_copy_context(c, &state->tooltip_c);
+    c->type = TOOLTIP_BUTTON; // constant - for all buttons.
+    return 1;
 }
 
-int cycling_button_array_handle_tooltip(const cycling_button *buttons, tooltip_context *c, unsigned int num_buttons)
+int cycling_button_handle_tooltip_array(const cycling_button *buttons, tooltip_context *c, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         if (cycling_button_handle_tooltip(&buttons[i], c)) {
@@ -784,7 +777,7 @@ int cycling_button_array_handle_tooltip(const cycling_button *buttons, tooltip_c
     return 0;
 }
 
-int complex_button_array_handle_mouse(complex_button *buttons, const mouse *m, unsigned int num_buttons)
+int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, unsigned int num_buttons)
 {
     int handled = 0;
 
@@ -802,12 +795,13 @@ int complex_button_handle_tooltip(const complex_button *button, tooltip_context 
 {
     if (button->is_focused) {
         tooltip_copy_context(c, &button->tooltip_c);
+        c->type = TOOLTIP_BUTTON; // constant - for all buttons.
         return 1;
     }
     return 0;
 }
 
-int complex_button_array_handle_tooltip(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons)
+int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons)
 {
     for (unsigned int i = 0; i < num_buttons; i++) {
         if (complex_button_handle_tooltip(&buttons[i], c)) {

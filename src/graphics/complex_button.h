@@ -138,35 +138,35 @@ color_t complex_button_color_for_style(complex_button_style style);
 // Complex Buttons
 // drawing
 void complex_button_draw(const complex_button *button);
-void complex_button_array_draw(const complex_button *buttons, unsigned int num_buttons);
+void complex_button_draw_array(const complex_button *buttons, unsigned int num_buttons);
 // input
 int complex_button_handle_mouse(complex_button *btn, const mouse *m);
-int complex_button_array_handle_mouse(complex_button *buttons, const mouse *m, unsigned int num_buttons);
+int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, unsigned int num_buttons);
 // tooltip
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c);
-int complex_button_array_handle_tooltip(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons);
+int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
 // Checkbox Buttons
 // drawing
 void checkbox_button_draw(const checkbox_button *button);
-void checkbox_button_array_draw(const checkbox_button *buttons, unsigned int num_buttons);
+void checkbox_button_draw_array(const checkbox_button *buttons, unsigned int num_buttons);
 // input
 int checkbox_button_handle_mouse(checkbox_button *btn, const mouse *m);
-int checkbox_button_array_handle_mouse(checkbox_button *buttons, const mouse *m, unsigned int num_buttons);
+int checkbox_button_handle_mouse_array(checkbox_button *buttons, const mouse *m, unsigned int num_buttons);
 // tooltip
 int checkbox_button_handle_tooltip(const checkbox_button *button, tooltip_context *c);
-int checkbox_button_array_handle_tooltip(const checkbox_button *buttons, tooltip_context *c, unsigned int num_buttons);
+int checkbox_button_handle_tooltip_array(const checkbox_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
 // Cycling Buttons
 // drawing
 void cycling_button_draw(const cycling_button *button);
-void cycling_button_array_draw(const cycling_button *buttons, unsigned int num_buttons);
+void cycling_button_draw_array(const cycling_button *buttons, unsigned int num_buttons);
 // input
 int cycling_button_handle_mouse(cycling_button *btn, const mouse *m);
-int cycling_button_array_handle_mouse(cycling_button *buttons, const mouse *m, unsigned int num_buttons);
+int cycling_button_handle_mouse_array(cycling_button *buttons, const mouse *m, unsigned int num_buttons);
 // tooltip
 int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context *c);
-int cycling_button_array_handle_tooltip(const cycling_button *buttons, tooltip_context *c, unsigned int num_buttons);
+int cycling_button_handle_tooltip_array(const cycling_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
 
 #endif // GRAPHICS_COMPLEX_BUTTON_H

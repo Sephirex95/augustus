@@ -262,10 +262,24 @@ void dropdown_button_update_dimensions(int x, int y, int width, int height, drop
 
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c)
 {
-    if (dd->num_buttons == 0) {
+    if (!dd || dd->num_buttons == 0) {
         return 0;
     }
-    return complex_button_array_handle_tooltip(dd->buttons, c, dd->num_buttons);
+    return complex_button_handle_tooltip_array(dd->buttons, c, dd->num_buttons);
+}
+
+int dropdown_button_handle_tooltip_array(const dropdown_button *dds, tooltip_context *c, unsigned int num_dropdowns)
+{
+    if (!dds || !c) {
+        return 0;
+    }
+
+    for (unsigned int i = 0; i < num_dropdowns; i++) {
+        if (dropdown_button_handle_tooltip(&dds[i], c)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void dropdown_button_draw(const dropdown_button *dd)
@@ -288,6 +302,17 @@ void dropdown_button_draw(const dropdown_button *dd)
     }
 }
 
+void dropdown_button_draw_array(const dropdown_button *dds, unsigned int num_dropdowns)
+{
+    if (!dds) {
+        return;
+    }
+
+    for (unsigned int i = 0; i < num_dropdowns; i++) {
+        dropdown_button_draw(&dds[i]);
+    }
+}
+
 static void unfocus_all(dropdown_button *dd)
 {
     for (unsigned int i = 0; i < dd->num_buttons; i++) {
@@ -298,7 +323,7 @@ static void unfocus_all(dropdown_button *dd)
 int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m)
 {
     int handled = 0; // indicator if returning 1 - means rest of the input handling should stop
-    if (dd->num_buttons == 0) {
+    if (!dd || dd->num_buttons == 0) {
         return 0;
     }
 
@@ -345,4 +370,26 @@ int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m)
     }
 
     return handled;
+}
+
+int dropdown_button_handle_mouse_array(dropdown_button *dds, const mouse *m, unsigned int num_dropdowns)
+{
+    if (!dds || !m) {
+        return 0;
+    }
+
+    for (unsigned int i = 0; i < num_dropdowns; i++) {
+        if (dds[i].expanded) {
+            dropdown_button_handle_mouse(&dds[i], m);
+            return 1;
+        }
+    }
+
+    for (unsigned int i = 0; i < num_dropdowns; i++) {
+        if (dropdown_button_handle_mouse(&dds[i], m)) {
+            return 1;
+        }
+    }
+
+    return 0;
 }

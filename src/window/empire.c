@@ -258,13 +258,23 @@ static trade_open_button trade_open_buttons[MAX_TRADE_OPEN_BUTTONS];
 static int trade_open_button_count = 0;
 static resource_button resource_buttons[MAX_RESOURCE_BUTTONS];
 static int resource_button_count = 0;
-static cycling_button route_type_filter_btn;
-static cycling_button route_open_filter_btn;
+enum {
+    EMPIRE_CYCLING_BTN_ROUTE_TYPE,
+    EMPIRE_CYCLING_BTN_ROUTE_OPEN,
+    EMPIRE_CYCLING_BTN_SORT_DIRECTION,
+    EMPIRE_CYCLING_BTN_COUNT
+};
+
+enum {
+    EMPIRE_COMPLEX_BTN_RESET_SORT,
+    EMPIRE_COMPLEX_BTN_RESET_FILTER,
+    EMPIRE_COMPLEX_BTN_COUNT
+};
+
+static cycling_button cycling_buttons[EMPIRE_CYCLING_BTN_COUNT];
 static dropdown_button trade_buy_sell_dd;
 static dropdown_button trade_sort_dd;
-static complex_button reset_sort_btn;
-static complex_button reset_filter_btn;
-static cycling_button sorting_direction_btn;
+static complex_button complex_buttons[EMPIRE_COMPLEX_BTN_COUNT];
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
 static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
@@ -431,59 +441,57 @@ static void setup_filter_and_sort_buttons(void)
     trade_sort_dd.buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_SORTING;
 
 
-    reset_sort_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
-    reset_sort_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    reset_sort_btn.image_before = sort_icon;
-    reset_sort_btn.style = COMPLEX_BUTTON_STYLE_RAW;
-    reset_sort_btn.hover_handler = reset_sort_hover;
-    reset_sort_btn.left_click_handler = reset_sort_click;
-    reset_sort_btn.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].image_before = sort_icon;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].style = COMPLEX_BUTTON_STYLE_RAW;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].hover_handler = reset_sort_hover;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].left_click_handler = reset_sort_click;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
 
-    sorting_direction_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
-    sorting_direction_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    sorting_direction_btn.style = CYCLING_BUTTON_STYLE_GRAY_NO_FILL;
-    sorting_direction_btn.state_count = 2;
-    sorting_direction_btn.states[0].image_before = arrow_down_icon;
-    sorting_direction_btn.states[1].image_before = arrow_up_icon;
-    sorting_direction_btn.states[0].tooltip_c.translation_key = TR_TOOLTIP_DESCENDING_ORDER;
-    sorting_direction_btn.states[1].tooltip_c.translation_key = TR_TOOLTIP_ASCENDING_ORDER;
-    sorting_direction_btn.left_click_handler = sorting_direction_button_click;
-    sorting_direction_btn.state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].style = CYCLING_BUTTON_STYLE_GRAY_NO_FILL;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].state_count = 2;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].states[0].image_before = arrow_down_icon;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].states[1].image_before = arrow_up_icon;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].states[0].tooltip_c.translation_key = TR_TOOLTIP_DESCENDING_ORDER;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].states[1].tooltip_c.translation_key = TR_TOOLTIP_ASCENDING_ORDER;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].left_click_handler = sorting_direction_button_click;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     // filtering section
-    reset_filter_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
-    reset_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    reset_filter_btn.image_before = filter_icon;
-    reset_filter_btn.style = COMPLEX_BUTTON_STYLE_RAW;
-    reset_filter_btn.hover_handler = reset_filter_hover;
-    reset_filter_btn.left_click_handler = reset_filter_click;
-    reset_filter_btn.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_FILTERS;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].image_before = filter_icon;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].style = COMPLEX_BUTTON_STYLE_RAW;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].hover_handler = reset_filter_hover;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].left_click_handler = reset_filter_click;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_FILTERS;
 
-    route_type_filter_btn.width = SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
-    route_type_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    route_type_filter_btn.left_click_handler = route_type_filter_button_click;
-    route_type_filter_btn.state_count = 3;
-    route_type_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
-    route_type_filter_btn.states[0].image_before = both_trade_icon; // All
-    route_type_filter_btn.states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_ALL_ROUTE_TYPES;
-    route_type_filter_btn.states[1].image_before = land_trade_icon; // Land
-    route_type_filter_btn.states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_LAND_ROUTES;
-    route_type_filter_btn.states[2].image_before = sea_trade_icon;  // Sea
-    route_type_filter_btn.states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_SEA_ROUTES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].width = SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].left_click_handler = route_type_filter_button_click;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].state_count = 3;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].style = CYCLING_BUTTON_STYLE_GRAY;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[0].image_before = both_trade_icon; // All
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_ALL_ROUTE_TYPES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[1].image_before = land_trade_icon; // Land
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_LAND_ROUTES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[2].image_before = sea_trade_icon;  // Sea
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_SEA_ROUTES;
 
-    route_open_filter_btn.width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
-    route_open_filter_btn.height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    route_open_filter_btn.left_click_handler = route_open_filter_button_click;
-
-
-    route_open_filter_btn.state_count = 3;
-    route_open_filter_btn.style = CYCLING_BUTTON_STYLE_GRAY;
-    //route_open_filter_btn.states[0].image_before = ??
-    route_open_filter_btn.states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_AND_CLOSED_ROUTES;
-    route_open_filter_btn.states[1].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK);
-    route_open_filter_btn.states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_ROUTES;
-    route_open_filter_btn.states[2].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CROSS);
-    route_open_filter_btn.states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_CLOSED_ROUTES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].left_click_handler = route_open_filter_button_click;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].state_count = 3;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].style = CYCLING_BUTTON_STYLE_GRAY;
+    //cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[0].image_before = ??
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_AND_CLOSED_ROUTES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[1].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CHECKMARK);
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[1].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_OPEN_ROUTES;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[2].image_before = assets_lookup_image_id(ASSET_UI_SELECTION_CROSS);
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].states[2].tooltip_c.translation_key = TR_UI_TOOLTIP_SHOW_CLOSED_ROUTES;
 
     static lang_fragment trade_buy_sell[4];
     for (int i = 0; i < 4; i++) {
@@ -540,42 +548,42 @@ static void refresh_filter_and_sort_buttons(void)
 
     filter_method filters = window_empire_sidebar_sort_get_current_filtering();
     if (filters & FILTER_BY_LAND) {
-        route_type_filter_btn.state_index = 1;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].state_index = 1;
     } else if (filters & FILTER_BY_SEA) {
-        route_type_filter_btn.state_index = 2;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].state_index = 2;
     } else {
-        route_type_filter_btn.state_index = 0;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].state_index = 0;
     }
 
     if (filters & FILTER_BY_OPEN) {
-        route_open_filter_btn.state_index = 1;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].state_index = 1;
     } else if (filters & FILTER_BY_CLOSED) {
-        route_open_filter_btn.state_index = 2;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].state_index = 2;
     } else {
-        route_open_filter_btn.state_index = 0;
+        cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].state_index = 0;
     }
 
-    sorting_direction_btn.state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     int sort_x = data.sidebar.sort_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int filter_x = data.sidebar.filter_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int y = data.sidebar.y_min + SIDEBAR_MARGIN_VERTICAL;
-    reset_sort_btn.x = sort_x;
-    reset_sort_btn.y = y;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].x = sort_x;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_SORT].y = y;
     sort_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
     dropdown_button_update_dimensions(sort_x, y, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT, &trade_sort_dd);
     sort_x += SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH;
-    sorting_direction_btn.x = sort_x;
-    sorting_direction_btn.y = y;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].x = sort_x;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].y = y;
 
-    reset_filter_btn.x = filter_x;
-    reset_filter_btn.y = y;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].x = filter_x;
+    complex_buttons[EMPIRE_COMPLEX_BTN_RESET_FILTER].y = y;
     filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
-    route_type_filter_btn.x = filter_x;
-    route_type_filter_btn.y = y;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].x = filter_x;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].y = y;
     filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING;
-    route_open_filter_btn.x = filter_x;
-    route_open_filter_btn.y = y;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].x = filter_x;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].y = y;
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
     dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT, &trade_buy_sell_dd);
     filter_x += SIDEBAR_HEADER_BUTTON_WIDE_WIDTH;
@@ -1975,11 +1983,8 @@ static void draw_sidebar_grid_box(void)
         width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
         large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_BUTTON_HEIGHT + 8);
         grid_picker_draw(&resource_picker);
-        cycling_button_draw(&route_type_filter_btn);
-        cycling_button_draw(&route_open_filter_btn);
-        cycling_button_draw(&sorting_direction_btn);
-        complex_button_draw(&reset_sort_btn);
-        complex_button_draw(&reset_filter_btn);
+        cycling_button_draw_array(cycling_buttons, EMPIRE_CYCLING_BTN_COUNT);
+        complex_button_draw_array(complex_buttons, EMPIRE_COMPLEX_BTN_COUNT);
         dropdown_button_draw(&trade_buy_sell_dd);
         dropdown_button_draw(&trade_sort_dd);
 
@@ -2286,15 +2291,15 @@ static void reset_sort_click(complex_button *button)
     window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME);
     window_empire_sidebar_sort_set_sorting_reversed(0);
     trade_sort_dd.selected_index = SORT_BY_NAME + 1;
-    sorting_direction_btn.state_index = 0;
+    cycling_buttons[EMPIRE_CYCLING_BTN_SORT_DIRECTION].state_index = 0;
     window_request_refresh();
 }
 
 static void reset_filter_click(complex_button *button)
 {
     window_empire_sidebar_sort_set_current_filtering(FILTER_NONE);
-    route_type_filter_btn.state_index = 0;
-    route_open_filter_btn.state_index = 0;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_TYPE].state_index = 0;
+    cycling_buttons[EMPIRE_CYCLING_BTN_ROUTE_OPEN].state_index = 0;
     window_request_refresh();
 }
 
@@ -2327,19 +2332,10 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (grid_picker_handle_mouse(&resource_picker, m)) {
             return;
         }
-        if (cycling_button_handle_mouse(&route_type_filter_btn, m)) {
+        if (cycling_button_handle_mouse_array(cycling_buttons, m, EMPIRE_CYCLING_BTN_COUNT)) {
             return;
         }
-        if (cycling_button_handle_mouse(&route_open_filter_btn, m)) {
-            return;
-        }
-        if (complex_button_handle_mouse(&reset_sort_btn, m)) {
-            return;
-        }
-        if (complex_button_handle_mouse(&reset_filter_btn, m)) {
-            return;
-        }
-        if (cycling_button_handle_mouse(&sorting_direction_btn, m)) {
+        if (complex_button_handle_mouse_array(complex_buttons, m, EMPIRE_COMPLEX_BTN_COUNT)) {
             return;
         }
 
@@ -2623,6 +2619,10 @@ static void get_tooltip(tooltip_context *c)
     } else if (get_city_name_tooltip_sidebar(c)) {
         return;
     } else if (grid_picker_handle_tooltip(&resource_picker, c)) {
+        return;
+    } else if (cycling_button_handle_tooltip_array(cycling_buttons, c, EMPIRE_CYCLING_BTN_COUNT)) {
+        return;
+    } else if (complex_button_handle_tooltip_array(complex_buttons, c, EMPIRE_COMPLEX_BTN_COUNT)) {
         return;
     } else {
         get_tooltip_trade_route_type(c);

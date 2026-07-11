@@ -86,6 +86,7 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
 void dropdown_button_update_dimensions(int x, int y, int width, int height, dropdown_button *dd);
 
 int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c);
+int dropdown_button_handle_tooltip_array(const dropdown_button *dds, tooltip_context *c, unsigned int num_dropdowns);
 
 /**
  * @brief Draw a dropdown (origin button + expanded options if expanded).
@@ -93,6 +94,7 @@ int dropdown_button_handle_tooltip(const dropdown_button *dd, tooltip_context *c
  * @param dd Pointer to the dropdown_button to draw.
  */
 void dropdown_button_draw(const dropdown_button *dd);
+void dropdown_button_draw_array(const dropdown_button *dds, unsigned int num_dropdowns);
 
 /**
  * @brief Handle mouse input for a dropdown.
@@ -105,6 +107,7 @@ void dropdown_button_draw(const dropdown_button *dd);
  * @return 1 if any button handled input, 0 otherwise.
  */
 int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m);
+int dropdown_button_handle_mouse_array(dropdown_button *dds, const mouse *m, unsigned int num_dropdowns);
 
 /**
  * @brief Default click handler for dropdown options.
