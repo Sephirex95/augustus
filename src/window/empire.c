@@ -231,8 +231,12 @@ static void route_type_filter_button_click(cycling_button *button);
 static void route_open_filter_button_click(cycling_button *button);
 static void sorting_direction_button_click(cycling_button *button);
 static void sort_dropdown_selected(dropdown_button *dd);
+static void trade_buy_sell_dropdown_selected(dropdown_button *dd);
 static void reset_sort_click(complex_button *button);
 static void reset_filter_click(complex_button *button);
+static void resource_picker_selected(grid_picker *picker);
+static void sync_trade_filters_from_controls(void);
+static void sync_resource_picker_from_filter(void);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -420,6 +424,7 @@ static void setup_resource_picker(void)
          NULL, 0, COMPLEX_BUTTON_STYLE_GRAY, &tooltip_c);
     grid_picker_init(&resource_picker_anchor, &resource_picker, (const grid_picker_cell *) resource_picker_cells,
          potential_count, column_count, row_count, cell_side, cell_side, cell_spacing, GRID_PICKER_STYLE_GRAY); // no cells yet
+    resource_picker.selected_callback = resource_picker_selected;
 }
 
 static void setup_filter_and_sort_buttons(void)
@@ -513,6 +518,7 @@ static void setup_filter_and_sort_buttons(void)
     dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
         trade_buy_sell, 4, &dropdown_buttons[DD_TRADE_BUY_SELL], DD_BUTTON_STYLE_GRAY); //0,0 for x,y because update runs every frame
     dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1; // default to "All"
+    dropdown_buttons[DD_TRADE_BUY_SELL].selected_callback = trade_buy_sell_dropdown_selected;
     dropdown_buttons[DD_TRADE_BUY_SELL].buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE;
     setup_resource_picker();
     data.sidebar.buttons_initialised = 1;
@@ -571,6 +577,14 @@ static void refresh_filter_and_sort_buttons(void)
     } else {
         cycling_buttons[BTN_ROUTE_OPEN].state_index = 0;
     }
+    if (filters & FILTER_BY_RESOURCE_BUY) {
+        dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 2;
+    } else if (filters & FILTER_BY_RESOURCE_SELL) {
+        dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 3;
+    } else {
+        dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1;
+    }
+    sync_resource_picker_from_filter();
     // TODO: find a way to reset the grid_picker index after selectin 'clear selection'.
     // can defo be done via selection_handler callback, but it should be doable without that?
     cycling_buttons[BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
@@ -2297,6 +2311,83 @@ static void sort_dropdown_selected(dropdown_button *dd)
     window_request_refresh();
 }
 
+static void trade_buy_sell_dropdown_selected(dropdown_button *dd)
+{
+    if (!dd) {
+        return;
+    }
+
+    sync_trade_filters_from_controls();
+    window_request_refresh();
+}
+
+static void resource_picker_selected(grid_picker *picker)
+{
+    if (!picker || !potential_resources) {
+        return;
+    }
+
+    const int clear_selection_index = potential_resources->size;
+    if (picker->selected_index < 0 || picker->selected_index >= clear_selection_index) {
+        window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE);
+    } else {
+        window_empire_sidebar_sort_set_selected_filter_resource(potential_resources->items[picker->selected_index]);
+    }
+
+    sync_trade_filters_from_controls();
+    window_request_refresh();
+}
+
+static void sync_trade_filters_from_controls(void)
+{
+    filter_method filters = window_empire_sidebar_sort_get_current_filtering();
+    filters &= ~(FILTER_BY_RESOURCE | FILTER_BY_RESOURCE_BUY | FILTER_BY_RESOURCE_SELL);
+
+    switch (dropdown_buttons[DD_TRADE_BUY_SELL].selected_index) {
+        case 2:
+            filters |= FILTER_BY_RESOURCE_BUY;
+            break;
+        case 3:
+            filters |= FILTER_BY_RESOURCE_SELL;
+            break;
+        case 1:
+        default:
+            filters |= FILTER_BY_RESOURCE;
+            break;
+    }
+
+    window_empire_sidebar_sort_set_current_filtering(filters);
+}
+
+static void sync_resource_picker_from_filter(void)
+{
+    resource_type selected_resource = window_empire_sidebar_sort_get_selected_filter_resource();
+
+    resource_picker.selected_index = -1;
+    memset(&resource_picker.anchor.image, 0, sizeof(resource_picker.anchor.image));
+    resource_picker.anchor.image_before = 0;
+    resource_picker.anchor.image_after = 0;
+    resource_picker.anchor.sequence = NULL;
+    resource_picker.anchor.sequence_size = 0;
+
+    if (!potential_resources || selected_resource == RESOURCE_NONE) {
+        return;
+    }
+
+    for (int i = 0; i < potential_resources->size; i++) {
+        if (potential_resources->items[i] != selected_resource) {
+            continue;
+        }
+
+        resource_picker.selected_index = i;
+        resource_picker.anchor.image.id = resource_get_data(selected_resource)->image.icon;
+        resource_picker.anchor.image.auto_center = 1;
+        resource_picker.anchor.image.image_x_offset = 0;
+        resource_picker.anchor.image.image_y_offset = 0;
+        return;
+    }
+}
+
 static void reset_sort_click(complex_button *button)
 {
     window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME);
@@ -2309,8 +2400,11 @@ static void reset_sort_click(complex_button *button)
 static void reset_filter_click(complex_button *button)
 {
     window_empire_sidebar_sort_set_current_filtering(FILTER_NONE);
+    window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE);
     cycling_buttons[BTN_ROUTE_TYPE].state_index = 0;
     cycling_buttons[BTN_ROUTE_OPEN].state_index = 0;
+    dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1;
+    sync_resource_picker_from_filter();
     window_request_refresh();
 }
 
