@@ -571,7 +571,8 @@ static void refresh_filter_and_sort_buttons(void)
     } else {
         cycling_buttons[BTN_ROUTE_OPEN].state_index = 0;
     }
-
+    // TODO: find a way to reset the grid_picker index after selectin 'clear selection'.
+    // can defo be done via selection_handler callback, but it should be doable without that?
     cycling_buttons[BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     int sort_x = data.sidebar.sort_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
