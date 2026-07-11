@@ -3,6 +3,7 @@
 #include "graphics/button.h"
 #include "graphics/graphics.h"
 #include "graphics/panel.h"
+#include "graphics/tooltip.h"
 #include "graphics/window.h"
 #include "input/mouse.h"
 
@@ -126,6 +127,7 @@ static void draw_button_contents(const complex_button *button, font_t font)
 
     const image *image_before = NULL;
     const image *image_after = NULL;
+    const image *image_main = button->image.id > 0 ? image_get(button->image.id) : NULL;
     int image_before_width = 0;
     int image_after_width = 0;
     int image_before_margin_x = inner_margin;
@@ -164,6 +166,22 @@ static void draw_button_contents(const complex_button *button, font_t font)
         default:
             cursor_x = button->x + (button->width - total_width) / 2;
             break;
+    }
+
+    if (image_main) {
+        int x, y;
+        if (button->image.auto_center) {
+            int image_width = image_main->width;
+            int image_height = image_main->height;
+            x = button->x + (button->width - image_width) / 2 + button->image.image_x_offset;
+            y = button->y + (button->height - image_height) / 2 + button->image.image_y_offset;
+        } else {
+            x = button->x + button->image.image_x_offset;
+            y = button->y + button->image.image_y_offset;
+        }
+        image_draw(button->image.id, x, y, image_mask, SCALE_NONE);
+        graphics_reset_clip_rectangle();
+        return;
     }
 
     if (image_before) {
@@ -717,8 +735,7 @@ int cycling_button_array_handle_mouse(cycling_button *buttons, const mouse *m, u
 int checkbox_button_handle_tooltip(const checkbox_button *button, tooltip_context *c)
 {
     if (button->is_hovered) {
-        c->type = button->tooltip_c.type;
-        c->precomposed_text = button->tooltip_c.precomposed_text;
+        tooltip_copy_context(c, &button->tooltip_c);
         return 1;
     }
     return 0;
@@ -750,10 +767,7 @@ int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context 
     }
 
     if (state->sequence && state->sequence_size > 0) {
-        static uint8_t tooltip_text[512];
-        lang_text_concatenate_sequence(state->sequence, state->sequence_size, tooltip_text, 512);
-        c->type = TOOLTIP_BUTTON;
-        c->precomposed_text = tooltip_text;
+        tooltip_copy_context(c, &state->tooltip_c);
         return 1;
     }
 
@@ -787,6 +801,7 @@ int complex_button_array_handle_mouse(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
 {
     if (button->is_focused) {
+        tooltip_copy_context(c, &button->tooltip_c);
         return 1;
     }
     return 0;

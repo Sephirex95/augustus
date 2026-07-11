@@ -44,6 +44,13 @@ typedef enum {
     SEQUENCE_POSITION_BOTTOM_RIGHT = 9,  /*  OOB values will be centered  */
 } sequence_positioning;
 
+typedef struct btn_img {
+    int id;
+    unsigned char auto_center;
+    int image_x_offset;
+    int image_y_offset;
+} btn_img;
+
 typedef struct complex_button {
     short x;
     short y;
@@ -66,6 +73,7 @@ typedef struct complex_button {
     int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
     int image_before; //img id
     int image_after; //img id
+    btn_img image; // if specified, will be drawn INSTEAD of text
     int flush_with_background; // if set, bottom border is not drawn
     color_t color_mask;
     font_t font;

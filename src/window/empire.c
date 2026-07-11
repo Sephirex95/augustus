@@ -379,15 +379,28 @@ static void setup_resource_picker(void)
         resource_data *r_data = resource_get_data(r);
         const uint8_t *text = r_data->text;
         int img_id = r_data->image.icon;
-        resource_picker_cells[i].image = img_id;
+        resource_picker_cells[i].image.id = img_id;
+        resource_picker_cells[i].image.auto_center = 1;
         resource_picker_cells[i].tooltip_c.precomposed_text = text;
+        resource_picker_cells[i].tooltip_c.type = TOOLTIP_BUTTON; // dont forget or no tooltip :(
     }
+    potential_count += 1; // add one for the reset button
+    resource_picker_cells[potential_count - 1].image.id = assets_lookup_image_id(ASSET_UI_SELECTION_CROSS);
+    resource_picker_cells[potential_count - 1].image.auto_center = 1;
+    resource_picker_cells[potential_count - 1].tooltip_c.translation_key = TR_UI_TOOLTIP_CLEAR_SELECTION;
+    resource_picker_cells[potential_count - 1].tooltip_c.type = TOOLTIP_BUTTON;
     int column_count = potential_count <= 16 ? 4 : 5;
     int row_count = (potential_count + column_count - 1) / column_count; // round up
     int cell_side = 32; // square cells
     int cell_spacing = 4; // space between cells
+
+    static tooltip_context tooltip_c = {
+        .type = TOOLTIP_BUTTON,
+        .text_group = CUSTOM_TRANSLATION,
+        .text_id = TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER,
+    };
     grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT,
-         NULL, 0, COMPLEX_BUTTON_STYLE_GRAY);
+         NULL, 0, COMPLEX_BUTTON_STYLE_GRAY, &tooltip_c);
     grid_picker_init(&resource_picker_anchor, &resource_picker, (const grid_picker_cell *) resource_picker_cells,
          potential_count, column_count, row_count, cell_side, cell_side, cell_spacing, GRID_PICKER_STYLE_GRAY); // no cells yet
 }
@@ -2283,7 +2296,13 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (scroll_get_delta(m, &position, SCROLL_TYPE_EMPIRE)) {
         empire_scroll_map(position.x, position.y);
     }
-
+    if (data.is_scrolling) {
+        if (m->right.went_up) {
+            data.finished_scroll = scroll_drag_end();
+            data.is_scrolling = 0;
+        }
+        return;
+    }
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!data.sidebar.border_btn.is_collapsed) {
         // since we have multiple buttons of same type, they should be array'd to call array input handlers
@@ -2381,7 +2400,6 @@ static void handle_input(const mouse *m, const hotkeys *h)
             m->y >= btn->y && m->y < btn->y + btn->height) {
             data.selected_button = i;
             if (m->left.went_up) {
-
                 button_open_trade_by_route(btn->route_id);  // <-- Trigger popup
                 data.selected_button = NO_POSITION; //reset to get rid of the highlight
             }

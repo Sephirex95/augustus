@@ -2130,6 +2130,8 @@ static translation_string all_strings[] = {
     { TR_UI_TRADE_LEDGER_TRADES, "Trades" },
     { TR_UI_TRADE_LEDGER_BUYS, "Buys" },
     { TR_UI_TRADE_LEDGER_SELLS, "Sells" },
+    { TR_UI_TOOLTIP_CLEAR_SELECTION, "Clear Selection" },
+    { TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER , "Select Resource" }
 };
 
 void translation_english(const translation_string **strings, int *num_strings)
