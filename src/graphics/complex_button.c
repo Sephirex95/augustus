@@ -260,6 +260,9 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
         }
     }
     draw_button_contents(button, font);
+    if (button->shade_on_hover && button->is_focused) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+    }
     graphics_reset_clip_rectangle();
 }
 
@@ -285,6 +288,9 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     draw_button_contents(button, font);
     if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
+    }
+    if (button->shade_on_hover && button->is_focused) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
     graphics_reset_clip_rectangle();
 }

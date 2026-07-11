@@ -56,29 +56,30 @@ typedef struct complex_button {
     short y;
     short width;
     short height;
-    short is_focused;             // bad wording - is_hovered would be more accurate
-    short is_clicked;
-    short is_active;              // persists toggle/selected/checked/expanded state
-    short is_hidden;              // 1 = hidden, 0 = visible
-    short is_disabled;            // 1 = disabled, 0 = enabled
-    short state;                  // special parameter for custom behaviours
-    short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
+    unsigned char is_focused;             // bad wording - is_hovered would be more accurate
+    unsigned char is_clicked;
+    unsigned char is_active;              // persists toggle/selected/checked/expanded state
+    unsigned char is_hidden;              // 1 = hidden, 0 = visible
+    unsigned char is_disabled;            // 1 = disabled, 0 = enabled
+    unsigned char state;                  // special parameter for custom behaviours
+    unsigned char is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
     void (*left_click_handler)(struct complex_button *button);
     void (*right_click_handler)(struct complex_button *button);
     void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
     tooltip_context tooltip_c;
     const lang_fragment *sequence;     // sequence of text to draw on button
     sequence_positioning sequence_position;
-    int sequence_size;
+    unsigned short sequence_size;
     int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
     int image_before; //img id
     int image_after; //img id
     btn_img image; // if specified, will be drawn INSTEAD of text
-    int flush_with_background; // if set, bottom border is not drawn
+    unsigned char flush_with_background; // if set, bottom border is not drawn
+    unsigned char shade_on_hover; // 0-7, if set, button is graphics_shade_rect with this value
     color_t color_mask;
     font_t font;
     complex_button_style style;
-    short expanded_hitbox_radius; //not yet implemented - placeholder
+    unsigned char expanded_hitbox_radius; //not yet fully implemented 
     void *user_data; // custom user data pointer, e.g. can point to a parent struct
 } complex_button;
 
