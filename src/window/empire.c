@@ -268,7 +268,7 @@ enum {
 enum {
     BTN_RESET_SORT,
     BTN_RESET_FILTER,
-    BTN_COUNT
+    RESET_BTN_COUNT
 };
 
 enum {
@@ -279,7 +279,7 @@ enum {
 
 static cycling_button cycling_buttons[BTN_COUNT];
 static dropdown_button dropdown_buttons[DD_COUNT];
-static complex_button complex_buttons[BTN_COUNT];
+static complex_button complex_buttons[RESET_BTN_COUNT];
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
 static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
@@ -1995,7 +1995,7 @@ static void draw_sidebar_grid_box(void)
         large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_BUTTON_HEIGHT + 8);
         grid_picker_draw(&resource_picker);
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
-        complex_button_draw_array(complex_buttons, BTN_COUNT);
+        complex_button_draw_array(complex_buttons, RESET_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
 
     }
@@ -2342,7 +2342,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (cycling_button_handle_mouse_array(cycling_buttons, m, BTN_COUNT)) {
             return;
         }
-        if (complex_button_handle_mouse_array(complex_buttons, m, BTN_COUNT)) {
+        if (complex_button_handle_mouse_array(complex_buttons, m, RESET_BTN_COUNT)) {
             return;
         }
 
@@ -2631,7 +2631,7 @@ static void get_tooltip(tooltip_context *c)
         return;
     } else if (cycling_button_handle_tooltip_array(cycling_buttons, c, BTN_COUNT)) {
         return;
-    } else if (complex_button_handle_tooltip_array(complex_buttons, c, BTN_COUNT)) {
+    } else if (complex_button_handle_tooltip_array(complex_buttons, c, RESET_BTN_COUNT)) {
         return;
     } else {
         get_tooltip_trade_route_type(c);
