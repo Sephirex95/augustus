@@ -314,6 +314,23 @@ void complex_button_draw(const complex_button *button)
     }
     color_t base_color = complex_button_color_for_style(button->style);
     font_t base_font = complex_button_font_for_style(button->style);
+    if (button->height > 32) {
+        // swap the font out to large variant
+        switch (base_font) {
+            case FONT_NORMAL_BLACK:
+                base_font = FONT_LARGE_BLACK;
+                break;
+            case FONT_NORMAL_BROWN:
+            case FONT_NORMAL_GREEN:
+                base_font = FONT_LARGE_BROWN;
+                break;
+            case FONT_NORMAL_PLAIN:
+                base_font = FONT_LARGE_PLAIN;
+                break;
+            default: // reds and other weirdos
+                break;
+        }
+    }
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
