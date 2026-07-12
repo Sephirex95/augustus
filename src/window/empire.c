@@ -2,7 +2,6 @@
 
 #include "assets/assets.h"
 #include "building/menu.h"
-#include "city/finance.h"
 #include "city/military.h"
 #include "city/resource.h"
 #include "city/warning.h"
@@ -17,7 +16,6 @@
 #include "empire/trade_prices.h"
 #include "empire/type.h"
 #include "game/system.h"
-#include "game/time.h"
 #include "game/tutorial.h"
 #include "graphics/arrow_button.h"
 #include "graphics/complex_button.h"
@@ -237,15 +235,11 @@ static void route_open_filter_button_click(cycling_button *button);
 static void sorting_direction_button_click(cycling_button *button);
 static void sort_dropdown_selected(dropdown_button *dd);
 static void trade_buy_sell_dropdown_selected(dropdown_button *dd);
-static void trade_history_date_dropdown_selected(dropdown_button *dd);
 static void reset_sort_click(complex_button *button);
 static void reset_filter_click(complex_button *button);
 static void resource_picker_selected(grid_picker *picker);
 static void sync_trade_filters_from_controls(void);
 static void sync_resource_picker_from_filter(void);
-static int dropdown_to_years_ago(int selected_index);
-static int selected_trade_history_year(void);
-static int get_trade_row_current_amount(const empire_city *city, resource_type resource);
 
 //sidebar show/hide
 static void sidebar_collapse(void);
@@ -300,7 +294,6 @@ static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
 static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
 static const resource_list *potential_resources;
-static int selected_trade_history_years_ago = 0;
 static void reset_filter_hover(complex_button *button);
 static void reset_sort_hover(complex_button *button);
 static void trade_ledger_hover(complex_button *button);
@@ -400,37 +393,6 @@ static void init(void)
     window_empire_collect_trade_edges();
     data.trade_route_anim_start = time_get_millis();
     refresh_screen_geometry();
-}
-
-static int dropdown_to_years_ago(int selected_index)
-{
-    if (selected_index <= 1) {
-        return 0;
-    }
-    return selected_index - 1;
-}
-
-static int selected_trade_history_year(void)
-{
-    return game_time_year() - selected_trade_history_years_ago;
-}
-
-static int get_trade_row_current_amount(const empire_city *city, resource_type resource)
-{
-    if (!city) {
-        return 0;
-    }
-
-    if (selected_trade_history_years_ago <= 0) {
-        return trade_route_traded(city->route_id, resource, 1);
-    }
-
-    int city_id = empire_city_get_for_object(city->empire_object_id);
-    if (!city_id) {
-        city_id = empire_city_get_for_trade_route(city->route_id);
-    }
-
-    return city_finance_trade_ledger_get_city_resource_traded(resource, city_id, selected_trade_history_year());
 }
 
 static void setup_resource_picker(void)
@@ -593,7 +555,7 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
     complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP;
 
-    static lang_fragment set_date_dd_frag[3] = { 0 };
+    static lang_fragment set_date_dd_frag[9] = { 0 };
 
     for (int i = 0; i < 3; i++) {
         set_date_dd_frag[i].type = LANG_FRAG_LABEL;
@@ -603,13 +565,18 @@ static void setup_header_footer_buttons(void)
     set_date_dd_frag[1].text_id = TR_UI_CURRENT_YEAR;
     set_date_dd_frag[2].text_id = TR_UI_LAST_YEAR;
 
+    for (int i = 3; i < 9; i++) {
+        set_date_dd_frag[i].type = LANG_FRAG_AMOUNT;
+        set_date_dd_frag[i].text_group = CUSTOM_TRANSLATION;
+        set_date_dd_frag[i].text_id = TR_UI_YEAR_AGO;
+        set_date_dd_frag[i].number = i - 1;
+    }
     int year_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
     dropdown_button_init_simple(0, 0, year_dd_width, SIDEBAR_HEADER_HEIGHT,
-        set_date_dd_frag, 3, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
+        set_date_dd_frag, 9, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
     dropdown_buttons[DD_SET_DATE].width = year_dd_width;
     dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_HEIGHT;
-    dropdown_buttons[DD_SET_DATE].selected_callback = trade_history_date_dropdown_selected;
-    dropdown_buttons[DD_SET_DATE].selected_index = selected_trade_history_years_ago + 1;
+    dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
 
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
@@ -675,7 +642,6 @@ static void refresh_header_and_footer_buttons(void)
     } else {
         dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1;
     }
-    dropdown_buttons[DD_SET_DATE].selected_index = selected_trade_history_years_ago + 1;
     sync_resource_picker_from_filter();
     // TODO: find a way to reset the grid_picker index after selectin 'clear selection'.
     // can defo be done via selection_handler callback, but it should be doable without that?
@@ -989,7 +955,7 @@ static int measure_trade_row_width(const empire_city *city, int is_sell, const t
 
         if (city->is_open) {
             // Also need width of current amount and "of" label
-            int w_now = text_get_number_width(get_trade_row_current_amount(city, r), '\0', "", FONT_NORMAL_GREEN);
+            int w_now = text_get_number_width(trade_route_traded(city->route_id, r, !is_sell), '\0', "", FONT_NORMAL_GREEN);
             int w_of = lang_text_get_width(47, 11, FONT_NORMAL_GREEN);
 
             segment_width =
@@ -1501,7 +1467,7 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
         if ((is_sell && !city->sells_resource[r]) || (!is_sell && !city->buys_resource[r])) continue;
 
         int trade_max = trade_route_limit(city->route_id, r, !is_sell);
-        int trade_now = get_trade_row_current_amount(city, r);
+        int trade_now = trade_route_traded(city->route_id, r, !is_sell);
         int icon_y = y + style->y_offset_icon;
 
         int segment_width, text_x;
@@ -2472,20 +2438,6 @@ static void trade_buy_sell_dropdown_selected(dropdown_button *dd)
     }
 
     sync_trade_filters_from_controls();
-    window_request_refresh();
-}
-
-static void trade_history_date_dropdown_selected(dropdown_button *dd)
-{
-    if (!dd) {
-        return;
-    }
-
-    selected_trade_history_years_ago = dropdown_to_years_ago(dd->selected_index);
-    if (selected_trade_history_years_ago > 1) {
-        selected_trade_history_years_ago = 1;
-        dd->selected_index = selected_trade_history_years_ago + 1;
-    }
     window_request_refresh();
 }
 

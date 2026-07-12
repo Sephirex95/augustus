@@ -23,7 +23,6 @@
 #include "map/terrain.h"
 
 #define MAX_HOUSE_LEVELS 20
-#define TRADE_LEDGER_CITY_CACHE_SIZE 256
 
 
 static building_levy_for_type building_levies[] = {
@@ -80,17 +79,10 @@ static trade_ledger_data trade_ledgers[8]; // 7 years of data + current year
 static short trade_ledgers_count;
 static array(transaction_t) current_year_transactions; // array of transaction structs for the current year
 static array(transaction_t) last_year_transactions; // array of transaction structs for the last year
-typedef struct {
-    int traded[TRADE_LEDGER_CITY_CACHE_SIZE][RESOURCE_MAX];
-} trade_city_ledger_cache;
-
-static trade_city_ledger_cache last_year_trade_city_cache;
 // transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
 // we could store more but i dont want crudelios to blame me for the savegame bloat
 
 static void trade_ledger_year_change(void);
-static void build_trade_city_cache_from_transactions(trade_city_ledger_cache *cache, array(transaction_t) *transactions);
-static int sum_trade_quantity_from_transactions(array(transaction_t) *transactions, resource_type resource, int empire_city_id);
 
 
 int city_finance_treasury(void)
@@ -570,52 +562,15 @@ static void pay_tribute(void)
     last_year->expenses.total = last_year->expenses.tribute + expenses;
 }
 
-static void build_trade_city_cache_from_transactions(trade_city_ledger_cache *cache, array(transaction_t) *transactions)
+static int get_ledger_year(int years_ago)
 {
-    if (!cache) {
-        return;
-    }
-
-    memset(cache, 0, sizeof(*cache));
-    if (!transactions) {
-        return;
-    }
-
-    for (unsigned int i = 0; i < transactions->size; i++) {
-        transaction_t *tx = array_item(*transactions, i);
-        int empire_city_id = tx->empire_city_id;
-        resource_type resource = (resource_type) tx->resource_id;
-
-        if (empire_city_id <= 0 || empire_city_id >= TRADE_LEDGER_CITY_CACHE_SIZE) {
-            continue;
-        }
-        if (resource < RESOURCE_MIN || resource >= RESOURCE_MAX) {
-            continue;
-        }
-
-        if (tx->quantity) {
-            int quantity = tx->quantity > 0 ? tx->quantity : -tx->quantity;
-            cache->traded[empire_city_id][resource] += quantity;
-        }
-    }
-}
-
-static int sum_trade_quantity_from_transactions(array(transaction_t) *transactions, resource_type resource, int empire_city_id)
-{
-    if (!transactions || empire_city_id <= 0 || empire_city_id >= TRADE_LEDGER_CITY_CACHE_SIZE ||
-        resource < RESOURCE_MIN || resource >= RESOURCE_MAX) {
+    if (years_ago < 0 || years_ago > trade_ledgers_count) {
         return 0;
     }
-
-    int total = 0;
-    for (unsigned int i = 0; i < transactions->size; i++) {
-        transaction_t *tx = array_item(*transactions, i);
-        if (tx->empire_city_id != empire_city_id || tx->resource_id != (unsigned char) resource) {
-            continue;
-        }
-        total += tx->quantity > 0 ? tx->quantity : -tx->quantity;
+    if (!trade_ledgers[years_ago].year) { // just a sanity check - will need to run on older saves
+        trade_ledgers[years_ago].year = (int) (game_time_year() - years_ago);
     }
-    return total;
+    return trade_ledgers[years_ago].year;
 }
 
 void city_finance_trade_ledger_add_produced(resource_type resource)
@@ -698,24 +653,6 @@ int city_finance_trade_ledger_get_stock(resource_type resource, int years_ago)
         trade_ledgers[0].stock[resource] = city_resource_get_total_amount(resource, 0);
     }
     return trade_ledgers[years_ago].stock[resource];
-}
-
-int city_finance_trade_ledger_get_city_resource_traded(resource_type resource, int empire_city_id, int year)
-{
-    if (year <= 0 || empire_city_id <= 0 || empire_city_id >= TRADE_LEDGER_CITY_CACHE_SIZE ||
-        resource < RESOURCE_MIN || resource >= RESOURCE_MAX) {
-        return 0;
-    }
-
-    if (year == game_time_year()) {
-        return sum_trade_quantity_from_transactions(&current_year_transactions, resource, empire_city_id);
-    }
-
-    if (year == game_time_year() - 1 && trade_ledgers_count > 0) {
-        return last_year_trade_city_cache.traded[empire_city_id][resource];
-    }
-
-    return 0;
 }
 
 
@@ -837,7 +774,6 @@ static void trade_ledger_year_change(void)
         log_error("Failed to transfer transactions to last year. Game will probably crash.", 0, 0);
         return;
     }
-    build_trade_city_cache_from_transactions(&last_year_trade_city_cache, &last_year_transactions);
 
     if (!array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0)) {
         log_error("Failed to allocate memory for current year transactions. Game will probably crash.", 0, 0);
@@ -873,7 +809,7 @@ void city_finance_ledger_save_state(buffer *buf)
     size_t total_size = sizeof(int16_t) // trade_ledgers_count
         + 8 * (sizeof(int32_t) * 2 + sizeof(int32_t) * RESOURCE_MAX * 6) // 8 ledger entries
         + sizeof(int32_t) + current_count * tx_size // current year transactions
-        + sizeof(int32_t) + last_count * tx_size;  // last year transactions
+        + sizeof(int32_t) + last_count * tx_size;   // last year transactions
 
     buffer_init_dynamic(buf, total_size);
 
@@ -913,7 +849,6 @@ void city_finance_ledger_save_state(buffer *buf)
         buffer_write_u16(buf, tx->trader_id);
         buffer_write_i8(buf, tx->quantity);
     }
-
 }
 
 void city_finance_ledger_load_state(buffer *buf)
@@ -967,8 +902,6 @@ void city_finance_ledger_load_state(buffer *buf)
         tx->trader_id = buffer_read_u16(buf);
         tx->quantity = buffer_read_i8(buf);
     }
-
-    build_trade_city_cache_from_transactions(&last_year_trade_city_cache, &last_year_transactions);
 }
 
 int city_finance_spawn_tourist(void)
