@@ -2,6 +2,7 @@
 #include "graphics/font.h"
 #include "graphics/lang_text.h"
 #include "graphics/window.h"
+#include "graphics/tooltip.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -51,7 +52,10 @@ static void update_anchor(dropdown_button *dd)
     anchor->color_mask = selected->color_mask;
     anchor->font = selected->font;
     anchor->style = selected->style;
-    memcpy((void *) &anchor->tooltip_c, (void *) &selected->tooltip_c, sizeof(tooltip_context));
+    if (selected->tooltip_c.type) { // only copy tooltip to anchor if the selected option has a valid tooltip
+        tooltip_copy_context(&anchor->tooltip_c, &selected->tooltip_c);
+    }
+
 }
 
 static void save_anchor(dropdown_button *dd)
@@ -62,6 +66,7 @@ static void save_anchor(dropdown_button *dd)
     complex_button *anchor_og = &dd->anchor_backup;
     complex_button *anchor = &dd->buttons[0];
     memcpy(anchor_og, anchor, sizeof(complex_button));
+    // might have to do the assignment 1 by 1 
 }
 
 static void restore_anchor(dropdown_button *dd)
@@ -81,7 +86,7 @@ static void restore_anchor(dropdown_button *dd)
     anchor->color_mask = anchor_og->color_mask;
     anchor->font = anchor_og->font;
     anchor->style = anchor_og->style;
-    memcpy((void *) &anchor->tooltip_c, (void *) &anchor_og->tooltip_c, sizeof(tooltip_context));
+    tooltip_copy_context(&anchor->tooltip_c, &anchor_og->tooltip_c);
 }
 
 void dropdown_button_advanced_update_anchor(dropdown_button *dd)
@@ -177,7 +182,7 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
 }
 
 void dropdown_button_init_simple(int x, int y, int width, int height, const lang_fragment *frags, unsigned int count,
-     dropdown_button *dd, dropdown_button_style dd_style)
+     dropdown_button *dd, dropdown_button_style dd_style, tooltip_context *origin_tooltip)
 {
     if (count == 0 || count > DROPDOWN_BUTTON_MAX_COUNT) {
         memset(dd, 0, sizeof(*dd));
@@ -207,6 +212,9 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     origin->sequence_size = 1;
     origin->left_click_handler = dropdown_button_default_origin_click;
     origin->user_data = dd; // pointer to parent
+    if (origin_tooltip) {
+        tooltip_copy_context(&origin->tooltip_c, origin_tooltip);
+    }
     save_anchor(dd); // store original anchor for restoring
 
     // Setup options [1..count-1]

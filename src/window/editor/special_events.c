@@ -71,7 +71,7 @@ static void init_dd(void)
     earthquake_pattern_dropdown.width = BLOCK_SIZE * 6;
     earthquake_pattern_dropdown.selected_callback = dd_earthquake_pattern;
     earthquake_pattern_dropdown.selected_index = scenario.earthquake.pattern + 1;
-    dropdown_button_init_simple(dd_x, dd_y, 0, 0, dd_fragments, 4, &earthquake_pattern_dropdown, 0);
+    dropdown_button_init_simple(dd_x, dd_y, 0, 0, dd_fragments, 4, &earthquake_pattern_dropdown, 0, 0);
 }
 
 static void draw_background(void)

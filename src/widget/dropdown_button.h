@@ -73,9 +73,10 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
  * @param count  Number of fragments (>=1)
  * @param dd     Pointer to dropdown_button to initialize
  * @param style  Style to apply to all buttons, 0 for default
+ * @param origin_tooltip Optional tooltip context to be applied to the origin/anchor button.
  */
 void dropdown_button_init_simple(int x, int y, int width, int height, const lang_fragment *frags,
-    unsigned int count, dropdown_button *dd, dropdown_button_style style);
+    unsigned int count, dropdown_button *dd, dropdown_button_style style, tooltip_context *origin_tooltip);
 
 /**
  * @brief Update dropdown geometry only (position and size for origin and options).

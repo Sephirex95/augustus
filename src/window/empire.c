@@ -440,6 +440,12 @@ static void setup_filter_and_sort_buttons(void)
     int filter_icon = assets_lookup_image_id(ASSET_UI_FILTER_ICON);
     int arrow_down_icon = assets_lookup_image_id(ASSET_UI_ARROW_MASKED_DOWN);
     int arrow_up_icon = assets_lookup_image_id(ASSET_UI_ARROW_MASKED_UP);
+    static tooltip_context tooltip_dd1 = {
+        .translation_key = TR_UI_TOOLTIP_SELECT_SORTING,
+    };
+    static tooltip_context tooltip_dd2 = {
+        .translation_key = TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE,
+    };
 
     // sorting section
     static lang_fragment trade_sort[6];
@@ -450,12 +456,10 @@ static void setup_filter_and_sort_buttons(void)
     }
 
     dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
-        trade_sort, 6, &dropdown_buttons[DD_TRADE_SORT], DD_BUTTON_STYLE_GRAY); // 0,0 for x,y because geometry update runs every frame
+        trade_sort, 6, &dropdown_buttons[DD_TRADE_SORT], DD_BUTTON_STYLE_GRAY, &tooltip_dd1); // 0,0 for x,y because geometry update runs every frame
 
     dropdown_buttons[DD_TRADE_SORT].selected_index = 1; // default to "Name"
     dropdown_buttons[DD_TRADE_SORT].selected_callback = sort_dropdown_selected;
-    dropdown_buttons[DD_TRADE_SORT].buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_SORTING;
-
 
     complex_buttons[BTN_RESET_SORT].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     complex_buttons[BTN_RESET_SORT].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
@@ -528,11 +532,13 @@ static void setup_filter_and_sort_buttons(void)
     trade_buy_sell[1].text_id = TR_UI_TRADE_LEDGER_TRADES;
     trade_buy_sell[2].text_id = TR_UI_TRADE_LEDGER_BUYS;
     trade_buy_sell[3].text_id = TR_UI_TRADE_LEDGER_SELLS;
+
     dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
-        trade_buy_sell, 4, &dropdown_buttons[DD_TRADE_BUY_SELL], DD_BUTTON_STYLE_GRAY); //0,0 for x,y because update runs every frame
+        trade_buy_sell, 4, &dropdown_buttons[DD_TRADE_BUY_SELL], DD_BUTTON_STYLE_GRAY, &tooltip_dd2); //0,0 for x,y because update runs every frame
     dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1; // default to "All"
     dropdown_buttons[DD_TRADE_BUY_SELL].selected_callback = trade_buy_sell_dropdown_selected;
-    dropdown_buttons[DD_TRADE_BUY_SELL].buttons[0].tooltip_c.translation_key = TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE;
+
+    dropdown_button_advanced_save_anchor(&dropdown_buttons[DD_TRADE_BUY_SELL]); // save anchor again after updating tooltip
     setup_resource_picker();
     data.sidebar.buttons_initialised = 1;
 }
@@ -619,20 +625,26 @@ static void refresh_header_buttons(void)
     complex_buttons[BTN_TRADE_LEDGER].x = ledger_btn_start_x;
     complex_buttons[BTN_TRADE_LEDGER].y = data.sidebar.y_min;
 
-    complex_buttons[BTN_RESET_FILTER].x = filter_x;
-    complex_buttons[BTN_RESET_FILTER].y = y;
-    filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
-    cycling_buttons[BTN_ROUTE_TYPE].x = filter_x;
-    cycling_buttons[BTN_ROUTE_TYPE].y = y;
-    filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING;
     cycling_buttons[BTN_ROUTE_OPEN].x = filter_x;
     cycling_buttons[BTN_ROUTE_OPEN].y = y;
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
-    dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH,
-        SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_BUY_SELL]);
-    filter_x += SIDEBAR_HEADER_BUTTON_WIDE_WIDTH;
+
+    cycling_buttons[BTN_ROUTE_TYPE].x = filter_x;
+    cycling_buttons[BTN_ROUTE_TYPE].y = y;
+    filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING;
+    // dropdown and reset filter are positioned from the right, instead from left:
+    filter_x = data.sidebar.filter_section.x_max - SIDEBAR_HEADER_BUTTON_SPACING - SIDEBAR_HEADER_BUTTON_HEIGHT;
+
+    complex_buttons[BTN_RESET_FILTER].x = filter_x;
+    complex_buttons[BTN_RESET_FILTER].y = y;
+
+    filter_x -= (SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING); // resource picker
     resource_picker.anchor.x = filter_x;
     resource_picker.anchor.y = y;
+
+    filter_x -= (SIDEBAR_HEADER_BUTTON_WIDE_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING); // dd
+    dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH,
+        SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_BUY_SELL]);
 }
 
 static void refresh_screen_geometry(void)
@@ -663,20 +675,14 @@ static void refresh_screen_geometry(void)
     int header_x_max = data.sidebar.x_max - data.sidebar.margin_right;
     int header_width = header_x_max - header_x_min;
 
-    int ledger_min_width = SIDEBAR_HEADER_BUTTON_HEIGHT + 2 * SIDEBAR_HEADER_BUTTON_SPACING;
+    int ledger_width = SIDEBAR_HEADER_LEDGER_BTN_SQ + 2 * SIDEBAR_HEADER_BUTTON_SPACING;
 
-    int ledger_width = header_width * SIDEBAR_HEADER_LEDGER_W_PERCENT / 100;
-
-    if (ledger_width < ledger_min_width) {
-        ledger_width = ledger_min_width;
+    if (ledger_width > header_width) {
+        ledger_width = header_width;
     }
-    int side_width = header_width - ledger_width;
-    int side_percent_total = SIDEBAR_HEADER_SORT_W_PERCENT + SIDEBAR_HEADER_FILTER_W_PERCENT;
-    int sort_width = side_percent_total > 0 ? side_width * SIDEBAR_HEADER_SORT_W_PERCENT / side_percent_total : 0;
 
-    // give any remainder to the filter section so that the three sections always exactly fill the available width.
-
-    int filter_width = side_width - sort_width;
+    int remaining_width = header_width - ledger_width;
+    int sort_width = remaining_width / 2;
 
     data.sidebar.sort_section.x_min = header_x_min;
     data.sidebar.sort_section.x_max = data.sidebar.sort_section.x_min + sort_width;
@@ -685,7 +691,7 @@ static void refresh_screen_geometry(void)
     data.sidebar.ledger_section.x_max = data.sidebar.ledger_section.x_min + ledger_width;
 
     data.sidebar.filter_section.x_min = data.sidebar.ledger_section.x_max;
-    data.sidebar.filter_section.x_max = data.sidebar.filter_section.x_min + filter_width;
+    data.sidebar.filter_section.x_max = header_x_max;
 }
 
 static void refresh_sidebar_city_entries(void)
@@ -2594,6 +2600,9 @@ static void handle_input(const mouse *m, const hotkeys *h)
         }
 
     } else {
+        if (is_sidebar(m)) {
+            return; // sidebar handling went through earlier - prevent clicks falling through to map
+        }
         if (m->right.went_down) {
             scroll_drag_start(0);
         }
@@ -2861,13 +2870,7 @@ static void trade_ledger_hover(complex_button *button)
 
 static void trade_ledger_click(complex_button *button)
 {
-    // if (button->is_clicked) {
-    //     button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_HOVER);
-    // } else {
-    //     button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);
-    // }
     window_trade_ledger_show();
-
 }
 // -------------------------------------------------------------------------------------------------------
 //                                              WINDOW SHOW

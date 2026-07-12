@@ -146,7 +146,7 @@ static void trade_ledger_init(void)
     }
 
     selected_year_index = 0;
-    dropdown_button_init_simple(580, 430, 0, 0, dd_fragments, 9, &ledger_year_dropdown, DD_BUTTON_STYLE_DEFAULT);
+    dropdown_button_init_simple(580, 430, 0, 0, dd_fragments, 9, &ledger_year_dropdown, DD_BUTTON_STYLE_DEFAULT, 0);
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
 

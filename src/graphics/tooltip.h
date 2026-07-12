@@ -49,4 +49,6 @@ void tooltip_handle(const mouse *m, void (*func)(tooltip_context *));
  */
 void tooltip_copy_context(tooltip_context *dst, const tooltip_context *src);
 
+int tooltip_context_is_empty(const tooltip_context *c);
+
 #endif // GRAPHICS_TOOLTIP_H

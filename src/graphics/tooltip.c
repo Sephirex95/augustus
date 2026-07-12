@@ -595,3 +595,11 @@ void tooltip_copy_context(tooltip_context *dst, const tooltip_context *src)
 
     dst->precomposed_text = src->precomposed_text;
 }
+
+int tooltip_context_is_empty(const tooltip_context *c)
+{
+    return c->type == 0
+        && c->text_group == 0
+        && c->translation_key == 0
+        && c->precomposed_text == NULL;
+}

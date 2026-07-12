@@ -803,9 +803,11 @@ int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
 {
     if (button->is_focused) {
-        tooltip_copy_context(c, &button->tooltip_c);
-        c->type = TOOLTIP_BUTTON; // constant - for all buttons.
-        return 1;
+        if (!tooltip_context_is_empty(&button->tooltip_c)) {
+            tooltip_copy_context(c, &button->tooltip_c);
+            c->type = TOOLTIP_BUTTON; // constant - for all buttons.
+            return 1;
+        }
     }
     return 0;
 }
