@@ -6,6 +6,7 @@
 #include "graphics/tooltip.h"
 #include "graphics/window.h"
 #include "input/mouse.h"
+#include "sound/effect.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -315,6 +316,7 @@ void complex_button_draw(const complex_button *button)
     font_t base_font = complex_button_font_for_style(button->style);
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
+        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
             draw_main_menu_style(button, base_font, base_color);
             break;
         default: // all other variants housed in the default style draw function 
@@ -613,6 +615,7 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
 
         if (m->left.went_up) {
             btn->is_clicked = 1;
+            sound_effect_play(SOUND_EFFECT_ICON);
             btn->is_active = !btn->is_active; // persistent toggle
             handled = 1;
             if (btn->left_click_handler) {

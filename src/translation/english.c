@@ -2142,6 +2142,7 @@ static translation_string all_strings[] = {
     { TR_UI_TOOLTIP_SHOW_OPEN_ROUTES, "Show Open Routes" },
     { TR_UI_TOOLTIP_SHOW_CLOSED_ROUTES, "Show Closed Routes" },
     { TR_UI_TOOLTIP_SELECT_CITY_RESOURCE_TRADE, "Select City Resource Filter" },
+    { TR_UI_TOOLTIP_OPEN_TRADE_LEDGER, "Open Trade Ledger" },
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

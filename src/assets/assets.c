@@ -113,6 +113,11 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_FILTER_ICON_HOVER] = assets_get_image_id("UI", "Filter_Icon_Hover");
     data.asset_lookup[ASSET_UI_ARROW_MASKED_UP] = assets_get_image_id("UI", "Arrow_Up_Masked");
     data.asset_lookup[ASSET_UI_ARROW_MASKED_DOWN] = assets_get_image_id("UI", "Arrow_Down_Masked");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER] = assets_get_image_id("UI", "Trade_Ledger_Small");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER_HOVER] = assets_get_image_id("UI", "Trade_Ledger_Small_Hover");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER_BUTTON_IDLE] = assets_get_image_id("UI", "Trade_Ledger_Button_Idle");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER_BUTTON_HOVER] = assets_get_image_id("UI", "Trade_Ledger_Button_Click");
+
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
     data.font_lookup[ASSET_FONT_SQ_BRACKET_RIGHT] = assets_get_image_id("UI", "rightbracket_white_l");

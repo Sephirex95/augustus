@@ -80,11 +80,14 @@
 #define SIDEBAR_HEADER_BUTTON_SPACING 5
 #define SIDEBAR_HEADER_BUTTON_V_MARGIN 2
 #define SIDEBAR_HEADER_BUTTON_HEIGHT 32
+#define SIDEBAR_HEADER_LEDGER_BTN_SQ (SIDEBAR_HEADER_BUTTON_HEIGHT + 8)
 #define SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH 54
 #define SIDEBAR_HEADER_BUTTON_WIDE_WIDTH 84
 #define SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH 116
 
-#define SIDEBAR_HEADER_SORT_END_PERCENT 40 // where sorting section ends and filters begin
+#define SIDEBAR_HEADER_SORT_W_PERCENT 45 
+#define SIDEBAR_HEADER_LEDGER_W_PERCENT 10
+#define SIDEBAR_HEADER_FILTER_W_PERCENT 45
 
 #define NO_POSITION ((unsigned int) -1) //used as an alterntive to 0 for some of new pointers
 //to avoid confusion with when relying on external indexing, which can be 0-based
@@ -214,7 +217,7 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
 static open_trade_button_style get_open_trade_button_style(int x, int y, trade_style_variant variant);
 
 // refresher funcitons - recalculating dimensions and positions of sidebar elements
-static void refresh_filter_and_sort_buttons(void);
+static void refresh_header_buttons(void);
 static void refresh_screen_geometry(void);
 static void refresh_sidebar_city_entries(void);
 static void refresh_sidebar_gridbox(void);
@@ -226,7 +229,7 @@ static void button_advisor(int advisor, int param2);
 static void button_show_prices(int param1, int param2);
 static void button_show_resource_window(int resource_button_index);
 static void button_open_trade_by_route(int route_id);
-static void button_open_trade_ledger(int param1, int param2);
+static void trade_ledger_click(complex_button *button);
 static void route_type_filter_button_click(cycling_button *button);
 static void route_open_filter_button_click(cycling_button *button);
 static void sorting_direction_button_click(cycling_button *button);
@@ -272,7 +275,8 @@ enum {
 enum {
     BTN_RESET_SORT,
     BTN_RESET_FILTER,
-    RESET_BTN_COUNT
+    BTN_TRADE_LEDGER,
+    CMPLX_BTN_COUNT
 };
 
 enum {
@@ -283,14 +287,14 @@ enum {
 
 static cycling_button cycling_buttons[BTN_COUNT];
 static dropdown_button dropdown_buttons[DD_COUNT];
-static complex_button complex_buttons[RESET_BTN_COUNT];
+static complex_button complex_buttons[CMPLX_BTN_COUNT];
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
 static grid_picker_cell resource_picker_cells[RESOURCE_MAX];
 static const resource_list *potential_resources;
 static void reset_filter_hover(complex_button *button);
 static void reset_sort_hover(complex_button *button);
-
+static void trade_ledger_hover(complex_button *button);
 //sidebar-related arrays and variables
 static scrollbar_type sidebar_scrollbar;
 static sidebar_city_entry sidebar_cities[MAX_SIDEBAR_CITIES];
@@ -300,9 +304,6 @@ static grid_box_type sidebar_grid_box;
 //original button properties
 static image_button image_button_help[] = {
     {0, 0, 27, 27, IB_NORMAL, GROUP_CONTEXT_ICONS, 0, button_help, button_none, 0, 0, 1}
-};
-static image_button image_button_ledger[] = {
-    {0, 0, 27, 27, IB_NORMAL, GROUP_CONTEXT_ICONS, 0, button_open_trade_ledger, button_none, 0, 0, 1}
 };
 static image_button image_button_return_to_city[] = {
     {0, 0, 24, 24, IB_NORMAL, GROUP_CONTEXT_ICONS, 4, button_return_to_city, button_none, 0, 0, 1}
@@ -362,6 +363,9 @@ static struct {
             char is_hovered;
             char is_collapsed;
         } border_btn;
+        struct {
+            int x_min, x_max;
+        } ledger_section;
         struct {
             int x_min, x_max;
         } filter_section;
@@ -462,6 +466,15 @@ static void setup_filter_and_sort_buttons(void)
     complex_buttons[BTN_RESET_SORT].left_click_handler = reset_sort_click;
     complex_buttons[BTN_RESET_SORT].tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
 
+    complex_buttons[BTN_TRADE_LEDGER].width = SIDEBAR_HEADER_LEDGER_BTN_SQ; // square button
+    complex_buttons[BTN_TRADE_LEDGER].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
+    complex_buttons[BTN_TRADE_LEDGER].image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);
+    complex_buttons[BTN_TRADE_LEDGER].image.auto_center = 1;
+    complex_buttons[BTN_TRADE_LEDGER].style = COMPLEX_BUTTON_STYLE_GRAY_NO_FILL;
+    complex_buttons[BTN_TRADE_LEDGER].hover_handler = trade_ledger_hover;
+    complex_buttons[BTN_TRADE_LEDGER].left_click_handler = trade_ledger_click;
+    complex_buttons[BTN_TRADE_LEDGER].tooltip_c.translation_key = TR_UI_TOOLTIP_OPEN_TRADE_LEDGER;
+
     cycling_buttons[BTN_SORT_DIRECTION].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     cycling_buttons[BTN_SORT_DIRECTION].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     cycling_buttons[BTN_SORT_DIRECTION].style = CYCLING_BUTTON_STYLE_GRAY_NO_FILL;
@@ -554,7 +567,7 @@ static void setup_sidebar(void)
     data.sidebar.initialised = 1; // dimensions set up
 }
 
-static void refresh_filter_and_sort_buttons(void)
+static void refresh_header_buttons(void)
 {
     int sorting = window_empire_sidebar_sort_get_current_sorting();
     if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
@@ -601,6 +614,11 @@ static void refresh_filter_and_sort_buttons(void)
     cycling_buttons[BTN_SORT_DIRECTION].x = sort_x;
     cycling_buttons[BTN_SORT_DIRECTION].y = y;
 
+    int ledger_w = data.sidebar.ledger_section.x_max - data.sidebar.ledger_section.x_min;
+    int ledger_btn_start_x = data.sidebar.ledger_section.x_min + ledger_w / 2 - (SIDEBAR_HEADER_LEDGER_BTN_SQ) / 2;
+    complex_buttons[BTN_TRADE_LEDGER].x = ledger_btn_start_x;
+    complex_buttons[BTN_TRADE_LEDGER].y = data.sidebar.y_min;
+
     complex_buttons[BTN_RESET_FILTER].x = filter_x;
     complex_buttons[BTN_RESET_FILTER].y = y;
     filter_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
@@ -621,12 +639,17 @@ static void refresh_screen_geometry(void)
 {
     data.screen_width = screen_width();
     data.screen_height = screen_height();
-    int map_width, map_height;
+
+    int map_width;
+    int map_height;
     empire_get_map_size(&map_width, &map_height);
+
     int max_width = map_width + WIDTH_BORDER;
     int max_height = map_height + HEIGHT_BORDER;
+
     data.x_min = data.screen_width <= max_width ? 0 : (data.screen_width - max_width) / 2;
     data.x_max = data.screen_width <= max_width ? data.screen_width : data.x_min + max_width;
+
     data.y_min = data.screen_height <= max_height ? 0 : (data.screen_height - max_height) / 2;
     data.y_max = data.screen_height <= max_height ? data.screen_height : data.y_min + max_height;
 
@@ -636,10 +659,33 @@ static void refresh_screen_geometry(void)
     data.sidebar.y_min = data.y_min + WIDTH_BORDER;
     data.sidebar.y_max = data.y_max - BOTTOM_PANEL_HEIGHT;
 
-    data.sidebar.sort_section.x_min = data.sidebar.x_min + data.sidebar.margin_left;
-    data.sidebar.sort_section.x_max = data.sidebar.x_min + SIDEBAR_HEADER_SORT_END_PERCENT * data.sidebar.width / 100;
-    data.sidebar.filter_section.x_min = data.sidebar.sort_section.x_max; // no margin between sort and filter sections
-    data.sidebar.filter_section.x_max = data.sidebar.x_max;
+    int header_x_min = data.sidebar.x_min + data.sidebar.margin_left;
+    int header_x_max = data.sidebar.x_max - data.sidebar.margin_right;
+    int header_width = header_x_max - header_x_min;
+
+    int ledger_min_width = SIDEBAR_HEADER_BUTTON_HEIGHT + 2 * SIDEBAR_HEADER_BUTTON_SPACING;
+
+    int ledger_width = header_width * SIDEBAR_HEADER_LEDGER_W_PERCENT / 100;
+
+    if (ledger_width < ledger_min_width) {
+        ledger_width = ledger_min_width;
+    }
+    int side_width = header_width - ledger_width;
+    int side_percent_total = SIDEBAR_HEADER_SORT_W_PERCENT + SIDEBAR_HEADER_FILTER_W_PERCENT;
+    int sort_width = side_percent_total > 0 ? side_width * SIDEBAR_HEADER_SORT_W_PERCENT / side_percent_total : 0;
+
+    // give any remainder to the filter section so that the three sections always exactly fill the available width.
+
+    int filter_width = side_width - sort_width;
+
+    data.sidebar.sort_section.x_min = header_x_min;
+    data.sidebar.sort_section.x_max = data.sidebar.sort_section.x_min + sort_width;
+
+    data.sidebar.ledger_section.x_min = data.sidebar.sort_section.x_max;
+    data.sidebar.ledger_section.x_max = data.sidebar.ledger_section.x_min + ledger_width;
+
+    data.sidebar.filter_section.x_min = data.sidebar.ledger_section.x_max;
+    data.sidebar.filter_section.x_max = data.sidebar.filter_section.x_min + filter_width;
 }
 
 static void refresh_sidebar_city_entries(void)
@@ -671,7 +717,7 @@ static void refresh_sidebar_gridbox(void)
     }
 
     refresh_sidebar_city_entries();
-    refresh_filter_and_sort_buttons();
+    refresh_header_buttons();
 
     qsort(sidebar_cities, sidebar_city_count, sizeof(sidebar_city_entry), window_empire_sidebar_sort_sidebar_city_sorter);
     int selection_visible = 0;
@@ -1981,7 +2027,6 @@ static void draw_panel_buttons(void)
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 44, image_button_return_to_city, 1);
     image_buttons_draw(data.panel.x_max - 44, data.y_max - 100, image_button_advisor, 1);
     image_buttons_draw(data.panel.x_min + 24, data.y_max - 100, image_button_show_prices, 1);
-    image_buttons_draw(data.panel.x_min + 50, data.y_max - 44, image_button_ledger, 1);
     if (data.selected_button != NO_POSITION) {
         const trade_open_button *btn = &trade_open_buttons[data.selected_button];
         button_border_draw(btn->x - 1, btn->y - 1, btn->width + 2, btn->height + 2, 1);
@@ -2003,14 +2048,14 @@ static void draw_sidebar_grid_box(void)
         int y = data.sidebar.y_min;
         int width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
 
-        large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_BUTTON_HEIGHT + 8);
+        large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_LEDGER_BTN_SQ);
 
         x = data.sidebar.filter_section.x_min;
         width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
-        large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_BUTTON_HEIGHT + 8);
+        large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_LEDGER_BTN_SQ);
         grid_picker_draw(&resource_picker);
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
-        complex_button_draw_array(complex_buttons, RESET_BTN_COUNT);
+        complex_button_draw_array(complex_buttons, CMPLX_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
 
     }
@@ -2437,7 +2482,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (cycling_button_handle_mouse_array(cycling_buttons, m, BTN_COUNT)) {
             return;
         }
-        if (complex_button_handle_mouse_array(complex_buttons, m, RESET_BTN_COUNT)) {
+        if (complex_button_handle_mouse_array(complex_buttons, m, CMPLX_BTN_COUNT)) {
             return;
         }
 
@@ -2476,10 +2521,6 @@ static void handle_input(const mouse *m, const hotkeys *h)
     image_buttons_handle_mouse(m, data.panel.x_min + 24, data.y_max - 100, image_button_show_prices, 1, &button_id);
     if (button_id) {
         data.focus_button_id = 4;
-    }
-    image_buttons_handle_mouse(m, data.panel.x_min + 50, data.y_max - 44, image_button_ledger, 1, &button_id);
-    if (button_id) {
-        data.focus_button_id = 5;
     }
 
     button_id = 0;
@@ -2726,7 +2767,7 @@ static void get_tooltip(tooltip_context *c)
         return;
     } else if (cycling_button_handle_tooltip_array(cycling_buttons, c, BTN_COUNT)) {
         return;
-    } else if (complex_button_handle_tooltip_array(complex_buttons, c, RESET_BTN_COUNT)) {
+    } else if (complex_button_handle_tooltip_array(complex_buttons, c, CMPLX_BTN_COUNT)) {
         return;
     } else {
         get_tooltip_trade_route_type(c);
@@ -2739,11 +2780,6 @@ static void get_tooltip(tooltip_context *c)
 static void button_help(int param1, int param2)
 {
     window_message_dialog_show(MESSAGE_DIALOG_EMPIRE_MAP, 0);
-}
-
-static void button_open_trade_ledger(int param1, int param2)
-{
-    window_trade_ledger_show();
 }
 
 static void button_return_to_city(int param1, int param2)
@@ -2812,6 +2848,26 @@ static void reset_sort_hover(complex_button *button)
     } else {
         button->image_before = assets_lookup_image_id(ASSET_UI_SORTING_ICON);
     }
+}
+
+static void trade_ledger_hover(complex_button *button)
+{
+    if (button->is_focused) {
+        button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_HOVER);
+    } else {
+        button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);
+    }
+}
+
+static void trade_ledger_click(complex_button *button)
+{
+    // if (button->is_clicked) {
+    //     button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_HOVER);
+    // } else {
+    //     button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);
+    // }
+    window_trade_ledger_show();
+
 }
 // -------------------------------------------------------------------------------------------------------
 //                                              WINDOW SHOW
