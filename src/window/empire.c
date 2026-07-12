@@ -217,7 +217,7 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
 static open_trade_button_style get_open_trade_button_style(int x, int y, trade_style_variant variant);
 
 // refresher funcitons - recalculating dimensions and positions of sidebar elements
-static void refresh_header_buttons(void);
+static void refresh_header_and_footer_buttons(void);
 static void refresh_screen_geometry(void);
 static void refresh_sidebar_city_entries(void);
 static void refresh_sidebar_gridbox(void);
@@ -549,7 +549,7 @@ static void setup_header_footer_buttons(void)
     };
     int trade_history_width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
     complex_buttons[BTN_TRADE_HISTORY].width = trade_history_width; // square button
-    complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_HEIGHT;
+    complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
     complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
     complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
     complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
@@ -612,7 +612,7 @@ static void setup_sidebar(void)
     data.sidebar.initialised = 1; // dimensions set up
 }
 
-static void refresh_header_buttons(void)
+static void refresh_header_and_footer_buttons(void)
 {
     int sorting = window_empire_sidebar_sort_get_current_sorting();
     if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
@@ -655,8 +655,10 @@ static void refresh_header_buttons(void)
     complex_buttons[BTN_RESET_SORT].x = sort_x;
     complex_buttons[BTN_RESET_SORT].y = y;
 
-    complex_buttons[BTN_TRADE_HISTORY].x = sort_x;
+    complex_buttons[BTN_TRADE_HISTORY].x = sort_x - SIDEBAR_HEADER_BUTTON_SPACING; // align with section start
     complex_buttons[BTN_TRADE_HISTORY].y = y_footer;
+    complex_buttons[BTN_TRADE_HISTORY].width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
+    complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
     sort_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
     dropdown_button_update_dimensions(sort_x, y, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH,
         SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_SORT]);
@@ -671,9 +673,11 @@ static void refresh_header_buttons(void)
 
     cycling_buttons[BTN_ROUTE_OPEN].x = filter_x;
     cycling_buttons[BTN_ROUTE_OPEN].y = y;
-    int date_dd_width = dropdown_buttons[DD_SET_DATE].width;
-    int date_dd_height = dropdown_buttons[DD_SET_DATE].height;
-    dropdown_button_update_dimensions(filter_x, y_footer, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
+    int date_dd_x = filter_x - SIDEBAR_HEADER_BUTTON_SPACING;
+    int date_dd_y = y_footer;
+    int date_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
+    int date_dd_height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
+    dropdown_button_update_dimensions(date_dd_x, date_dd_y, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
 
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
 
@@ -764,6 +768,17 @@ static void refresh_sidebar_city_entries(void)
     }
 }
 
+static int refresh_sidebar_entry_height(void)
+{
+    int can_fit = sidebar_grid_box.height / (SIDEBAR_ENTRY_HEIGHT + SIDEBAR_MARGIN_VERTICAL);
+
+    if (can_fit <= 0) {
+        return SIDEBAR_ENTRY_HEIGHT;
+    }
+
+    return sidebar_grid_box.height / can_fit;
+}
+
 static void refresh_sidebar_gridbox(void)
 {
     if (data.sidebar.width_percent < 20) {
@@ -771,7 +786,7 @@ static void refresh_sidebar_gridbox(void)
     }
 
     refresh_sidebar_city_entries();
-    refresh_header_buttons();
+    refresh_header_and_footer_buttons();
 
     qsort(sidebar_cities, sidebar_city_count, sizeof(sidebar_city_entry), window_empire_sidebar_sort_sidebar_city_sorter);
     int selection_visible = 0;
@@ -781,12 +796,16 @@ static void refresh_sidebar_gridbox(void)
     if (!selection_visible) {
         data.selected_city = 0; // or keep it but ensure UI handles "not in list"
     }
-
+    int y_min = data.sidebar.y_min + SIDEBAR_HEADER_HEIGHT + SIDEBAR_HEADER_BUTTON_V_MARGIN;
+    int y_max = data.sidebar.y_max - SIDEBAR_HEADER_HEIGHT - SIDEBAR_HEADER_BUTTON_V_MARGIN;
     sidebar_grid_box.x = data.sidebar.x_min + data.sidebar.margin_left;
-    sidebar_grid_box.y = data.sidebar.y_min + data.sidebar.margin_top + SIDEBAR_HEADER_BUTTON_V_MARGIN;
+    sidebar_grid_box.y = y_min;
     sidebar_grid_box.width = data.sidebar.width - data.sidebar.margin_right - data.sidebar.margin_left;
-    sidebar_grid_box.height = data.sidebar.y_max - data.sidebar.y_min - data.sidebar.margin_top - data.sidebar.margin_bottom;
-    sidebar_grid_box.item_height = SIDEBAR_ENTRY_HEIGHT;
+    sidebar_grid_box.width -= SIDEBAR_MARGIN_VERTICAL; // additional mini margin 
+    sidebar_grid_box.height = y_max - y_min;
+    // calculate fitting item height:
+
+    sidebar_grid_box.item_height = refresh_sidebar_entry_height();
     sidebar_grid_box.num_columns = 1;
     sidebar_grid_box.item_margin.horizontal = 0;
     sidebar_grid_box.item_margin.vertical = SIDEBAR_MARGIN_VERTICAL;
@@ -797,7 +816,7 @@ static void refresh_sidebar_gridbox(void)
     sidebar_grid_box.draw_item = draw_sidebar_city_item;
     sidebar_grid_box.on_click = on_sidebar_city_click;
     sidebar_grid_box.handle_tooltip = NULL;
-    sidebar_grid_box.offset_scrollbar_x = grid_box_has_scrollbar(&sidebar_grid_box) ? -14 : 0;
+    sidebar_grid_box.offset_scrollbar_x = 0; //grid_box_has_scrollbar(&sidebar_grid_box) ? -14 : 0;
     sidebar_grid_box.offset_scrollbar_y = 0;
     grid_box_set_bounds(&sidebar_grid_box, sidebar_grid_box.x, sidebar_grid_box.y, sidebar_grid_box.width, sidebar_grid_box.height);
 }
@@ -827,7 +846,7 @@ static open_trade_button_style get_open_trade_button_style(int x, int y, trade_s
     open_trade_button_style style = {
         .button_x_min = (is_sidebar ? x + 15 : (data.panel.x_min + data.panel.x_max - 500) / 2) + 30, //15px offset somewhere got lost, * 2 for 30
         .button_y_min = y + (is_sidebar ? 0 : -9),
-        .button_width = is_sidebar ? get_usable_width(&sidebar_grid_box) * 0.75 : 440,  // restored fixed widths // sidebar: main bar
+        .button_width = is_sidebar ? grid_box_get_usable_width(&sidebar_grid_box) * 0.75 : 440,  // restored fixed widths // sidebar: main bar
         .button_height = 26,
         .y_offset_icon = is_sidebar ? 2 : 2, //separated in case of resolution considerations - wait for feedback before simplifying
         .y_offset_text = is_sidebar ? 10 : 10, //separated in case of resolution considerations - wait for feedback before simplifying
@@ -1561,20 +1580,23 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     sidebar_city_entry *entry = &sidebar_cities[item->index];
     empire_city *city = empire_city_get(entry->city_id);
     const uint8_t *name = empire_city_get_name(city);
-    //const grid_box_type *sidebar_grid_box;
 
-    int item_usable_width = get_usable_width(&sidebar_grid_box) + sidebar_grid_box.offset_scrollbar_x;
-    graphics_set_clip_rectangle(data.sidebar.x_min, data.sidebar.y_min, item_usable_width + 4, data.sidebar.y_max); // 4px extra reserved for the border drawn AROUND the item
-    int x_blocks = item_usable_width / BLOCK_SIZE;
-    int y_blocks = item->height / BLOCK_SIZE;
+    int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) / WIDTH_BORDER;
+    item_usable_width = item_usable_width * WIDTH_BORDER; // cheeky
+    // because inner_panel_draw only works in blocks of 16px, above just happens to work out ok
+    // the alternative to manipulating the drawing here, is either:
+    // a) adjust the inner_panel_draw with some graphics_set_clip_rectangle calls to allow 1px increments, or
+    // b) adjust width/pos of the sidebar to ensure that the dimensions work perfectly with this limitation
+    // or do both - but for now, just positioning it works well enough.
 
+    int item_usable_height = item->height;
     // base offset for all content in the box
-    int x_offset = item->x;
+    int x_offset = item->x + SIDEBAR_MARGIN_HORIZONTAL;
     int y_offset = item->y;
-    trade_row_style style_sells = get_trade_row_style(city, 1, item_usable_width + sidebar_grid_box.offset_scrollbar_x, TRADE_STYLE_SIDEBAR);
-    trade_row_style style_buys = get_trade_row_style(city, 0, item_usable_width + sidebar_grid_box.offset_scrollbar_x, TRADE_STYLE_SIDEBAR);
+    trade_row_style style_sells = get_trade_row_style(city, 1, item_usable_width, TRADE_STYLE_SIDEBAR);
+    trade_row_style style_buys = get_trade_row_style(city, 0, item_usable_width, TRADE_STYLE_SIDEBAR);
     // draw background + name + badge
-    inner_panel_draw(x_offset, y_offset, x_blocks, y_blocks);
+    inner_panel_draw_colored(x_offset, y_offset, item_usable_width, item_usable_height, COLOR_MASK_NONE);
     if (item->is_focused) {
         data.hovered_object = city->empire_object_id + 1;
     }
@@ -1582,13 +1604,13 @@ static void draw_sidebar_city_item(const grid_box_item *item)
         graphics_shade_rect(
             item->x,
             item->y,
-            item_usable_width - data.sidebar.margin_right,
-            item->height - data.sidebar.margin_bottom,
+            item_usable_width,
+            item_usable_height,
             2  // 0-7
         );
     }
     if (entry->city_id == data.selected_city) {
-        button_border_draw(item->x, item->y, item_usable_width, item->height - data.sidebar.margin_bottom / 2, 1); // margin/2 to not be exactly the same size as the item
+        button_border_draw(item->x, item->y, item_usable_width, item_usable_height, 1); // margin/2 to not be exactly the same size as the item
     }
 
     int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
@@ -1642,7 +1664,6 @@ static void draw_sidebar_city_item(const grid_box_item *item)
         open_trade_button_style open_trade_style_closed = get_open_trade_button_style(item->x, y_offset, TRADE_STYLE_SIDEBAR);
         draw_open_trade_button(city, &open_trade_style_closed, (trade_icon_type) (city->is_sea_trade));
     }
-    graphics_reset_clip_rectangle();
 }
 
 static void draw_city_info(const empire_object *object)
@@ -2473,7 +2494,7 @@ static void sync_resource_picker_from_filter(void)
         return;
     }
 
-    for (int i = 0; i < potential_resources->size; i++) {
+    for (unsigned int i = 0; i < potential_resources->size; i++) {
         if (potential_resources->items[i] != selected_resource) {
             continue;
         }
