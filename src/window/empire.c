@@ -693,8 +693,6 @@ static void refresh_header_buttons(void)
     filter_x -= (SIDEBAR_HEADER_BUTTON_WIDE_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING); // dd
     dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH,
         SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_BUY_SELL]);
-
-
 }
 
 static void refresh_screen_geometry(void)
