@@ -276,12 +276,14 @@ enum {
     BTN_RESET_SORT,
     BTN_RESET_FILTER,
     BTN_TRADE_LEDGER,
+    BTN_TRADE_HISTORY,
     CMPLX_BTN_COUNT
 };
 
 enum {
     DD_TRADE_BUY_SELL,
     DD_TRADE_SORT,
+    DD_SET_DATE,
     DD_COUNT
 };
 
@@ -421,8 +423,7 @@ static void setup_resource_picker(void)
 
     static tooltip_context tooltip_c = {
         .type = TOOLTIP_BUTTON,
-        .text_group = CUSTOM_TRANSLATION,
-        .text_id = TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER,
+        .translation_key = TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER,
     };
     grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT,
          NULL, 0, COMPLEX_BUTTON_STYLE_GRAY, &tooltip_c);
@@ -431,7 +432,7 @@ static void setup_resource_picker(void)
     resource_picker.selected_callback = resource_picker_selected;
 }
 
-static void setup_filter_and_sort_buttons(void)
+static void setup_header_footer_buttons(void)
 {
     int sea_trade_icon = assets_lookup_image_id(ASSET_UI_CENTERED_BOAT);
     int land_trade_icon = assets_lookup_image_id(ASSET_UI_CENTERED_CART);
@@ -540,6 +541,44 @@ static void setup_filter_and_sort_buttons(void)
 
     dropdown_button_advanced_save_anchor(&dropdown_buttons[DD_TRADE_BUY_SELL]); // save anchor again after updating tooltip
     setup_resource_picker();
+    // header setup finished
+    static lang_fragment trade_history = {
+        .type = LANG_FRAG_LABEL,
+        .text_group = CUSTOM_TRANSLATION,
+        .text_id = TR_UI_SIDEBAR_TRADE_HISTORY
+    };
+    int trade_history_width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
+    complex_buttons[BTN_TRADE_HISTORY].width = trade_history_width; // square button
+    complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_HEIGHT;
+    complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
+    complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
+    complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
+    complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP;
+
+    static lang_fragment set_date_dd_frag[9] = { 0 };
+
+    for (int i = 0; i < 3; i++) {
+        set_date_dd_frag[i].type = LANG_FRAG_LABEL;
+        set_date_dd_frag[i].text_group = CUSTOM_TRANSLATION;
+    }
+    set_date_dd_frag[0].text_id = TR_UI_SELECT_TRADE_LEDGER_YEAR; // anchor
+    set_date_dd_frag[1].text_id = TR_UI_CURRENT_YEAR;
+    set_date_dd_frag[2].text_id = TR_UI_LAST_YEAR;
+
+    for (int i = 3; i < 9; i++) {
+        set_date_dd_frag[i].type = LANG_FRAG_AMOUNT;
+        set_date_dd_frag[i].text_group = CUSTOM_TRANSLATION;
+        set_date_dd_frag[i].text_id = TR_UI_YEAR_AGO;
+        set_date_dd_frag[i].number = i - 1;
+    }
+    int year_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
+    dropdown_button_init_simple(0, 0, year_dd_width, SIDEBAR_HEADER_HEIGHT,
+        set_date_dd_frag, 9, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
+    dropdown_buttons[DD_SET_DATE].width = year_dd_width;
+    dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_HEIGHT;
+    dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
+
+    // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
 
@@ -560,7 +599,7 @@ static void setup_sidebar(void)
     data.sidebar.margin_left = SIDEBAR_MARGIN_HORIZONTAL; //margins between sidebar and gridbox
     data.sidebar.margin_right = SIDEBAR_MARGIN_HORIZONTAL;
     data.sidebar.margin_top = SIDEBAR_HEADER_HEIGHT; //space for sorting buttons
-    data.sidebar.margin_bottom = SIDEBAR_MARGIN_VERTICAL;
+    data.sidebar.margin_bottom = SIDEBAR_HEADER_HEIGHT; // space for history and date picker
     data.usable_map_width = data.x_max - data.x_min;
 
     // Use only one width source - prefer dragging width when actively dragging
@@ -568,7 +607,7 @@ static void setup_sidebar(void)
     int raw = (data.usable_map_width * active_width_percent) / 100;
     data.sidebar.width = ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE + data.sidebar.margin_left + data.sidebar.margin_right;
 
-    setup_filter_and_sort_buttons();
+    setup_header_footer_buttons();
 
     data.sidebar.initialised = 1; // dimensions set up
 }
@@ -611,8 +650,13 @@ static void refresh_header_buttons(void)
     int sort_x = data.sidebar.sort_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int filter_x = data.sidebar.filter_section.x_min + SIDEBAR_HEADER_BUTTON_SPACING;
     int y = data.sidebar.y_min + SIDEBAR_MARGIN_VERTICAL;
+    int y_footer = data.sidebar.y_max - SIDEBAR_HEADER_HEIGHT;
+
     complex_buttons[BTN_RESET_SORT].x = sort_x;
     complex_buttons[BTN_RESET_SORT].y = y;
+
+    complex_buttons[BTN_TRADE_HISTORY].x = sort_x;
+    complex_buttons[BTN_TRADE_HISTORY].y = y_footer;
     sort_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
     dropdown_button_update_dimensions(sort_x, y, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH,
         SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_SORT]);
@@ -627,6 +671,10 @@ static void refresh_header_buttons(void)
 
     cycling_buttons[BTN_ROUTE_OPEN].x = filter_x;
     cycling_buttons[BTN_ROUTE_OPEN].y = y;
+    int date_dd_width = dropdown_buttons[DD_SET_DATE].width;
+    int date_dd_height = dropdown_buttons[DD_SET_DATE].height;
+    dropdown_button_update_dimensions(filter_x, y_footer, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
+
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
 
     cycling_buttons[BTN_ROUTE_TYPE].x = filter_x;
@@ -645,6 +693,8 @@ static void refresh_header_buttons(void)
     filter_x -= (SIDEBAR_HEADER_BUTTON_WIDE_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING); // dd
     dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH,
         SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_BUY_SELL]);
+
+
 }
 
 static void refresh_screen_geometry(void)

@@ -149,7 +149,7 @@ static void trade_ledger_init(void)
     dropdown_button_init_simple(580, 430, 0, 0, dd_fragments, 9, &ledger_year_dropdown, DD_BUTTON_STYLE_DEFAULT, 0);
     ledger_year_dropdown.show_origin = 1; // show anchor button when expanded
     ledger_year_dropdown.selected_callback = dropdown_selected_callback;
-
+    ledger_year_dropdown.selected_index = 1; // default to "Current Year"
     resource_table = (grid_box_type) {
             .x = 10,
             .y = 80,

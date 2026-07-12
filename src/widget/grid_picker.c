@@ -378,6 +378,9 @@ int grid_picker_handle_tooltip(grid_picker *picker, tooltip_context *c)
         grid_picker_cell *cell = &picker->cells[row][column];
         tooltip_copy_context(c, &cell->tooltip_c);
         return 1;
+    } else if (picker->anchor.is_focused && !tooltip_context_is_empty(&picker->anchor.tooltip_c)) {
+        tooltip_copy_context(c, &picker->anchor.tooltip_c);
+        return 1;
     }
     return 0;
 }
