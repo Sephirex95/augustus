@@ -317,12 +317,10 @@ void complex_button_draw(const complex_button *button)
     if (button->height > 32) {
         // swap the font out to large variant
         switch (base_font) {
-            case FONT_NORMAL_BLACK:
-                base_font = FONT_LARGE_BLACK;
-                break;
             case FONT_NORMAL_BROWN:
             case FONT_NORMAL_GREEN:
-                base_font = FONT_LARGE_BROWN;
+            case FONT_NORMAL_BLACK:
+                base_font = FONT_LARGE_BLACK;
                 break;
             case FONT_NORMAL_PLAIN:
                 base_font = FONT_LARGE_PLAIN;
