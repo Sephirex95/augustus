@@ -162,6 +162,8 @@ const finance_overview *city_finance_overview_last_year(void);
 
 const finance_overview *city_finance_overview_this_year(void);
 
+void city_finance_ledger_init(void);
+
 int city_finance_spawn_tourist(void);
 
 void city_finance_ledger_save_state(buffer *buf);

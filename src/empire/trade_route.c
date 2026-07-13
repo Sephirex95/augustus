@@ -23,6 +23,7 @@ typedef struct {
 typedef array(trade_route) trade_route_array;
 static trade_route_array routes;
 static trade_route_array trade_history[MAX_TRADE_HISTORY_YEARS];
+static unsigned char years_stored = 0;
 
 static int init_trade_route_array(trade_route_array *route_array, int routes_to_load)
 {
@@ -32,6 +33,15 @@ static int init_trade_route_array(trade_route_array *route_array, int routes_to_
 static int trade_route_array_buffer_size(const trade_route_array *route_array)
 {
     return sizeof(int32_t) + (int) route_array->size * (int) (sizeof(int32_t) * RESOURCE_MAX * 4 + sizeof(uint8_t));
+}
+
+static int get_trade_history_buffer_size(void)
+{
+    int buf_size = sizeof(uint8_t);
+    for (int i = 0; i < MAX_TRADE_HISTORY_YEARS; i++) {
+        buf_size += trade_route_array_buffer_size(&trade_history[i]);
+    }
+    return buf_size;
 }
 
 static void save_trade_route_array_state(buffer *buf, const trade_route_array *route_array)
@@ -97,14 +107,22 @@ int trade_route_init(void)
             return 0;
         }
     }
-
+    years_stored = 0;
     return 1;
 }
 
-int trade_route_open(int route_id)
+int trade_route_set_open(int route_id)
 {
     array_item(routes, route_id)->open = 1;
     return array_item(routes, route_id)->open;
+}
+
+int trade_route_was_open(int route_id, int year)
+{
+    if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
+        return 0;
+    }
+    return array_item(trade_history[year], route_id)->open;
 }
 
 int trade_route_new(void)
@@ -147,7 +165,12 @@ int trade_route_traded(int route_id, resource_type resource, int buying)
         array_item(routes, route_id)->sells.traded[resource];
 }
 
-int trade_route_history_limit(int year, int route_id, resource_type resource, int buying)
+int trade_route_get_history_years_stored(void)
+{
+    return years_stored;
+}
+
+int trade_route_history_limit(int route_id, resource_type resource, int buying, int year)
 {
     if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
         return 0;
@@ -162,7 +185,7 @@ int trade_route_history_limit(int year, int route_id, resource_type resource, in
     }
 }
 
-int trade_route_history_traded(int year, int route_id, resource_type resource, int buying)
+int trade_route_history_traded(int route_id, resource_type resource, int buying, int year)
 {
     if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
         return 0;
@@ -249,7 +272,10 @@ static int copy_trade_route_array(trade_route_array *dest, const trade_route_arr
     dest->size = src->size;
 
     for (unsigned int i = 0; i < src->size; i++) {
-        *array_item(*dest, i) = *array_item(*src, i);
+        trade_route *src_route = array_item(*src, i);
+        trade_route *dest_route = array_item(*dest, i);
+
+        *dest_route = *src_route;
     }
 
     return 1;
@@ -266,10 +292,11 @@ void trade_route_save_history(void)
         }
     }
 
-    // Store the current routes as the newest history entry.
+    // move current routes as the [0] history entry
     if (!copy_trade_route_array(&trade_history[0], &routes)) {
         log_error("Unable to expand trade route history.", 0, 0);
     }
+    years_stored = years_stored < MAX_TRADE_HISTORY_YEARS ? years_stored + 1 : MAX_TRADE_HISTORY_YEARS;
 }
 
 void trade_routes_save_state(buffer *trade_routes)
@@ -288,13 +315,10 @@ void trade_routes_load_state(buffer *trade_routes, int version)
 
 void trade_history_save_state(buffer *buf)
 {
-    int buf_size = 0;
-    for (int i = 0; i < MAX_TRADE_HISTORY_YEARS; i++) {
-        buf_size += trade_route_array_buffer_size(&trade_history[i]);
-    }
+    uint8_t *buf_data = malloc(get_trade_history_buffer_size());
+    buffer_init(buf, buf_data, get_trade_history_buffer_size());
 
-    uint8_t *buf_data = malloc(buf_size);
-    buffer_init(buf, buf_data, buf_size);
+    buffer_write_u8(buf, years_stored);
 
     for (int i = 0; i < MAX_TRADE_HISTORY_YEARS; i++) {
         save_trade_route_array_state(buf, &trade_history[i]);
@@ -303,6 +327,7 @@ void trade_history_save_state(buffer *buf)
 
 void trade_history_clear_state(void)
 {
+    years_stored = 0;
     for (int i = 0; i < MAX_TRADE_HISTORY_YEARS; i++) {
         if (!init_trade_route_array(&trade_history[i], 0)) {
             log_error("Unable to create memory for trade route history. The game will now crash.", 0, 0);
@@ -313,6 +338,11 @@ void trade_history_clear_state(void)
 
 void trade_history_load_state(buffer *buf, int version)
 {
+    years_stored = buffer_read_u8(buf);
+    if (years_stored > MAX_TRADE_HISTORY_YEARS) {
+        years_stored = MAX_TRADE_HISTORY_YEARS;
+    }
+
     for (int i = 0; i < MAX_TRADE_HISTORY_YEARS; i++) {
         if (!load_trade_route_array_state(buf, &trade_history[i], version, 0)) {
             log_error("Unable to create memory for trade route history. The game will now crash.", 0, 0);

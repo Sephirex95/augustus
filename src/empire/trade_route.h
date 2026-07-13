@@ -20,13 +20,21 @@ int trade_route_count(void);
 
 int trade_route_is_valid(int route_id);
 
-int trade_route_open(int route_id);
+int trade_route_set_open(int route_id);
+
+int trade_route_was_open(int route_id, int year);
 
 void trade_route_set(int route_id, resource_type resource, int limit, int buying);
 
 int trade_route_limit(int route_id, resource_type resource, int buying);
 
 int trade_route_traded(int route_id, resource_type resource, int buying);
+
+int trade_route_get_history_years_stored(void);
+
+int trade_route_history_limit(int route_id, resource_type resource, int buying, int year);
+
+int trade_route_history_traded(int route_id, resource_type resource, int buying, int year);
 
 void trade_route_set_limit(int route_id, resource_type resource, int amount, int buying);
 

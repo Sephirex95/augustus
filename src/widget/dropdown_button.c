@@ -32,6 +32,29 @@ static complex_button_style dropdown_button_style_to_complex_style(dropdown_butt
     }
 }
 
+static unsigned int get_option_visual_slot(const dropdown_button *dd, unsigned int option_index)
+{
+    if (!dd || option_index == 0 || option_index >= dd->num_buttons) {
+        return 0;
+    }
+
+    if (dd->reverse_order) {
+        return dd->num_buttons - option_index - 1;
+    }
+    return option_index - 1;
+}
+
+static int get_option_y(const dropdown_button *dd, const complex_button *origin, unsigned int option_index)
+{
+    unsigned int slot = get_option_visual_slot(dd, option_index);
+    int stride = dd->calculated_height + dd->spacing;
+
+    if (dd->drop_up) {
+        return origin->y - dd->calculated_height - (int) slot * stride;
+    }
+    return origin->y + origin->height + (int) slot * stride;
+}
+
 /* --- Helper to set anchor visual parameters to match selected option --- */
 static void update_anchor(dropdown_button *dd)
 {
@@ -174,10 +197,10 @@ void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     // --- Apply geometry ---
     origin->width = calc_width;
     for (unsigned int i = 1; i < num_buttons; i++) {
-        buttons[i].x = origin->x;
-        buttons[i].y = origin->y + origin->height + (i - 1) * (dd->calculated_height + spacing);
-        buttons[i].width = calc_width;
-        buttons[i].height = dd->calculated_height;
+        dd->buttons[i].x = origin->x;
+        dd->buttons[i].y = get_option_y(dd, origin, i);
+        dd->buttons[i].width = calc_width;
+        dd->buttons[i].height = dd->calculated_height;
     }
 }
 
@@ -262,7 +285,7 @@ void dropdown_button_update_dimensions(int x, int y, int width, int height, drop
     for (unsigned int i = 1; i < dd->num_buttons; i++) {
         complex_button *opt = &dd->buttons[i];
         opt->x = x;
-        opt->y = y + new_height + (i - 1) * (new_height + dd->spacing);
+        opt->y = get_option_y(dd, origin, i);
         opt->width = new_width;
         opt->height = new_height;
     }

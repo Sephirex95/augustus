@@ -41,6 +41,8 @@ struct dropdown_button {
     int width;                             /**< Dropdown width: 0 = auto (based on longest text) */
     int spacing;                           /**< Vertical spacing between option buttons (px) */
     int padding;                           /**< Horizontal padding added to text width (px) */
+    int reverse_order;                     /**< 1 = options get drawn in reverse order (last option closest to origin)*/
+    int drop_up;                           /**< 1 = options get drawn upwards instead of downwards */
     /* Cached layout values */
     int calculated_width;                  /**< Final calculated width */
     int calculated_height;                 /**< Option button height (all options same) */

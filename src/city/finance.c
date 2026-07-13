@@ -801,6 +801,14 @@ const finance_overview *city_finance_overview_this_year(void)
     return &city_data.finance.this_year;
 }
 
+void city_finance_ledger_init(void)
+{
+    trade_ledgers_count = 0;
+    memset(trade_ledgers, 0, sizeof(trade_ledgers));
+    array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0);
+    array_init(last_year_transactions, TRANSACTION_STEP_SIZE, 0, 0);
+}
+
 void city_finance_ledger_save_state(buffer *buf)
 {
     size_t current_count = current_year_transactions.size;

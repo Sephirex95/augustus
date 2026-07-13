@@ -13,6 +13,9 @@
 #include <string.h>
 
 static void complex_button_ellipsized(complex_button *button, int was_ellipsized);
+static int debug_shade = 6;
+static font_t debug_font = FONT_NORMAL_BLACK;
+static color_t debug_color = 4289967027;
 
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button)
 {
@@ -116,7 +119,7 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
 static void draw_button_contents(const complex_button *button, font_t font)
 {
     const int inner_margin = 2;
-    const color_t font_color = button->is_disabled ? COLOR_FONT_GRAY : COLOR_MASK_NONE;
+    const color_t font_color = button->is_disabled ? debug_color : COLOR_MASK_NONE;
     const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
 
     sequence_positioning position = button->sequence_position ?
@@ -218,10 +221,13 @@ static font_t get_button_font(const complex_button *button, font_t base_font)
     if (!button->is_disabled) {
         return base_font;
     }
+    // if disabled:
     switch (base_font) {
         case FONT_NORMAL_BLACK:
             return FONT_NORMAL_WHITE;
-
+        case FONT_LARGE_BLACK:
+        case FONT_LARGE_BROWN:
+            return FONT_LARGE_PLAIN;
         case FONT_SMALL_PLAIN:
         case FONT_NORMAL_BROWN:
         default:
@@ -285,7 +291,9 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     if (!button->is_disabled && button->is_focused) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
     }
-
+    if (button->is_disabled) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, debug_shade);
+    }
     draw_button_contents(button, font);
     if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
@@ -679,6 +687,7 @@ int checkbox_button_handle_mouse(checkbox_button *btn, const mouse *m)
     }
 
     if (inside && m->left.went_up) {
+        sound_effect_play(SOUND_EFFECT_ICON);
         btn->is_checked = !btn->is_checked;
         if (btn->left_click_handler) {
             btn->left_click_handler(btn);
@@ -721,6 +730,7 @@ int cycling_button_handle_mouse(cycling_button *btn, const mouse *m)
     int handled = 0;
 
     if (inside && m->left.went_up) {
+        sound_effect_play(SOUND_EFFECT_ICON);
         if (btn->state_count > 0) {
             btn->state_index = (btn->state_index + 1) % btn->state_count;
             window_request_refresh();

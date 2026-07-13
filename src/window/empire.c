@@ -302,6 +302,7 @@ static scrollbar_type sidebar_scrollbar;
 static sidebar_city_entry sidebar_cities[MAX_SIDEBAR_CITIES];
 static int sidebar_city_count = 0;
 static grid_box_type sidebar_grid_box;
+static int trade_history_years_stored;
 
 //original button properties
 static image_button image_button_help[] = {
@@ -578,7 +579,11 @@ static void setup_header_footer_buttons(void)
     dropdown_buttons[DD_SET_DATE].width = year_dd_width;
     dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_HEIGHT;
     dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
-
+    dropdown_buttons[DD_SET_DATE].drop_up = 1; // defy gravity and drop up instead of down
+    for (int i = 2; i < 9; i++) {
+        dropdown_buttons[DD_SET_DATE].buttons[i].is_disabled = 1;
+        dropdown_buttons[DD_SET_DATE].buttons[i].is_hidden = 1; // disable buttons except current year and anchor
+    }
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
@@ -615,6 +620,7 @@ static void setup_sidebar(void)
 
 static void refresh_header_and_footer_buttons(void)
 {
+    data.sidebar.trade_year = dropdown_buttons[DD_SET_DATE].selected_index - 1; // 0 index is anchor, so -1
     int sorting = window_empire_sidebar_sort_get_current_sorting();
     if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
         dropdown_buttons[DD_TRADE_SORT].selected_index = sorting + 1;
@@ -679,7 +685,14 @@ static void refresh_header_and_footer_buttons(void)
     int date_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
     int date_dd_height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
     dropdown_button_update_dimensions(date_dd_x, date_dd_y, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
-
+    if (!trade_history_years_stored) {
+        dropdown_buttons[DD_SET_DATE].buttons[0].is_disabled = 1; // disable anchor button if no history
+    } else {
+        for (int i = 0; i < trade_history_years_stored; i++) {
+            dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_hidden = 0;
+            dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_disabled = 0; // enable all years that have data
+        }
+    }
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
 
     cycling_buttons[BTN_ROUTE_TYPE].x = filter_x;
@@ -750,6 +763,7 @@ static void refresh_screen_geometry(void)
 static void refresh_sidebar_city_entries(void)
 {
     sidebar_city_count = 0;
+    trade_history_years_stored = trade_route_get_history_years_stored();
     int y = data.sidebar.y_min + data.sidebar.margin_top;
     for (int i = 1; i < empire_city_get_array_size(); i++) { // skip "no city" entry
         empire_city *city = empire_city_get(i);
@@ -1430,7 +1444,13 @@ void draw_open_trade_button(const empire_city *city, const open_trade_button_sty
 static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, const trade_row_style *style)
 {
     int label_id;
-    if (city->is_open) {
+    int is_city_open;
+    if (data.sidebar.trade_year == 0) {
+        is_city_open = city->is_open;
+    } else {
+        is_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
+    }
+    if (is_city_open) {
         label_id = is_sell ? 10 : 9;
     } else {
         label_id = is_sell ? 5 : 4;
@@ -1455,8 +1475,9 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
 
         return x_cursor;
     }
+
     int label_width = lang_text_draw(47, label_id, x_cursor, y_cursor, FONT_NORMAL_GREEN);
-    if (city->is_open) {
+    if (is_city_open) {
         x_cursor += style->label_indent; //advance by pre-defined label width for open cities where there's two rows
     } else {
         x_cursor += label_width;
@@ -1466,9 +1487,15 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
     for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
         if (!resource_is_storable(r)) continue;
         if ((is_sell && !city->sells_resource[r]) || (!is_sell && !city->buys_resource[r])) continue;
+        int trade_max, trade_now;
+        if (data.sidebar.trade_year == 0) {
+            trade_max = trade_route_limit(city->route_id, r, !is_sell);
+            trade_now = trade_route_traded(city->route_id, r, !is_sell);
+        } else {
+            trade_max = trade_route_history_limit(city->route_id, r, !is_sell, data.sidebar.trade_year - 1);
+            trade_now = trade_route_history_traded(city->route_id, r, !is_sell, data.sidebar.trade_year - 1);
+        }
 
-        int trade_max = trade_route_limit(city->route_id, r, !is_sell);
-        int trade_now = trade_route_traded(city->route_id, r, !is_sell);
         int icon_y = y + style->y_offset_icon;
 
         int segment_width, text_x;
@@ -2074,6 +2101,9 @@ static void draw_map(void)
     empire_object_foreach_of_type(draw_empire_object, EMPIRE_OBJECT_CITY);
 
     scenario_invasion_foreach_warning(draw_invasion_warning);
+    int map_width = map_clip_x_max - map_clip_x_min;
+    int map_height = map_clip_y_max - map_clip_y_min;
+    graphics_shade_rect(map_clip_x_min, map_clip_y_min, map_width, map_height, data.sidebar.trade_year ? 7 : 0);
 
     graphics_reset_clip_rectangle();
 }
@@ -2723,6 +2753,9 @@ static int get_city_name_tooltip_sidebar(tooltip_context *c)
         return 0;
     }
     int hovered_object = data.hovered_object - 1; // data.hovered_object always is one more than the actual object id
+    if (!empire_object_get(hovered_object)) { // Ensure the object is valid
+        return 0;
+    }
     if (empire_object_get(hovered_object)->type != EMPIRE_OBJECT_CITY) {
         return 0;
     }

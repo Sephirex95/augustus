@@ -475,6 +475,7 @@ void empire_city_open_trade(int city_id, int apply_cost)
     if (apply_cost) {
         city_finance_process_sundry(city->cost_to_open);
     }
+    trade_route_set_open(city->route_id);
     city->is_open = 1;
 }
 
