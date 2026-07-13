@@ -20,6 +20,8 @@ int trade_route_count(void);
 
 int trade_route_is_valid(int route_id);
 
+int trade_route_open(int route_id);
+
 void trade_route_set(int route_id, resource_type resource, int limit, int buying);
 
 int trade_route_limit(int route_id, resource_type resource, int buying);
@@ -50,9 +52,17 @@ void trade_route_reset_traded(int route_id);
 
 int trade_route_limit_reached(int route_id, resource_type resource, int buying);
 
+void trade_route_save_history(void);
+
 void trade_routes_save_state(buffer *trade_routes);
 
-void trade_routes_load_state(buffer *trade_routes);
+void trade_routes_load_state(buffer *trade_routes, int version);
+
+void trade_history_save_state(buffer *trade_history);
+
+void trade_history_load_state(buffer *trade_history, int version);
+
+void trade_history_clear_state(void);
 
 void trade_routes_migrate_to_buys_sells(buffer *limit, buffer *traded, int version);
 

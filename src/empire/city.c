@@ -346,7 +346,8 @@ void empire_city_set_trade_route_cost(int route_id, int new_cost)
 void empire_city_reset_yearly_trade_amounts(void)
 {
     empire_city *city;
-    array_foreach(cities, city) {
+    trade_route_save_history();
+    array_foreach(cities, city){
         if (city->in_use && city->is_open) {
             trade_route_reset_traded(city->route_id);
         }

@@ -374,6 +374,7 @@ static struct {
         struct {
             int x_min, x_max;
         }sort_section;
+        unsigned char trade_year; // year of data displayed in the sidebar - 0 is current, 1 is last year, etc.
     } sidebar;
     int trade_route_anim_start;
 } data = { 0, 1 , 0 };
