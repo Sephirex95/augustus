@@ -211,8 +211,6 @@ static int divide_round_up(int value, int divisor)
 
 void inner_panel_draw_colored(int x, int y, int width, int height, color_t color)
 {
-    int width_blocks = (width + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    int height_blocks = (height + BLOCK_SIZE - 1) / BLOCK_SIZE;
     int image_base = image_group(GROUP_SUNKEN_TEXTBOX_BACKGROUND);
 
     int right_x = x + width - BLOCK_SIZE;
