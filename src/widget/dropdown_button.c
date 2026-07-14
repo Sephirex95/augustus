@@ -217,7 +217,7 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     dd->selected_value = -1;
     int buttons_width = width ? width : 0;
     dd->spacing = 2;
-    dd->padding = 10;
+    dd->padding = 10; // TODO: Check why the width calculation downstream doesnt change with padding change
     complex_button_style style = dropdown_button_style_to_complex_style(dd_style);
     font_t style_font = complex_button_font_for_style(style); // ensure font is set for style
     // Setup origin (button 0)

@@ -459,7 +459,7 @@ static void setup_header_footer_buttons(void)
         trade_sort[i].text_id = TR_EMPIRE_SIDE_BAR_SORT + i;
     }
 
-    dropdown_button_init_simple(0, 0, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH, SIDEBAR_HEADER_BUTTON_HEIGHT,
+    dropdown_button_init_simple(0, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT,
         trade_sort, 6, &dropdown_buttons[DD_TRADE_SORT], DD_BUTTON_STYLE_GRAY, &tooltip_dd1); // 0,0 for x,y because geometry update runs every frame
 
     dropdown_buttons[DD_TRADE_SORT].selected_index = 1; // default to "Name"
