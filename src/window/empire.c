@@ -828,7 +828,7 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
     sidebar_grid_box.item_height = refresh_sidebar_entry_height();
     sidebar_grid_box.num_columns = 1;
     sidebar_grid_box.item_margin.horizontal = 0;
-    sidebar_grid_box.item_margin.vertical = low_res_mode ? SIDEBAR_MARGIN_VERTICAL : 0;
+    sidebar_grid_box.item_margin.vertical = SIDEBAR_MARGIN_VERTICAL;
     sidebar_grid_box.draw_inner_panel = 0;
     sidebar_grid_box.extend_to_hidden_scrollbar = 1;
     sidebar_grid_box.decorate_scrollbar = 1;
@@ -1622,6 +1622,8 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     // or do both - but for now, just positioning it works well enough.
 
     int item_usable_height = item->height;
+    int height_diff_from_default = item_usable_height - SIDEBAR_ENTRY_HEIGHT;
+    int content_offset = (height_diff_from_default > 0) ? height_diff_from_default / 2 : 0;
     // base offset for all content in the box
     int x_offset = item->x + SIDEBAR_MARGIN_HORIZONTAL;
     int y_offset = item->y;
@@ -1680,7 +1682,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
         text_draw_ellipsized(name, x_offset + badge_margin, y_offset + 9, 262, FONT_LARGE_BLACK, 0);
     }
     // Move y_offset down for trade info rows
-    y_offset += 44;
+    y_offset += 44 + content_offset;
     if (city->is_open) {
         y_offset += 8; // For Sells
         draw_trade_row(city, 1, x_offset, y_offset, &style_sells);
