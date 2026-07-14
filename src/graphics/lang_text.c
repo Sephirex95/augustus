@@ -604,3 +604,34 @@ int lang_text_concatenate_sequence(const lang_fragment *seq, int count, uint8_t 
     *cursor = 0; // Null terminate
     return cursor - dst; // Return length of concatenated string
 }
+
+static font_t font_to_plain(font_t font)
+{
+    switch (font) {
+        case FONT_NORMAL_BLACK:
+        case FONT_NORMAL_WHITE:
+        case FONT_NORMAL_RED:
+        case FONT_NORMAL_GREEN:
+        case FONT_NORMAL_BROWN:
+            return FONT_NORMAL_PLAIN;
+        case FONT_LARGE_BLACK:
+        case FONT_LARGE_BROWN:
+            return FONT_LARGE_PLAIN;
+        default:
+            return font;
+    }
+}
+
+void lang_text_draw_sequence_with_shadow(const lang_fragment *sequence, int seq_size, int x, int y, int width,
+     font_t font, color_t primary, color_t secondary, int centered, int sunken)
+{
+    int shadow_y = sunken ? y + 1 : y - 1;
+    font_t plain_f = font_to_plain(font);
+    if (centered) {
+        lang_text_draw_sequence_centered_ellipsized(sequence, seq_size, x, y, width, plain_f, primary, NULL);
+        lang_text_draw_sequence_centered_ellipsized(sequence, seq_size, x + 1, shadow_y, width, font, secondary, NULL);
+    } else {
+        lang_text_draw_sequence_ellipsized(sequence, seq_size, x, y, width, plain_f, primary, NULL);
+        lang_text_draw_sequence_ellipsized(sequence, seq_size, x + 1, shadow_y, width, font, secondary, NULL);
+    }
+}

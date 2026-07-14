@@ -17,8 +17,6 @@ typedef enum {
     COMPLEX_BUTTON_STYLE_GRAY,             // main-menu-like style
     COMPLEX_BUTTON_STYLE_GRAY_NO_FILL,     // mainmenu border, but no fill background
     COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
-    COMPLEX_BUTTON_STYLE_LIGHT_WOOD,       // X - not implemented
-    COMPLEX_BUTTON_STYLE_COLORFUL,         // X - not implemented
     COMPLEX_BUTTON_STYLE_RAW,              // No border, no fill. Content-only.
     COMPLEX_BUTTON_STYLE_CUSTOM            // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
@@ -76,8 +74,10 @@ typedef struct complex_button {
     btn_img image; // if specified, will be drawn INSTEAD of text
     unsigned char flush_with_background; // if set, bottom border is not drawn
     unsigned char shade_on_hover; // 0-7, if set, button is graphics_shade_rect with this value
-    color_t color_mask;
-    font_t font;
+    unsigned char dont_enlarge_font; // if set, the fontsize override to large wont be applied
+    color_t color_mask; // not font mask - background mask. If set, overrides the style
+    font_t font; // if set, overrides the style properties
+    color_t font_color; // if set, overrides the style properties
     complex_button_style style;
     unsigned char expanded_hitbox_radius; //not yet fully implemented 
     void *user_data; // custom user data pointer, e.g. can point to a parent struct
@@ -134,7 +134,7 @@ typedef struct cycling_button {
 
 color_t complex_button_basic_colors(int id);
 font_t complex_button_font_for_style(complex_button_style style);
-color_t complex_button_color_for_style(complex_button_style style);
+color_t complex_button_mask_for_style(complex_button_style style);
 
 // Complex Buttons
 // drawing

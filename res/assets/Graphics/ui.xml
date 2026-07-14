@@ -1627,4 +1627,10 @@
 	<image id="Trade_Ledger_Small_Hover" width="24" height="24">
 		<layer src="Trade_Ledger_H_sml" x="0" y="0" width="24" height="24"/>
 	</image>
+	<image id="Diagonal_Lines_L" width="8" height="8">
+		<layer src="Double_slash_l"/>
+	</image>
+	<image id="Diagonal_Lines_R" width="8" height="8">
+		<layer src="Double_slash_r"/>
+	</image>
 </assetlist>

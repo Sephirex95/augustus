@@ -13,9 +13,11 @@
 #include <string.h>
 
 static void complex_button_ellipsized(complex_button *button, int was_ellipsized);
-static int debug_shade = 6;
+static int debug_shade = 0;
+static int debug_sunken = 0;
 static font_t debug_font = FONT_NORMAL_BLACK;
-static color_t debug_color = 4289967027;
+static color_t debug_color_primary = COLOR_FONT_GRAY_50;
+static color_t debug_color_secondary = COLOR_FONT_GRAY_GREEN;
 
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button)
 {
@@ -54,31 +56,90 @@ color_t complex_button_basic_colors(int id)
 font_t complex_button_font_for_style(complex_button_style style)
 {
     switch (style) {
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_NO_FILL:
+            return FONT_NORMAL_BLACK;
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
             return FONT_SMALL_PLAIN;
-        case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
         case COMPLEX_BUTTON_STYLE_GRAY:
+        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
+        case COMPLEX_BUTTON_STYLE_BROWN:
             return FONT_NORMAL_GREEN;
+        case COMPLEX_BUTTON_STYLE_RAW:
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
         default:
             return FONT_NORMAL_BLACK;
     }
 }
 
-color_t complex_button_color_for_style(complex_button_style style)
+static void font_and_colours(complex_button_style style, int is_disabled, int is_large, font_t *font, color_t *font_primary, color_t *font_secondary)
 {
+    int dont_override = 0;
+    if (!is_disabled) {
+        switch (style) {
+            case COMPLEX_BUTTON_STYLE_DEFAULT:
+            case COMPLEX_BUTTON_STYLE_NO_FILL:
+                *font = is_large ? FONT_LARGE_BLACK : FONT_NORMAL_BLACK;
+                break;
+            case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
+                *font = FONT_SMALL_PLAIN;
+                break;
+            case COMPLEX_BUTTON_STYLE_GRAY:
+            case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
+            case COMPLEX_BUTTON_STYLE_BROWN:
+                *font = FONT_NORMAL_GREEN;
+                if (is_large) {
+                    *font = FONT_LARGE_BROWN;
+                }
+                break;
+            case COMPLEX_BUTTON_STYLE_RAW:
+            case COMPLEX_BUTTON_STYLE_CUSTOM:
+            default:
+                *font = FONT_NORMAL_BLACK;
+                break;
+        }
+        if (!dont_override) {
+            *font_primary = COLOR_MASK_NONE;
+            *font_secondary = COLOR_MASK_NONE;
+        }
+        return;
+    }
+    // if disabled:
     switch (style) {
-        case COMPLEX_BUTTON_STYLE_COLORFUL:
-            return COLOR_MASK_PASTEL_TURQUOISE;
-        case COMPLEX_BUTTON_STYLE_LIGHT_WOOD:
-            return COLOR_MASK_PASTEL_BROWN4;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
         case COMPLEX_BUTTON_STYLE_NO_FILL:
+            *font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
+            *font_primary = COLOR_FONT_GRAY;
+            *font_secondary = COLOR_MASK_NONE;
+            break;
         case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
+            *font = FONT_SMALL_PLAIN;
+            *font_primary = COLOR_FONT_GRAY;
+            *font_secondary = COLOR_MASK_NONE;
+            break;
         case COMPLEX_BUTTON_STYLE_GRAY:
+        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
+        case COMPLEX_BUTTON_STYLE_BROWN:
+            *font = FONT_NORMAL_GREEN;
+            if (is_large) {
+                *font = FONT_LARGE_PLAIN;
+                *font_primary = debug_color_primary; //COLOR_FONT_GRAY_50;
+                *font_secondary = debug_color_secondary; //COLOR_FONT_GRAY_GREEN;
+            }
+            break;
+        case COMPLEX_BUTTON_STYLE_RAW:
+            *font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
+            *font_primary = COLOR_FONT_GRAY;
+            *font_secondary = COLOR_MASK_NONE;
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
         default:
-            return COLOR_MASK_NONE;
+            *font = FONT_NORMAL_BLACK;
+            *font_primary = COLOR_MASK_NONE;
+            *font_secondary = COLOR_MASK_NONE;
+            break;
     }
-}
+
+};
 
 static int sequence_position_is_centered(sequence_positioning position)
 {
@@ -116,10 +177,9 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
     }
 }
 
-static void draw_button_contents(const complex_button *button, font_t font)
+static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary)
 {
     const int inner_margin = 2;
-    const color_t font_color = button->is_disabled ? debug_color : COLOR_MASK_NONE;
     const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
 
     sequence_positioning position = button->sequence_position ?
@@ -199,12 +259,17 @@ static void draw_button_contents(const complex_button *button, font_t font)
 
     int was_ellipsized = 0;
     if (button->sequence && button->sequence_size > 0) {
-        if (sequence_position_is_centered(position)) {
-            lang_text_draw_sequence_centered_ellipsized(button->sequence, button->sequence_size,
-                button->x, text_y, button->width, font, font_color, &was_ellipsized);
+        if (font == FONT_NORMAL_PLAIN || font == FONT_LARGE_PLAIN || font == FONT_SMALL_PLAIN) {
+            lang_text_draw_sequence_with_shadow(button->sequence, button->sequence_size, button->x, text_y, button->width,
+    font, font_primary, font_secondary, sequence_position_is_centered(position), debug_sunken);
         } else {
-            cursor_x += lang_text_draw_sequence_ellipsized(button->sequence, button->sequence_size,
-                cursor_x, text_y, button->width, font, font_color, &was_ellipsized);
+            if (sequence_position_is_centered(position)) {
+                lang_text_draw_sequence_centered_ellipsized(button->sequence, button->sequence_size,
+                    button->x, text_y, button->width, font, font_primary, &was_ellipsized);
+            } else {
+                cursor_x += lang_text_draw_sequence_ellipsized(button->sequence, button->sequence_size,
+                    cursor_x, text_y, button->width, font, font_primary, &was_ellipsized);
+            }
         }
     }
 
@@ -216,30 +281,8 @@ static void draw_button_contents(const complex_button *button, font_t font)
     }
 }
 
-static font_t get_button_font(const complex_button *button, font_t base_font)
+static void draw_default_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
 {
-    if (!button->is_disabled) {
-        return base_font;
-    }
-    // if disabled:
-    switch (base_font) {
-        case FONT_NORMAL_BLACK:
-            return FONT_NORMAL_WHITE;
-        case FONT_LARGE_BLACK:
-        case FONT_LARGE_BROWN:
-            return FONT_LARGE_PLAIN;
-        case FONT_SMALL_PLAIN:
-        case FONT_NORMAL_BROWN:
-        default:
-            return base_font;
-    }
-}
-
-static void draw_default_style(const complex_button *button, font_t base_font, color_t label_color)
-{
-    font_t font = get_button_font(button, base_font);
-    label_color = label_color ? label_color : COLOR_MASK_NONE;
-
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
     int height_blocks = button->height / BLOCK_SIZE;
@@ -248,35 +291,33 @@ static void draw_default_style(const complex_button *button, font_t base_font, c
         case COMPLEX_BUTTON_STYLE_RAW:
             break; // no bg fill
         case COMPLEX_BUTTON_STYLE_BROWN:
-            inner_panel_draw_colored(button->x, button->y, button->width, button->height, label_color);
+            inner_panel_draw_colored(button->x, button->y, button->width, button->height, COLOR_MASK_PASTEL_BROWN);
             break;
         default:
             unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                height_blocks + 1, label_color);
+                height_blocks + 1, COLOR_MASK_NONE);
             break;
     }
 
     int draw_red_border = !button->is_disabled && button->is_focused;
     if (button->flush_with_background) {
         button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
-            draw_red_border, label_color);
+            draw_red_border, COLOR_MASK_NONE);
     } else {
         if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
             button_border_draw_colored(button->x, button->y, button->width, button->height,
-                draw_red_border, label_color);
+                draw_red_border, COLOR_MASK_NONE);
         }
     }
-    draw_button_contents(button, font);
+    draw_button_contents(button, base_font, font_primary, font_secondary);
     if (button->shade_on_hover && button->is_focused) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
     graphics_reset_clip_rectangle();
 }
 
-static void draw_main_menu_style(const complex_button *button, font_t base_font, color_t label_color)
+static void draw_main_menu_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
 {
-    font_t font = get_button_font(button, base_font);
-
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
@@ -294,7 +335,7 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     if (button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, debug_shade);
     }
-    draw_button_contents(button, font);
+    draw_button_contents(button, base_font, font_primary, font_secondary);
     if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     }
@@ -309,43 +350,53 @@ static void complex_button_ellipsized(complex_button *button, int was_ellipsized
     button->is_ellipsized = was_ellipsized;
 }
 
+// static font_t font_enlarge(font_t base_font)
+// {
+//     switch (base_font) {
+//         case FONT_NORMAL_BLACK:
+//             base_font = FONT_LARGE_BLACK;
+//             break;
+//         case FONT_NORMAL_BROWN:
+//         case FONT_NORMAL_GREEN:
+//             base_font = FONT_LARGE_BROWN;
+//             break;
+//         case FONT_NORMAL_PLAIN:
+//             base_font = FONT_LARGE_PLAIN;
+//             break;
+//         default: // reds and other weirdos
+//             break;
+//     }
+//     return base_font;
+// }
+
 // === Draw a single button ===
 void complex_button_draw(const complex_button *button)
 {
     if (button->is_hidden) {
         return;
     }
-    if (button->style == COMPLEX_BUTTON_STYLE_CUSTOM) {
-        // Custom style - bypasses the default selection of colors/fonts
-        draw_default_style(button, button->font, button->color_mask);
+    if (button->font || button->color_mask || button->style == COMPLEX_BUTTON_STYLE_CUSTOM) {
+        // bypasses the default selection of colors/fonts
+        draw_default_style(button, button->font, button->font_color, COLOR_MASK_NONE);
         return;
     }
-    color_t base_color = complex_button_color_for_style(button->style);
-    font_t base_font = complex_button_font_for_style(button->style);
-    if (button->height > 32) {
-        // swap the font out to large variant
-        switch (base_font) {
-            case FONT_NORMAL_BLACK:
-                base_font = FONT_LARGE_BLACK;
-                break;
-            case FONT_NORMAL_BROWN:
-            case FONT_NORMAL_GREEN:
-                base_font = FONT_LARGE_BROWN;
-                break;
-            case FONT_NORMAL_PLAIN:
-                base_font = FONT_LARGE_PLAIN;
-                break;
-            default: // reds and other weirdos
-                break;
-        }
-    }
+    int is_large = button->height > 32 && !button->dont_enlarge_font;
+    color_t font_primary;
+    color_t font_secondary;
+    font_t base_font;
+    font_and_colours(button->style, button->is_disabled, is_large, &base_font, &font_primary, &font_secondary);
+    // if (is_large) {
+    //     // swap the font out to large variant
+    //     base_font = font_enlarge(base_font);
+    // }
+
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
-            draw_main_menu_style(button, base_font, base_color);
+            draw_main_menu_style(button, base_font, font_primary, font_secondary);
             break;
         default: // all other variants housed in the default style draw function 
-            draw_default_style(button, base_font, base_color);
+            draw_default_style(button, base_font, font_primary, font_secondary);
     }
 }
 
@@ -355,6 +406,145 @@ void complex_button_draw_array(const complex_button *buttons, unsigned int num_b
         complex_button_draw(&buttons[i]);
     }
 }
+
+int complex_button_handle_mouse(complex_button *btn, const mouse *m)
+{
+    if (btn->is_hidden || btn->is_disabled) {
+        btn->is_focused = 0;
+        btn->is_clicked = 0;
+        return 0;
+    }
+
+    int handled = 0;
+
+    // Expanded hitbox
+    int left = btn->x - btn->expanded_hitbox_radius;
+    int right = btn->x + btn->width + btn->expanded_hitbox_radius;
+    int top = btn->y - btn->expanded_hitbox_radius;
+    int bottom = btn->y + btn->height + btn->expanded_hitbox_radius;
+
+    int inside = (m->x >= left && m->x < right && m->y >= top && m->y < bottom);
+    if (btn->is_focused != inside) {
+        btn->is_focused = inside;
+        if (btn->hover_handler) {
+            btn->hover_handler(btn); // run the hover handler on hover state change
+        }
+        window_request_refresh(); // redraw to show focus change
+    } else {
+        btn->is_focused = inside;
+    }
+
+    if (btn->is_ellipsized && btn->is_focused) { //if the button is ellipsized, show tooltip
+        static uint8_t tooltip_text[512];
+        lang_text_concatenate_sequence(btn->sequence, btn->sequence_size, tooltip_text, 512);
+        btn->tooltip_c.type = TOOLTIP_BUTTON;
+        btn->tooltip_c.precomposed_text = tooltip_text; // reset precomposed text to force re-generation
+    }
+
+    if (inside) {
+
+        // --- Left click ---
+
+        if (m->left.went_up) {
+            btn->is_clicked = 1;
+            sound_effect_play(SOUND_EFFECT_ICON);
+            btn->is_active = !btn->is_active; // persistent toggle
+            handled = 1;
+            if (btn->left_click_handler) {
+                btn->left_click_handler(btn);
+            }
+
+        }
+        // --- Right click ---
+        if (m->right.went_up) {
+            btn->is_clicked = 1;
+            handled = 1;
+            if (btn->right_click_handler) {
+                btn->right_click_handler(btn);
+            }
+        }
+    } else {
+        btn->is_clicked = 0;
+    }
+
+    return handled;
+}
+
+int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, unsigned int num_buttons)
+{
+    int handled = 0;
+
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        if (complex_button_handle_mouse(&buttons[i], m)) {
+            handled = 1;
+        }
+    }
+
+    return handled;
+}
+
+//TO SOLVE: manually set tooltips will be overwritten if the button is ellipsized. 
+int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
+{
+    if (button->is_focused) {
+        if (!tooltip_context_is_empty(&button->tooltip_c)) {
+            tooltip_copy_context(c, &button->tooltip_c);
+            c->type = TOOLTIP_BUTTON; // constant - for all buttons.
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons)
+{
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        if (complex_button_handle_tooltip(&buttons[i], c)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void checkbox_button_draw(const checkbox_button *button)
 {
@@ -600,68 +790,6 @@ void cycling_button_draw_array(const cycling_button *buttons, unsigned int num_b
     }
 }
 
-int complex_button_handle_mouse(complex_button *btn, const mouse *m)
-{
-    if (btn->is_hidden || btn->is_disabled) {
-        btn->is_focused = 0;
-        btn->is_clicked = 0;
-        return 0;
-    }
-
-    int handled = 0;
-
-    // Expanded hitbox
-    int left = btn->x - btn->expanded_hitbox_radius;
-    int right = btn->x + btn->width + btn->expanded_hitbox_radius;
-    int top = btn->y - btn->expanded_hitbox_radius;
-    int bottom = btn->y + btn->height + btn->expanded_hitbox_radius;
-
-    int inside = (m->x >= left && m->x < right && m->y >= top && m->y < bottom);
-    if (btn->is_focused != inside) {
-        btn->is_focused = inside;
-        if (btn->hover_handler) {
-            btn->hover_handler(btn); // run the hover handler on hover state change
-        }
-        window_request_refresh(); // redraw to show focus change
-    } else {
-        btn->is_focused = inside;
-    }
-
-    if (btn->is_ellipsized && btn->is_focused) { //if the button is ellipsized, show tooltip
-        static uint8_t tooltip_text[512];
-        lang_text_concatenate_sequence(btn->sequence, btn->sequence_size, tooltip_text, 512);
-        btn->tooltip_c.type = TOOLTIP_BUTTON;
-        btn->tooltip_c.precomposed_text = tooltip_text; // reset precomposed text to force re-generation
-    }
-
-    if (inside) {
-
-        // --- Left click ---
-
-        if (m->left.went_up) {
-            btn->is_clicked = 1;
-            sound_effect_play(SOUND_EFFECT_ICON);
-            btn->is_active = !btn->is_active; // persistent toggle
-            handled = 1;
-            if (btn->left_click_handler) {
-                btn->left_click_handler(btn);
-            }
-
-        }
-        // --- Right click ---
-        if (m->right.went_up) {
-            btn->is_clicked = 1;
-            handled = 1;
-            if (btn->right_click_handler) {
-                btn->right_click_handler(btn);
-            }
-        }
-    } else {
-        btn->is_clicked = 0;
-    }
-
-    return handled;
-}
 
 int checkbox_button_handle_mouse(checkbox_button *btn, const mouse *m)
 {
@@ -813,38 +941,3 @@ int cycling_button_handle_tooltip_array(const cycling_button *buttons, tooltip_c
     return 0;
 }
 
-int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, unsigned int num_buttons)
-{
-    int handled = 0;
-
-    for (unsigned int i = 0; i < num_buttons; i++) {
-        if (complex_button_handle_mouse(&buttons[i], m)) {
-            handled = 1;
-        }
-    }
-
-    return handled;
-}
-
-//TO SOLVE: manually set tooltips will be overwritten if the button is ellipsized. 
-int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
-{
-    if (button->is_focused) {
-        if (!tooltip_context_is_empty(&button->tooltip_c)) {
-            tooltip_copy_context(c, &button->tooltip_c);
-            c->type = TOOLTIP_BUTTON; // constant - for all buttons.
-            return 1;
-        }
-    }
-    return 0;
-}
-
-int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons)
-{
-    for (unsigned int i = 0; i < num_buttons; i++) {
-        if (complex_button_handle_tooltip(&buttons[i], c)) {
-            return 1;
-        }
-    }
-    return 0;
-}

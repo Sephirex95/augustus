@@ -33,6 +33,14 @@ void large_label_draw_custom_size(int x, int y, int width, int height);
 
 void large_label_draw_bg(int x, int y, int width, int height);
 
+/// @brief draws a pattern of greyed out diagonal lines
+/// @param x 
+/// @param y 
+/// @param width 
+/// @param height 
+/// @param opacity 0-100 
+void label_draw_greyout_pattern(int x, int y, int width, int height, int opacity);
+
 void large_label_draw_border(int x, int y, int width, int height);
 
 int top_menu_black_panel_draw(int x, int y, int width);

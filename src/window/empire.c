@@ -550,7 +550,7 @@ static void setup_header_footer_buttons(void)
         .text_id = TR_UI_SIDEBAR_TRADE_HISTORY
     };
     int trade_history_width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
-    complex_buttons[BTN_TRADE_HISTORY].width = trade_history_width; // square button
+    complex_buttons[BTN_TRADE_HISTORY].width = trade_history_width;
     complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
     complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
     complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
