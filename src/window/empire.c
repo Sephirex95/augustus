@@ -56,7 +56,7 @@
 #define HEIGHT_BORDER 86
 #define SIDEBAR_ENTRY_HEIGHT 120
 #define BOTTOM_PANEL_HEIGHT 120
-
+#define LOW_RES_SIDEBAR_ENTRY_HEIGHT 110
 #define RESOURCE_ICON_WIDTH 26 //dimensions the resource icon in px, informative only
 #define RESOURCE_ICON_HEIGHT 26
 
@@ -303,6 +303,7 @@ static sidebar_city_entry sidebar_cities[MAX_SIDEBAR_CITIES];
 static int sidebar_city_count = 0;
 static grid_box_type sidebar_grid_box;
 static int trade_history_years_stored;
+static int low_res_mode = 0;
 
 //original button properties
 static image_button image_button_help[] = {
@@ -588,8 +589,8 @@ static void setup_header_footer_buttons(void)
     data.sidebar.buttons_initialised = 1;
 }
 
-
 static void setup_sidebar(void)
+
 {
     if (!data.sidebar.initialised) {
         window_empire_sidebar_sort_set_current_sorting(SORT_BY_NAME); // default sorting method
@@ -717,6 +718,7 @@ static void refresh_screen_geometry(void)
 {
     data.screen_width = screen_width();
     data.screen_height = screen_height();
+    low_res_mode = data.screen_height <= 768 ? 1 : 0; // lowres mode for sidebar to fit more content
 
     int map_width;
     int map_height;
@@ -785,16 +787,17 @@ static void refresh_sidebar_city_entries(void)
 
 static int refresh_sidebar_entry_height(void)
 {
-    int can_fit = sidebar_grid_box.height / (SIDEBAR_ENTRY_HEIGHT + SIDEBAR_MARGIN_VERTICAL);
+    int entry_height = low_res_mode ? LOW_RES_SIDEBAR_ENTRY_HEIGHT : SIDEBAR_ENTRY_HEIGHT + SIDEBAR_MARGIN_VERTICAL;
+    int can_fit = sidebar_grid_box.height / entry_height;
 
     if (can_fit <= 0) {
-        return SIDEBAR_ENTRY_HEIGHT;
+        return entry_height;
     }
 
     return sidebar_grid_box.height / can_fit;
 }
 
-static void refresh_sidebar_gridbox(void)
+static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
 {
     if (data.sidebar.width_percent < 20) {
         return; // won't fit
@@ -802,7 +805,9 @@ static void refresh_sidebar_gridbox(void)
 
     refresh_sidebar_city_entries();
     refresh_header_and_footer_buttons();
-
+    if (low_res_mode) {
+        // lowres mode - cut entry height and some margins
+    }
     qsort(sidebar_cities, sidebar_city_count, sizeof(sidebar_city_entry), window_empire_sidebar_sort_sidebar_city_sorter);
     int selection_visible = 0;
     for (int i = 0; i < sidebar_city_count; i++) {
@@ -811,8 +816,8 @@ static void refresh_sidebar_gridbox(void)
     if (!selection_visible) {
         data.selected_city = 0; // or keep it but ensure UI handles "not in list"
     }
-    int y_min = data.sidebar.y_min + SIDEBAR_HEADER_HEIGHT + SIDEBAR_HEADER_BUTTON_V_MARGIN;
-    int y_max = data.sidebar.y_max - SIDEBAR_HEADER_HEIGHT - SIDEBAR_HEADER_BUTTON_V_MARGIN;
+    int y_min = data.sidebar.y_min + SIDEBAR_HEADER_HEIGHT + ((!low_res_mode) * SIDEBAR_HEADER_BUTTON_V_MARGIN);
+    int y_max = data.sidebar.y_max - SIDEBAR_HEADER_HEIGHT - ((!low_res_mode) * SIDEBAR_HEADER_BUTTON_V_MARGIN);
     sidebar_grid_box.x = data.sidebar.x_min + data.sidebar.margin_left;
     sidebar_grid_box.y = y_min;
     sidebar_grid_box.width = data.sidebar.width - data.sidebar.margin_right - data.sidebar.margin_left;
@@ -823,7 +828,7 @@ static void refresh_sidebar_gridbox(void)
     sidebar_grid_box.item_height = refresh_sidebar_entry_height();
     sidebar_grid_box.num_columns = 1;
     sidebar_grid_box.item_margin.horizontal = 0;
-    sidebar_grid_box.item_margin.vertical = SIDEBAR_MARGIN_VERTICAL;
+    sidebar_grid_box.item_margin.vertical = low_res_mode ? SIDEBAR_MARGIN_VERTICAL : 0;
     sidebar_grid_box.draw_inner_panel = 0;
     sidebar_grid_box.extend_to_hidden_scrollbar = 1;
     sidebar_grid_box.decorate_scrollbar = 1;
@@ -859,13 +864,13 @@ static open_trade_button_style get_open_trade_button_style(int x, int y, trade_s
     int is_sidebar = (variant == TRADE_STYLE_SIDEBAR);
 
     open_trade_button_style style = {
-        .button_x_min = (is_sidebar ? x + 15 : (data.panel.x_min + data.panel.x_max - 500) / 2) + 30, //15px offset somewhere got lost, * 2 for 30
-        .button_y_min = y + (is_sidebar ? 0 : -9),
-        .button_width = is_sidebar ? grid_box_get_usable_width(&sidebar_grid_box) * 0.75 : 440,  // restored fixed widths // sidebar: main bar
+        .button_x_min = (is_sidebar ? x + 15 : (data.panel.x_min + data.panel.x_max - 500) / 2) + 30,
+        .button_y_min = y + (is_sidebar ? 0 : -9) - (low_res_mode * 3), // -3px in loweres
+        .button_width = is_sidebar ? grid_box_get_usable_width(&sidebar_grid_box) * 0.75 : 440,
         .button_height = 26,
-        .y_offset_icon = is_sidebar ? 2 : 2, //separated in case of resolution considerations - wait for feedback before simplifying
-        .y_offset_text = is_sidebar ? 10 : 10, //separated in case of resolution considerations - wait for feedback before simplifying
-        .seg_space_0 = is_sidebar ? 0 : 0,  //later centerd in draw_open_trade_button, so adjust carefully
+        .y_offset_icon = is_sidebar ? 2 : 2,
+        .y_offset_text = is_sidebar ? 10 : 10,
+        .seg_space_0 = is_sidebar ? 0 : 0,
         .seg_space_1 = 0,
         .seg_space_2 = 0,
         .seg_space_3 = 8,
@@ -1609,8 +1614,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     empire_city *city = empire_city_get(entry->city_id);
     const uint8_t *name = empire_city_get_name(city);
 
-    int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) / WIDTH_BORDER;
-    item_usable_width = item_usable_width * WIDTH_BORDER; // cheeky
+    int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) - SIDEBAR_MARGIN_HORIZONTAL * 2;
     // because inner_panel_draw only works in blocks of 16px, above just happens to work out ok
     // the alternative to manipulating the drawing here, is either:
     // a) adjust the inner_panel_draw with some graphics_set_clip_rectangle calls to allow 1px increments, or
