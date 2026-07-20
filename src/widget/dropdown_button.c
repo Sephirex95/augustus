@@ -425,7 +425,7 @@ int dropdown_button_handle_mouse_array(dropdown_button *dds, const mouse *m, uns
     return 0;
 }
 
-int dropdown_button_get_x_min(const dropdown_button *dd)
+int dropdown_button_get_x_min(dropdown_button *dd)
 {
     if (!dd || dd->num_buttons == 0) {
         return 0;
@@ -433,7 +433,7 @@ int dropdown_button_get_x_min(const dropdown_button *dd)
     return dd->buttons[0].x;
 }
 
-int dropdown_button_get_x_max(const dropdown_button *dd)
+int dropdown_button_get_x_max(dropdown_button *dd)
 {
     if (!dd || dd->num_buttons == 0) {
         return 0;
@@ -441,7 +441,7 @@ int dropdown_button_get_x_max(const dropdown_button *dd)
     return dd->buttons[0].x + dd->calculated_width;
 }
 
-int dropdown_button_get_width(const dropdown_button *dd)
+int dropdown_button_get_width(dropdown_button *dd)
 {
     if (!dd || dd->num_buttons == 0) {
         return 0;

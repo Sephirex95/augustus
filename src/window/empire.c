@@ -222,6 +222,10 @@ static void refresh_screen_geometry(void);
 static void refresh_sidebar_city_entries(void);
 static void refresh_sidebar_gridbox(void);
 static void setup_minimum_dimensions(void);
+static int sidebar_is_visible(void);
+static int sidebar_content_width_from_percent(unsigned char width_percent);
+static int sidebar_outer_width_from_percent(unsigned char width_percent);
+static unsigned char sidebar_width_percent_for_content_width(int content_width);
 //buttons
 static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
@@ -362,7 +366,8 @@ static struct {
         unsigned char width_percent; // sidebar width as percentage of map width (0-100)
         unsigned char dragging_width; // width during dragging (0-100)
         unsigned char previous_width; // used to restore the width when dragging ends (0-100)
-        int minimum_width; // minimum width to allow header buttons to display without collision
+        int minimum_width; // narrowest width to allow header buttons to display without collision
+        int default_width; // comfortable default width with equal sort and filter sections
         struct {
             int x_min, x_max, y_min, y_max;
             char is_hovered;
@@ -590,6 +595,35 @@ static void setup_header_footer_buttons(void)
     data.sidebar.buttons_initialised = 1;
 }
 
+static int sidebar_is_visible(void)
+{
+    return data.sidebar.dragging ? data.sidebar.dragging_width > 5 : data.sidebar.width_percent > 0;
+}
+
+static int sidebar_content_width_from_percent(unsigned char width_percent)
+{
+    int raw = (data.usable_map_width * width_percent) / 100;
+    return ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE;
+}
+
+static int sidebar_outer_width_from_percent(unsigned char width_percent)
+{
+    return sidebar_content_width_from_percent(width_percent) + data.sidebar.margin_left + data.sidebar.margin_right;
+}
+
+static unsigned char sidebar_width_percent_for_content_width(int content_width)
+{
+    if (content_width <= 0 || data.usable_map_width <= 0) {
+        return 0;
+    }
+    for (unsigned char width_percent = 1; width_percent <= 70; width_percent++) {
+        if (sidebar_content_width_from_percent(width_percent) >= content_width) {
+            return width_percent;
+        }
+    }
+    return 70;
+}
+
 static void setup_sidebar(void)
 
 {
@@ -598,7 +632,6 @@ static void setup_sidebar(void)
         window_empire_sidebar_sort_set_current_filtering(FILTER_NONE); // default to no filtering
         window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE); // no resource selected
     }
-    data.sidebar.width_percent = config_get(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH); // default sidebar width (25%)
     data.sidebar.dragging = 0; // not dragging initially
     data.sidebar.dragging_width = 0;
     data.sidebar.previous_width = 0;
@@ -610,12 +643,19 @@ static void setup_sidebar(void)
     data.sidebar.margin_bottom = SIDEBAR_HEADER_HEIGHT; // space for history and date picker
     data.usable_map_width = data.x_max - data.x_min;
 
-    // Use only one width source - prefer dragging width when actively dragging
-    uint8_t active_width_percent = data.sidebar.dragging ? data.sidebar.dragging_width : data.sidebar.width_percent;
-    int raw = (data.usable_map_width * active_width_percent) / 100;
-    data.sidebar.width = ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE + data.sidebar.margin_left + data.sidebar.margin_right;
-
     setup_header_footer_buttons();
+    setup_minimum_dimensions();
+
+    int configured_width_percent = config_get(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH);
+    if (configured_width_percent == config_get_default_value(CONFIG_UI_EMPIRE_SIDEBAR_WIDTH)) {
+        data.sidebar.width_percent = sidebar_width_percent_for_content_width(data.sidebar.default_width);
+    } else {
+        data.sidebar.width_percent = CLAMP(0, configured_width_percent, 100);
+    }
+
+    // Use only one width source - prefer dragging width when actively dragging
+    unsigned char active_width_percent = data.sidebar.dragging ? data.sidebar.dragging_width : data.sidebar.width_percent;
+    data.sidebar.width = sidebar_outer_width_from_percent(active_width_percent);
 
     data.sidebar.initialised = 1; // dimensions set up
 }
@@ -709,9 +749,52 @@ static void refresh_header_and_footer_buttons(void)
     resource_picker.anchor.x = filter_x;
     resource_picker.anchor.y = y;
 
-    filter_x -= (SIDEBAR_HEADER_BUTTON_WIDE_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING); // dd
+    filter_x -= SIDEBAR_HEADER_BUTTON_WIDE_WIDTH; // dd
     dropdown_button_update_dimensions(filter_x, y, SIDEBAR_HEADER_BUTTON_WIDE_WIDTH,
         SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_BUY_SELL]);
+}
+
+static void refresh_header_section_geometry(int header_x_min, int header_x_max)
+{
+    int header_width = header_x_max - header_x_min;
+    int ledger_width = data.sidebar.ledger_section.min_width;
+
+    if (ledger_width > header_width) {
+        ledger_width = header_width;
+    }
+
+    int remaining_width = header_width - ledger_width;
+    int balanced_section_width = data.sidebar.sort_section.min_width > data.sidebar.filter_section.min_width ?
+        data.sidebar.sort_section.min_width : data.sidebar.filter_section.min_width;
+    int sort_width = remaining_width / 2;
+
+    if (remaining_width < 2 * balanced_section_width) {
+        sort_width = balanced_section_width;
+
+        int shrink_width = 2 * balanced_section_width - remaining_width;
+        int sort_shrink_limit = balanced_section_width - data.sidebar.sort_section.min_width;
+        int sort_shrink = shrink_width < sort_shrink_limit ? shrink_width : sort_shrink_limit;
+        sort_width -= sort_shrink;
+        shrink_width -= sort_shrink;
+
+        int filter_shrink_limit = balanced_section_width - data.sidebar.filter_section.min_width;
+        int filter_shrink = shrink_width < filter_shrink_limit ? shrink_width : filter_shrink_limit;
+        shrink_width -= filter_shrink;
+
+        if (shrink_width > 0) {
+            int sort_overflow_shrink = shrink_width < sort_width ? shrink_width : sort_width;
+            sort_width -= sort_overflow_shrink;
+        }
+    }
+
+    data.sidebar.sort_section.x_min = header_x_min;
+    data.sidebar.sort_section.x_max = data.sidebar.sort_section.x_min + sort_width;
+
+    data.sidebar.ledger_section.x_min = data.sidebar.sort_section.x_max;
+    data.sidebar.ledger_section.x_max = data.sidebar.ledger_section.x_min + ledger_width;
+
+    data.sidebar.filter_section.x_min = data.sidebar.ledger_section.x_max;
+    data.sidebar.filter_section.x_max = header_x_max;
 }
 
 static void refresh_screen_geometry(void)
@@ -741,25 +824,7 @@ static void refresh_screen_geometry(void)
 
     int header_x_min = data.sidebar.x_min + data.sidebar.margin_left;
     int header_x_max = data.sidebar.x_max - data.sidebar.margin_right;
-    int header_width = header_x_max - header_x_min;
-
-    int ledger_width = SIDEBAR_HEADER_LEDGER_BTN_SQ + 2 * SIDEBAR_HEADER_BUTTON_SPACING;
-
-    if (ledger_width > header_width) {
-        ledger_width = header_width;
-    }
-
-    int remaining_width = header_width - ledger_width;
-    int sort_width = remaining_width / 2;
-
-    data.sidebar.sort_section.x_min = header_x_min;
-    data.sidebar.sort_section.x_max = data.sidebar.sort_section.x_min + sort_width;
-
-    data.sidebar.ledger_section.x_min = data.sidebar.sort_section.x_max;
-    data.sidebar.ledger_section.x_max = data.sidebar.ledger_section.x_min + ledger_width;
-
-    data.sidebar.filter_section.x_min = data.sidebar.ledger_section.x_max;
-    data.sidebar.filter_section.x_max = header_x_max;
+    refresh_header_section_geometry(header_x_min, header_x_max);
 }
 
 static void refresh_sidebar_city_entries(void)
@@ -799,7 +864,7 @@ static int refresh_sidebar_entry_height(void)
 
 static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
 {
-    if (data.sidebar.width_percent < 20) {
+    if (!sidebar_is_visible()) {
         return; // won't fit
     }
     setup_minimum_dimensions();
@@ -843,22 +908,24 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
 
 static void setup_minimum_dimensions(void)
 {
-    int sorting_min_width = 2 * SIDEBAR_HEADER_BUTTON_SPACING + SIDEBAR_HEADER_BUTTON_HEIGHT + // reset sort
-        dropdown_buttons[DD_TRADE_SORT].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // sort dd
-        cycling_buttons[BTN_SORT_DIRECTION].width + 4 * SIDEBAR_HEADER_BUTTON_SPACING; // sort dir
+    int sorting_min_width = SIDEBAR_HEADER_BUTTON_HEIGHT + // reset sort
+        dropdown_button_get_width(&dropdown_buttons[DD_TRADE_SORT]) + SIDEBAR_HEADER_BUTTON_SPACING + // sort dd
+        SIDEBAR_HEADER_BUTTON_HEIGHT; // sort dir
 
     int trade_ledger_width = SIDEBAR_HEADER_LEDGER_BTN_SQ + 2 * SIDEBAR_HEADER_BUTTON_SPACING; // ledger button
     int filtering_min_width = SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // of/off filter btn
-        SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING + // route type filter
-        dropdown_buttons[DD_TRADE_BUY_SELL].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // trade buy sell dd
-        SIDEBAR_HEADER_BUTTON_WIDE_WIDTH +  // buy/sell dd
+        SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + 2 * SIDEBAR_HEADER_BUTTON_SPACING + // route type filter
+        dropdown_button_get_width(&dropdown_buttons[DD_TRADE_BUY_SELL]) + // trade buy sell dd
         +SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // resource picker
         SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING; // reset filter
     int minimal_width = sorting_min_width + trade_ledger_width + filtering_min_width;
+    int balanced_section_width = sorting_min_width > filtering_min_width ? sorting_min_width : filtering_min_width;
+    int default_width = 2 * balanced_section_width + trade_ledger_width;
     data.sidebar.sort_section.min_width = sorting_min_width;
     data.sidebar.ledger_section.min_width = trade_ledger_width;
     data.sidebar.filter_section.min_width = filtering_min_width;
     data.sidebar.minimum_width = minimal_width;
+    data.sidebar.default_width = default_width;
 }
 
 // -------------------------------------------------------------------------------------------------------
@@ -874,7 +941,7 @@ static void sidebar_collapse(void)
 }
 static void sidebar_expand(void)
 {
-    data.sidebar.width_percent = 25;
+    data.sidebar.width_percent = sidebar_width_percent_for_content_width(data.sidebar.default_width);
     data.sidebar.border_btn.is_collapsed = 0;
     window_invalidate();
 }
@@ -1635,11 +1702,6 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     const uint8_t *name = empire_city_get_name(city);
 
     int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) - SIDEBAR_MARGIN_HORIZONTAL * 2;
-    // because inner_panel_draw only works in blocks of 16px, above just happens to work out ok
-    // the alternative to manipulating the drawing here, is either:
-    // a) adjust the inner_panel_draw with some graphics_set_clip_rectangle calls to allow 1px increments, or
-    // b) adjust width/pos of the sidebar to ensure that the dimensions work perfectly with this limitation
-    // or do both - but for now, just positioning it works well enough.
 
     int item_usable_height = item->height;
     int height_diff_from_default = item_usable_height - SIDEBAR_ENTRY_HEIGHT;
@@ -2175,7 +2237,7 @@ static void draw_sidebar_grid_box(void)
     );
 
     grid_box_draw(&sidebar_grid_box);
-    if (data.sidebar.width_percent > 20 && (!data.sidebar.dragging || data.sidebar.dragging_width > 5)) {
+    if (sidebar_is_visible()) {
         int x = data.sidebar.sort_section.x_min;
         int y = data.sidebar.y_min;
         int width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
@@ -2402,12 +2464,11 @@ void handle_sidebar_dragging(const mouse *m)
     int strip_index = mouse_percent_from_right / strip;
     if (strip_index < 0) strip_index = 0;
     int new_width = (strip_index * strip) + 1; // +1 to center in strip
-    int new_width_px = (data.usable_map_width * new_width) / 100;
-    if (new_width < 10) {
+    int new_width_px = sidebar_content_width_from_percent(new_width);
+    if (new_width <= 5) {
         data.sidebar.dragging_width = 0;      // collapse preview
     } else if (new_width_px < data.sidebar.minimum_width) {
-        int new_percent = data.sidebar.minimum_width / data.usable_map_width * 100;
-        data.sidebar.dragging_width = new_percent;     // minimum visible width with headers intact
+        data.sidebar.dragging_width = sidebar_width_percent_for_content_width(data.sidebar.minimum_width);
     } else if (new_width > 70) {
         data.sidebar.dragging_width = 70;     // maximum width (70%)
     } else {
@@ -2415,10 +2476,7 @@ void handle_sidebar_dragging(const mouse *m)
     }
 
     // Immediate layout update for live feedback
-    int raw = (data.usable_map_width * data.sidebar.dragging_width) / 100;
-    data.sidebar.width =
-        ((raw + (BLOCK_SIZE / 2)) / BLOCK_SIZE) * BLOCK_SIZE
-        + data.sidebar.margin_left + data.sidebar.margin_right;
+    data.sidebar.width = sidebar_outer_width_from_percent(data.sidebar.dragging_width);
 
     data.sidebar.x_max = map_draw_x_max;
     data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
