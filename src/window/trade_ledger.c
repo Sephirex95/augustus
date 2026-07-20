@@ -4,6 +4,8 @@
 #include "city/finance.h"
 #include "city/resource.h"
 #include "core/image_group.h"
+#include "core/lang.h"
+#include "core/string.h"
 #include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/grid_box.h"
@@ -16,6 +18,7 @@
 #include "graphics/window.h"
 #include "input/input.h"
 #include "widget/dropdown_button.h"
+#include "window/resource_settings.h"
 
 #define PANEL_W 800
 #define PANEL_H 600
@@ -38,7 +41,9 @@
 #define LEDGER_TRADE_STATUS_COLUMN_X (LEDGER_HEADER_BALANCE_X + LEDGER_HEADER_BALANCE_WIDTH)
 #define LEDGER_TRADE_STATUS_COLUMN_WIDTH (LEDGER_TABLE_X + LEDGER_TABLE_WIDTH - LEDGER_TRADE_STATUS_COLUMN_X)
 #define LEDGER_TRADE_STATUS_ICON_WIDTH 17
-#define LEDGER_TRADE_STATUS_ICON_SPACING 2
+#define LEDGER_TRADE_STATUS_ICON_SPACING -2
+#define LEDGER_TRADE_STATUS_BUTTON_MAX (RESOURCE_MAX * 2)
+#define LEDGER_TRADE_STATUS_TOOLTIP_MAX 96
 
 typedef enum {
     LEDGER_HEADER_IMPORTED = 0,
@@ -53,7 +58,6 @@ static color_t balance_font_red = 0;
 static font_t balance_font = FONT_NORMAL_RED;
 static font_t balance_font_green = FONT_NORMAL_GREEN;
 static color_t bg_color_window = COLOR_MASK_PASTEL_GRAY;
-static color_t bg_color_tabs = COLOR_MASK_NONE;
 static color_t brown_correction = 0; // white atlas inversion test
 static color_t green_correction = 0; // white atlas inversion test
 
@@ -65,6 +69,8 @@ static void refresh_irrelevant_resources(void);
 static void setup_header_buttons(void);
 static void ledger_header_button_click(cycling_button *button);
 static void draw_trade_status_column(resource_type resource, int row_y, int row_height);
+static void update_trade_status_button_focus(const mouse *m);
+static void on_resource_row_click(const grid_box_item *item);
 static void handle_tooltip(tooltip_context *c);
 
 static tab_view ledger_tabs;
@@ -75,6 +81,9 @@ static grid_box_type resource_table;
 static dropdown_button ledger_year_dropdown;
 static int selected_year_index = 0;
 static int hide_irrelevant = 1; //default to hide
+static complex_button trade_status_buttons[LEDGER_TRADE_STATUS_BUTTON_MAX] = { 0 };
+static uint8_t trade_status_tooltips[LEDGER_TRADE_STATUS_BUTTON_MAX][LEDGER_TRADE_STATUS_TOOLTIP_MAX] = { 0 };
+static int trade_status_button_count = 0;
 
 static const lang_fragment hide_irrelevant_sequence[] = {
     {.type = LANG_FRAG_LABEL, .text_group = CUSTOM_TRANSLATION, .text_id = TR_UI_HIDE_IRRELEVANT_RESOURCES},
@@ -234,9 +243,55 @@ static void ledger_header_button_click(cycling_button *button)
     }
 }
 
-static void draw_trade_status_button(int image_id, int x, int y)
+static int remaining_text_length(const uint8_t *cursor, const uint8_t *buffer, int buffer_size)
 {
-    complex_button button = {
+    int remaining = buffer_size - (int) (cursor - buffer);
+    return remaining > 0 ? remaining : 1;
+}
+
+static uint8_t *append_trade_quantity(uint8_t *cursor, uint8_t *buffer, int buffer_size, int quantity, int show_max_for_zero)
+{
+    cursor = string_copy(string_from_ascii(" "), cursor, remaining_text_length(cursor, buffer, buffer_size));
+    if (show_max_for_zero && quantity == 0) {
+        return string_copy(translation_for(TR_ADVISOR_TRADE_NO_LIMIT), cursor,
+            remaining_text_length(cursor, buffer, buffer_size));
+    }
+    cursor += string_from_int(cursor, quantity, 0);
+    return cursor;
+}
+
+static void build_trade_status_tooltip(resource_type resource, uint8_t *buffer, int buffer_size)
+{
+    uint8_t *cursor = buffer;
+    resource_trade_status trade_status = city_resource_trade_status(resource);
+    int export_over = city_resource_export_over(resource);
+    int import_over = city_resource_import_over(resource);
+    int has_export = (trade_status & TRADE_STATUS_EXPORT) == TRADE_STATUS_EXPORT;
+    int has_import = (trade_status & TRADE_STATUS_IMPORT) == TRADE_STATUS_IMPORT;
+
+    buffer[0] = 0;
+    if (has_export) {
+        cursor = string_copy(lang_get_string(54, 6), cursor, buffer_size);
+        cursor = append_trade_quantity(cursor, buffer, buffer_size, export_over, 0);
+    }
+    if (has_export && has_import) {
+        cursor = string_copy(string_from_ascii("\n"), cursor, remaining_text_length(cursor, buffer, buffer_size));
+    }
+    if (has_import) {
+        cursor = string_copy(lang_get_string(54, 5), cursor, remaining_text_length(cursor, buffer, buffer_size));
+        append_trade_quantity(cursor, buffer, buffer_size, import_over, 1);
+    }
+}
+
+static void draw_trade_status_button(resource_type resource, int image_id, int x, int y)
+{
+    if (trade_status_button_count >= LEDGER_TRADE_STATUS_BUTTON_MAX) {
+        return;
+    }
+
+    complex_button *button = &trade_status_buttons[trade_status_button_count];
+    build_trade_status_tooltip(resource, trade_status_tooltips[trade_status_button_count], LEDGER_TRADE_STATUS_TOOLTIP_MAX);
+    *button = (complex_button) {
         .x = x,
         .y = y,
         .width = LEDGER_TRADE_STATUS_ICON_WIDTH,
@@ -247,10 +302,12 @@ static void draw_trade_status_button(int image_id, int x, int y)
             .auto_center = 1
         },
         .tooltip_c = {
-            .type = TOOLTIP_BUTTON
+            .type = TOOLTIP_BUTTON,
+            .precomposed_text = trade_status_tooltips[trade_status_button_count]
         }
     };
-    complex_button_draw(&button);
+    complex_button_draw(button);
+    trade_status_button_count++;
 }
 
 static void draw_trade_status_column(resource_type resource, int row_y, int row_height)
@@ -270,11 +327,24 @@ static void draw_trade_status_column(resource_type resource, int row_y, int row_
     int y = row_y + (row_height - LEDGER_TRADE_STATUS_ICON_WIDTH) / 2;
 
     if (is_imported) {
-        draw_trade_status_button(assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_IMPORT), x, y);
+        draw_trade_status_button(resource, assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_IMPORT), x, y);
         x += LEDGER_TRADE_STATUS_ICON_WIDTH + LEDGER_TRADE_STATUS_ICON_SPACING;
     }
     if (is_exported) {
-        draw_trade_status_button(assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_EXPORT), x, y);
+        draw_trade_status_button(resource, assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_EXPORT), x, y);
+    }
+}
+
+static void update_trade_status_button_focus(const mouse *m)
+{
+    for (int i = 0; i < trade_status_button_count; i++) {
+        complex_button *button = &trade_status_buttons[i];
+        int is_focused = m->x >= button->x && m->x < button->x + button->width &&
+            m->y >= button->y && m->y < button->y + button->height;
+        if (button->is_focused != is_focused) {
+            button->is_focused = is_focused;
+            window_request_refresh();
+        }
     }
 }
 
@@ -314,7 +384,7 @@ static void trade_ledger_init(void)
             .item_margin.vertical = 5,
             .draw_inner_panel = 1,
             .extend_to_hidden_scrollbar = 1,
-            .on_click = 0,
+            .on_click = on_resource_row_click,
             .draw_item = draw_resource_row,
     };
     // get resource list for the scenario
@@ -401,6 +471,7 @@ static int handle_trade_tab_mouse(const mouse *m, void *user_data)
     if (cycling_button_handle_mouse_array(header_buttons, m, LEDGER_HEADER_BUTTON_COUNT)) {
         return 1;
     }
+    update_trade_status_button_focus(m);
     if (checkbox_button_handle_mouse(&hide_irrelevant_checkbox, m)) {
         return 1;
     }
@@ -410,6 +481,17 @@ static int handle_trade_tab_mouse(const mouse *m, void *user_data)
 static void button_close(int param1, int param2)
 {
     window_go_back();
+}
+
+static void on_resource_row_click(const grid_box_item *item)
+{
+    unsigned int real_index = item->index;
+    unsigned int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
+    if (real_index >= total_items) {
+        return;
+    }
+    resource_type resource = hide_irrelevant ? filtered_resources.items[real_index] : resources->items[real_index];
+    window_resource_settings_show(resource);
 }
 
 static void placeholder_content_draw(tab_view *view, tab *active_tab)
@@ -485,6 +567,7 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     lang_text_draw(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, 20, LEDGER_HEADER_STARTING_Y, FONT_NORMAL_BLACK);
     cycling_button_draw_array(header_buttons, LEDGER_HEADER_BUTTON_COUNT);
 
+    trade_status_button_count = 0;
     grid_box_request_refresh(&resource_table);
     grid_box_draw(&resource_table);
     checkbox_button_draw(&hide_irrelevant_checkbox);
@@ -495,6 +578,9 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
 static void handle_tooltip(tooltip_context *c)
 {
     if (tab_view_get_active_tab(&ledger_tabs) != 0) {
+        return;
+    }
+    if (complex_button_handle_tooltip_array(trade_status_buttons, c, trade_status_button_count)) {
         return;
     }
     cycling_button_handle_tooltip_array(header_buttons, c, LEDGER_HEADER_BUTTON_COUNT);
