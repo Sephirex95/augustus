@@ -78,7 +78,6 @@ static font_t button_font_for_tab_style(tab_view_style style)
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
             return FONT_SMALL_PLAIN;
         case TAB_VIEW_STYLE_WOOD:
-            return FONT_NORMAL_BROWN;
         case TAB_VIEW_STYLE_GRAY:
         case TAB_VIEW_STYLE_COLORFUL:
         case TAB_VIEW_STYLE_DEFAULT:

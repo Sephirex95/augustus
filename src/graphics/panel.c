@@ -5,6 +5,8 @@
 #include "graphics/graphics.h"
 #include "graphics/image.h"
 
+#define INNER_PANEL_MIN_SIZE (2 * BLOCK_SIZE)
+
 void outer_panel_draw(int x, int y, int width_blocks, int height_blocks)
 {
     int image_base = image_group(GROUP_DIALOG_BACKGROUND);
@@ -201,8 +203,6 @@ void inner_panel_draw(int x, int y, int width_blocks, int height_blocks)
         }
     }
 }
-
-#define INNER_PANEL_MIN_SIZE (2 * BLOCK_SIZE)
 
 static int divide_round_up(int value, int divisor)
 {

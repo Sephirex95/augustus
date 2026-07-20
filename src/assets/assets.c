@@ -119,6 +119,10 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_BUTTON_HOVER] = assets_get_image_id("UI", "Trade_Ledger_Button_Click");
     data.asset_lookup[ASSET_UI_DIAGONAL_LINES_L] = assets_get_image_id("UI", "Diagonal_Lines_L");
     data.asset_lookup[ASSET_UI_DIAGONAL_LINES_R] = assets_get_image_id("UI", "Diagonal_Lines_R");
+    data.asset_lookup[ASSET_UI_FONT_BROWN_UP_ARROW] = assets_get_image_id("UI", "Font_Brown_Up_Arrow");
+    data.asset_lookup[ASSET_UI_FONT_BROWN_DOWN_ARROW] = assets_get_image_id("UI", "Font_Brown_Down_Arrow");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER_EXPORT] = assets_get_image_id("UI", "Trade_Ledger_Export");
+    data.asset_lookup[ASSET_UI_TRADE_LEDGER_IMPORT] = assets_get_image_id("UI", "Trade_Ledger_Import");
 
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");

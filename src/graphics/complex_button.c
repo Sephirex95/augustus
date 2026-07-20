@@ -350,24 +350,6 @@ static void complex_button_ellipsized(complex_button *button, int was_ellipsized
     button->is_ellipsized = was_ellipsized;
 }
 
-// static font_t font_enlarge(font_t base_font)
-// {
-//     switch (base_font) {
-//         case FONT_NORMAL_BLACK:
-//             base_font = FONT_LARGE_BLACK;
-//             break;
-//         case FONT_NORMAL_BROWN:
-//         case FONT_NORMAL_GREEN:
-//             base_font = FONT_LARGE_BROWN;
-//             break;
-//         case FONT_NORMAL_PLAIN:
-//             base_font = FONT_LARGE_PLAIN;
-//             break;
-//         default: // reds and other weirdos
-//             break;
-//     }
-//     return base_font;
-// }
 
 // === Draw a single button ===
 void complex_button_draw(const complex_button *button)

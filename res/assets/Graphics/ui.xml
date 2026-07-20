@@ -1633,4 +1633,8 @@
 	<image id="Diagonal_Lines_R" width="8" height="8">
 		<layer src="Double_slash_r"/>
 	</image>
+	<image id="Font_Brown_Up_Arrow" src = "Font_Brown_Up_Arrow"/>
+	<image id="Font_Brown_Down_Arrow" src = "Font_Brown_Down_Arrow"/>
+	<image id="Trade_Ledger_Export" src = "Trade_Ledger_Export"/>
+	<image id="Trade_Ledger_Import" src = "Trade_Ledger_Import"/>
 </assetlist>
