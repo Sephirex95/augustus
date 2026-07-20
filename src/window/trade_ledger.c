@@ -23,7 +23,22 @@
 #define LEDGER_HEADER_BUTTON_HEIGHT 20
 #define LEDGER_HEADER_X_GAP 40
 #define LEDGER_HEADER_STARTING_Y 65
-#define LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT 6
+#define LEDGER_TABLE_X 10
+#define LEDGER_TABLE_WIDTH (45 * BLOCK_SIZE)
+#define LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT 10
+#define LEDGER_HEADER_SMALL_WIDTH (LEDGER_HEADER_X_GAP + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT)
+#define LEDGER_HEADER_STOCK_WIDTH (58 + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT)
+#define LEDGER_HEADER_BALANCE_WIDTH 160
+#define LEDGER_HEADER_IMPORTED_X (120 + LEDGER_HEADER_X_GAP)
+#define LEDGER_HEADER_PRODUCED_X (LEDGER_HEADER_IMPORTED_X + LEDGER_HEADER_SMALL_WIDTH)
+#define LEDGER_HEADER_CONSUMED_X (LEDGER_HEADER_PRODUCED_X + LEDGER_HEADER_SMALL_WIDTH)
+#define LEDGER_HEADER_EXPORTED_X (LEDGER_HEADER_CONSUMED_X + LEDGER_HEADER_SMALL_WIDTH)
+#define LEDGER_HEADER_STOCK_X (LEDGER_HEADER_EXPORTED_X + LEDGER_HEADER_SMALL_WIDTH)
+#define LEDGER_HEADER_BALANCE_X (LEDGER_HEADER_STOCK_X + LEDGER_HEADER_STOCK_WIDTH)
+#define LEDGER_TRADE_STATUS_COLUMN_X (LEDGER_HEADER_BALANCE_X + LEDGER_HEADER_BALANCE_WIDTH)
+#define LEDGER_TRADE_STATUS_COLUMN_WIDTH (LEDGER_TABLE_X + LEDGER_TABLE_WIDTH - LEDGER_TRADE_STATUS_COLUMN_X)
+#define LEDGER_TRADE_STATUS_ICON_WIDTH 17
+#define LEDGER_TRADE_STATUS_ICON_SPACING 2
 
 typedef enum {
     LEDGER_HEADER_IMPORTED = 0,
@@ -39,10 +54,8 @@ static font_t balance_font = FONT_NORMAL_RED;
 static font_t balance_font_green = FONT_NORMAL_GREEN;
 static color_t bg_color_window = COLOR_MASK_PASTEL_GRAY;
 static color_t bg_color_tabs = COLOR_MASK_NONE;
-static color_t bg_color_items = COLOR_MASK_NONE;
 static color_t brown_correction = 0; // white atlas inversion test
 static color_t green_correction = 0; // white atlas inversion test
-static color_t active_item_border = COLOR_WHITE;
 
 
 static void button_close(int param1, int param2);
@@ -51,6 +64,7 @@ static void hide_irrelevant_checkbox_clicked(checkbox_button *btn);
 static void refresh_irrelevant_resources(void);
 static void setup_header_buttons(void);
 static void ledger_header_button_click(cycling_button *button);
+static void draw_trade_status_column(resource_type resource, int row_y, int row_height);
 static void handle_tooltip(tooltip_context *c);
 
 static tab_view ledger_tabs;
@@ -114,21 +128,21 @@ static const int header_button_tooltips[LEDGER_HEADER_BUTTON_COUNT] = {
 };
 
 static const int header_button_x_positions[LEDGER_HEADER_BUTTON_COUNT] = {
-    120 + LEDGER_HEADER_X_GAP,
-    120 + 2 * LEDGER_HEADER_X_GAP,
-    120 + 3 * LEDGER_HEADER_X_GAP,
-    120 + 4 * LEDGER_HEADER_X_GAP,
-    120 + 6 * LEDGER_HEADER_X_GAP,
-    120 + 8 * LEDGER_HEADER_X_GAP
+    LEDGER_HEADER_IMPORTED_X,
+    LEDGER_HEADER_PRODUCED_X,
+    LEDGER_HEADER_CONSUMED_X,
+    LEDGER_HEADER_EXPORTED_X,
+    LEDGER_HEADER_STOCK_X,
+    LEDGER_HEADER_BALANCE_X
 };
 
 static const int header_button_widths[LEDGER_HEADER_BUTTON_COUNT] = {
-    LEDGER_HEADER_X_GAP + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT,
-    LEDGER_HEADER_X_GAP + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT,
-    LEDGER_HEADER_X_GAP + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT,
-    LEDGER_HEADER_X_GAP + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT,
-    58 + LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT,
-    96 - (LEDGER_HEADER_BUTTON_WIDTH_ADJUSTMENT * (LEDGER_HEADER_BUTTON_COUNT - 1))
+    LEDGER_HEADER_SMALL_WIDTH,
+    LEDGER_HEADER_SMALL_WIDTH,
+    LEDGER_HEADER_SMALL_WIDTH,
+    LEDGER_HEADER_SMALL_WIDTH,
+    LEDGER_HEADER_STOCK_WIDTH,
+    LEDGER_HEADER_BALANCE_WIDTH
 };
 
 static void trade_draw_content(tab_view *view, tab *active_tab);
@@ -220,6 +234,50 @@ static void ledger_header_button_click(cycling_button *button)
     }
 }
 
+static void draw_trade_status_button(int image_id, int x, int y)
+{
+    complex_button button = {
+        .x = x,
+        .y = y,
+        .width = LEDGER_TRADE_STATUS_ICON_WIDTH,
+        .height = LEDGER_TRADE_STATUS_ICON_WIDTH,
+        .style = COMPLEX_BUTTON_STYLE_RAW,
+        .image = {
+            .id = image_id,
+            .auto_center = 1
+        },
+        .tooltip_c = {
+            .type = TOOLTIP_BUTTON
+        }
+    };
+    complex_button_draw(&button);
+}
+
+static void draw_trade_status_column(resource_type resource, int row_y, int row_height)
+{
+    resource_trade_status trade_status = city_resource_trade_status(resource);
+    const int is_imported = (trade_status & TRADE_STATUS_IMPORT) == TRADE_STATUS_IMPORT;
+    const int is_exported = (trade_status & TRADE_STATUS_EXPORT) == TRADE_STATUS_EXPORT;
+    const int icon_count = is_imported + is_exported;
+
+    if (!icon_count || LEDGER_TRADE_STATUS_COLUMN_WIDTH <= 0) {
+        return;
+    }
+
+    const int icons_width = icon_count * LEDGER_TRADE_STATUS_ICON_WIDTH +
+        (icon_count - 1) * LEDGER_TRADE_STATUS_ICON_SPACING;
+    int x = LEDGER_TRADE_STATUS_COLUMN_X + (LEDGER_TRADE_STATUS_COLUMN_WIDTH - icons_width) / 2;
+    int y = row_y + (row_height - LEDGER_TRADE_STATUS_ICON_WIDTH) / 2;
+
+    if (is_imported) {
+        draw_trade_status_button(assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_IMPORT), x, y);
+        x += LEDGER_TRADE_STATUS_ICON_WIDTH + LEDGER_TRADE_STATUS_ICON_SPACING;
+    }
+    if (is_exported) {
+        draw_trade_status_button(assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_EXPORT), x, y);
+    }
+}
+
 static void trade_ledger_init(void)
 {
     static lang_fragment dd_fragments[9] = { 0 };
@@ -246,9 +304,9 @@ static void trade_ledger_init(void)
     ledger_year_dropdown.selected_index = 1; // default to "Current Year"
     setup_header_buttons();
     resource_table = (grid_box_type) {
-            .x = 10,
+            .x = LEDGER_TABLE_X,
             .y = 80,
-            .width = 45 * BLOCK_SIZE,
+            .width = LEDGER_TABLE_WIDTH,
             .height = 22 * BLOCK_SIZE,
             .num_columns = 1,
             .item_height = 40,
@@ -394,8 +452,6 @@ static void draw_resource_row(const grid_box_item *item)
     }
 
     int number_y = item->y + 10;
-    // unbordered_panel_draw_colored(item->x, item->y, item->width / BLOCK_SIZE, item->height / BLOCK_SIZE, bg_color_items);
-    // button_border_draw(item->x, item->y, item->width, item->height, 0);
     int is_focused = item->is_focused;
     inner_panel_draw_colored(item->x, item->y, item->width, item->height, COLOR_MASK_NONE);
     button_border_draw(item->x, item->y, item->width, item->height, is_focused);
@@ -414,6 +470,7 @@ static void draw_resource_row(const grid_box_item *item)
         header_button_widths[LEDGER_HEADER_STOCK], FONT_NORMAL_GREEN, brown_correction);
     text_draw_number_centered_colored(balance, header_button_x_positions[LEDGER_HEADER_BALANCE], number_y,
         header_button_widths[LEDGER_HEADER_BALANCE], bal_font, bal_color);
+    draw_trade_status_column(current_resource, item->y, item->height);
 
 }
 
