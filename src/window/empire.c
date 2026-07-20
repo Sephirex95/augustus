@@ -221,7 +221,7 @@ static void refresh_header_and_footer_buttons(void);
 static void refresh_screen_geometry(void);
 static void refresh_sidebar_city_entries(void);
 static void refresh_sidebar_gridbox(void);
-
+static void header_buttons_collision_check(void);
 //buttons
 static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
@@ -362,6 +362,7 @@ static struct {
         unsigned char width_percent; // sidebar width as percentage of map width (0-100)
         unsigned char dragging_width; // width during dragging (0-100)
         unsigned char previous_width; // used to restore the width when dragging ends (0-100)
+        int minimum_width; // minimum width to allow header buttons to display without collision
         struct {
             int x_min, x_max, y_min, y_max;
             char is_hovered;
@@ -667,10 +668,9 @@ static void refresh_header_and_footer_buttons(void)
     complex_buttons[BTN_TRADE_HISTORY].y = y_footer;
     complex_buttons[BTN_TRADE_HISTORY].width = data.sidebar.sort_section.x_max - data.sidebar.sort_section.x_min;
     complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
-    sort_x += SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH;
-    dropdown_button_update_dimensions(sort_x, y, SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH,
-        SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_SORT]);
-    sort_x += SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH;
+    sort_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
+    dropdown_button_update_dimensions(sort_x, y, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, &dropdown_buttons[DD_TRADE_SORT]);
+    sort_x += dropdown_buttons[DD_TRADE_SORT].calculated_width; // width is 0 - auto, use calculated
     cycling_buttons[BTN_SORT_DIRECTION].x = sort_x;
     cycling_buttons[BTN_SORT_DIRECTION].y = y;
 
@@ -802,7 +802,7 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
     if (data.sidebar.width_percent < 20) {
         return; // won't fit
     }
-
+    header_buttons_collision_check();
     refresh_sidebar_city_entries();
     refresh_header_and_footer_buttons();
     if (low_res_mode) {
@@ -839,6 +839,36 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
     sidebar_grid_box.offset_scrollbar_x = 0; //grid_box_has_scrollbar(&sidebar_grid_box) ? -14 : 0;
     sidebar_grid_box.offset_scrollbar_y = 0;
     grid_box_set_bounds(&sidebar_grid_box, sidebar_grid_box.x, sidebar_grid_box.y, sidebar_grid_box.width, sidebar_grid_box.height);
+}
+
+static void header_buttons_collision_check(void)
+{
+    cycling_button *sort_dir_btn = &cycling_buttons[BTN_SORT_DIRECTION];
+    int end_of_sort_label = data.sidebar.sort_section.x_max;
+    if (sort_dir_btn->x + sort_dir_btn->width > end_of_sort_label) {
+        // handle collision 1
+    }
+    cycling_button *route_type_btn = &cycling_buttons[BTN_ROUTE_TYPE];
+    int rt_type_btn_max_x = dropdown_buttons[DD_TRADE_BUY_SELL].buttons[0].x - SIDEBAR_HEADER_BUTTON_SPACING;
+    if (route_type_btn->x + route_type_btn->width > rt_type_btn_max_x) {
+        // handle collision 2
+    }
+    // minimal sidebar width calculation:
+    int minimal_width = 2 * SIDEBAR_HEADER_BUTTON_SPACING + SIDEBAR_HEADER_BUTTON_HEIGHT + // reset sort
+        dropdown_buttons[DD_TRADE_SORT].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // sort dd
+        cycling_buttons[BTN_SORT_DIRECTION].width + 4 * SIDEBAR_HEADER_BUTTON_SPACING + // sort dir
+        SIDEBAR_HEADER_LEDGER_BTN_SQ + SIDEBAR_HEADER_BUTTON_SPACING + // ledger button
+        SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // of/off filter btn
+        SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING + // route type filter
+        dropdown_buttons[DD_TRADE_BUY_SELL].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // trade buy sell dd
+        SIDEBAR_HEADER_BUTTON_WIDE_WIDTH +  // buy/sell dd
+        +SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // resource picker
+        SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING; // reset filter
+    data.sidebar.minimum_width = minimal_width;
+    if (data.sidebar.width < data.sidebar.minimum_width) {
+        // handle collision 3
+        data.sidebar.width = data.sidebar.minimum_width;
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------
@@ -2382,10 +2412,12 @@ void handle_sidebar_dragging(const mouse *m)
     int strip_index = mouse_percent_from_right / strip;
     if (strip_index < 0) strip_index = 0;
     int new_width = (strip_index * strip) + 1; // +1 to center in strip
+    int new_width_px = (data.usable_map_width * new_width) / 100;
     if (new_width < 10) {
         data.sidebar.dragging_width = 0;      // collapse preview
-    } else if (new_width < 20) {
-        data.sidebar.dragging_width = 20;     // minimum visible width (20%)
+    } else if (new_width_px < data.sidebar.minimum_width) {
+        int new_percent = data.sidebar.minimum_width / data.usable_map_width * 100;
+        data.sidebar.dragging_width = new_percent;     // minimum visible width with headers intact
     } else if (new_width > 70) {
         data.sidebar.dragging_width = 70;     // maximum width (70%)
     } else {
@@ -2707,6 +2739,12 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
     } else {
         if (is_sidebar(m)) {
+            if (m->right.went_up) {
+                int has_scrolled = scroll_drag_end();
+                if (!has_scrolled && input_go_back_requested(m, h)) {
+                    window_city_show();
+                }
+            }
             return; // sidebar handling went through earlier - prevent clicks falling through to map
         }
         if (m->right.went_down) {

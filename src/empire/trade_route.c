@@ -175,9 +175,6 @@ int trade_route_history_limit(int route_id, resource_type resource, int buying, 
     if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
         return 0;
     }
-    if (array_item(trade_history[year], route_id)->open == 0) {
-        return -1;
-    }
     if (buying) {
         return array_item(trade_history[year], route_id)->buys.limit[resource];
     } else {
