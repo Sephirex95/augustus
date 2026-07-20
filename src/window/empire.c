@@ -221,7 +221,7 @@ static void refresh_header_and_footer_buttons(void);
 static void refresh_screen_geometry(void);
 static void refresh_sidebar_city_entries(void);
 static void refresh_sidebar_gridbox(void);
-static void header_buttons_collision_check(void);
+static void setup_minimum_dimensions(void);
 //buttons
 static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
@@ -369,13 +369,13 @@ static struct {
             char is_collapsed;
         } border_btn;
         struct {
-            int x_min, x_max;
+            int x_min, x_max, min_width;
         } ledger_section;
         struct {
-            int x_min, x_max;
+            int x_min, x_max, min_width;
         } filter_section;
         struct {
-            int x_min, x_max;
+            int x_min, x_max, min_width;
         }sort_section;
         unsigned char trade_year; // year of data displayed in the sidebar - 0 is current, 1 is last year, etc.
     } sidebar;
@@ -719,7 +719,7 @@ static void refresh_screen_geometry(void)
     data.screen_width = screen_width();
     data.screen_height = screen_height();
     low_res_mode = data.screen_height <= 768 ? 1 : 0; // lowres mode for sidebar to fit more content
-
+    setup_minimum_dimensions();
     int map_width;
     int map_height;
     empire_get_map_size(&map_width, &map_height);
@@ -802,7 +802,7 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
     if (data.sidebar.width_percent < 20) {
         return; // won't fit
     }
-    header_buttons_collision_check();
+    setup_minimum_dimensions();
     refresh_sidebar_city_entries();
     refresh_header_and_footer_buttons();
     if (low_res_mode) {
@@ -841,34 +841,24 @@ static void refresh_sidebar_gridbox(void) //setup_gridbox <-debugging marker
     grid_box_set_bounds(&sidebar_grid_box, sidebar_grid_box.x, sidebar_grid_box.y, sidebar_grid_box.width, sidebar_grid_box.height);
 }
 
-static void header_buttons_collision_check(void)
+static void setup_minimum_dimensions(void)
 {
-    cycling_button *sort_dir_btn = &cycling_buttons[BTN_SORT_DIRECTION];
-    int end_of_sort_label = data.sidebar.sort_section.x_max;
-    if (sort_dir_btn->x + sort_dir_btn->width > end_of_sort_label) {
-        // handle collision 1
-    }
-    cycling_button *route_type_btn = &cycling_buttons[BTN_ROUTE_TYPE];
-    int rt_type_btn_max_x = dropdown_buttons[DD_TRADE_BUY_SELL].buttons[0].x - SIDEBAR_HEADER_BUTTON_SPACING;
-    if (route_type_btn->x + route_type_btn->width > rt_type_btn_max_x) {
-        // handle collision 2
-    }
-    // minimal sidebar width calculation:
-    int minimal_width = 2 * SIDEBAR_HEADER_BUTTON_SPACING + SIDEBAR_HEADER_BUTTON_HEIGHT + // reset sort
+    int sorting_min_width = 2 * SIDEBAR_HEADER_BUTTON_SPACING + SIDEBAR_HEADER_BUTTON_HEIGHT + // reset sort
         dropdown_buttons[DD_TRADE_SORT].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // sort dd
-        cycling_buttons[BTN_SORT_DIRECTION].width + 4 * SIDEBAR_HEADER_BUTTON_SPACING + // sort dir
-        SIDEBAR_HEADER_LEDGER_BTN_SQ + SIDEBAR_HEADER_BUTTON_SPACING + // ledger button
-        SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // of/off filter btn
+        cycling_buttons[BTN_SORT_DIRECTION].width + 4 * SIDEBAR_HEADER_BUTTON_SPACING; // sort dir
+
+    int trade_ledger_width = SIDEBAR_HEADER_LEDGER_BTN_SQ + 2 * SIDEBAR_HEADER_BUTTON_SPACING; // ledger button
+    int filtering_min_width = SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // of/off filter btn
         SIDEBAR_HEADER_BUTTON_MEDIUM_WIDTH + SIDEBAR_HEADER_BUTTON_SPACING + // route type filter
         dropdown_buttons[DD_TRADE_BUY_SELL].calculated_width + SIDEBAR_HEADER_BUTTON_SPACING + // trade buy sell dd
         SIDEBAR_HEADER_BUTTON_WIDE_WIDTH +  // buy/sell dd
         +SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING + // resource picker
         SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING; // reset filter
+    int minimal_width = sorting_min_width + trade_ledger_width + filtering_min_width;
+    data.sidebar.sort_section.min_width = sorting_min_width;
+    data.sidebar.ledger_section.min_width = trade_ledger_width;
+    data.sidebar.filter_section.min_width = filtering_min_width;
     data.sidebar.minimum_width = minimal_width;
-    if (data.sidebar.width < data.sidebar.minimum_width) {
-        // handle collision 3
-        data.sidebar.width = data.sidebar.minimum_width;
-    }
 }
 
 // -------------------------------------------------------------------------------------------------------

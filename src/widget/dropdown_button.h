@@ -135,6 +135,11 @@ void dropdown_button_advanced_restore_anchor(dropdown_button *dd);
  */
 void dropdown_button_advanced_save_anchor(dropdown_button *dd);
 
+
+int dropdown_button_get_x_min(const dropdown_button *dd);
+int dropdown_button_get_x_max(const dropdown_button *dd);
+int dropdown_button_get_width(const dropdown_button *dd);
+
 #endif // GRAPHICS_DROPDOWN_BUTTON_H
 
 
