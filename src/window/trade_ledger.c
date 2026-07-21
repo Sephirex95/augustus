@@ -291,21 +291,18 @@ static void draw_trade_status_button(resource_type resource, int image_id, int x
 
     complex_button *button = &trade_status_buttons[trade_status_button_count];
     build_trade_status_tooltip(resource, trade_status_tooltips[trade_status_button_count], LEDGER_TRADE_STATUS_TOOLTIP_MAX);
-    *button = (complex_button) {
-        .x = x,
-        .y = y,
-        .width = LEDGER_TRADE_STATUS_ICON_WIDTH,
-        .height = LEDGER_TRADE_STATUS_ICON_WIDTH,
-        .style = COMPLEX_BUTTON_STYLE_RAW,
-        .image = {
-            .id = image_id,
-            .auto_center = 1
-        },
-        .tooltip_c = {
-            .type = TOOLTIP_BUTTON,
-            .precomposed_text = trade_status_tooltips[trade_status_button_count]
-        }
-    };
+
+    button->x = x;
+    button->y = y;
+    button->width = LEDGER_TRADE_STATUS_ICON_WIDTH;
+    button->height = LEDGER_TRADE_STATUS_ICON_WIDTH;
+    button->style = COMPLEX_BUTTON_STYLE_RAW;
+
+    button->image.id = image_id;
+    button->image.auto_center = 1;
+
+    button->tooltip_c.type = TOOLTIP_BUTTON;
+    button->tooltip_c.precomposed_text = trade_status_tooltips[trade_status_button_count];
     complex_button_draw(button);
     trade_status_button_count++;
 }
