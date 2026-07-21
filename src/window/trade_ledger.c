@@ -20,6 +20,8 @@
 #include "widget/dropdown_button.h"
 #include "window/resource_settings.h"
 
+#include <stdlib.h>
+
 #define PANEL_W 800
 #define PANEL_H 600
 #define LEDGER_HEADER_BUTTON_COUNT 6
@@ -54,13 +56,28 @@ typedef enum {
     LEDGER_HEADER_BALANCE
 } ledger_header_button_type;
 
+typedef enum {
+    LEDGER_SORT_NONE = 0,
+    LEDGER_SORT_DESCENDING,
+    LEDGER_SORT_ASCENDING
+} ledger_sort_direction;
+
+typedef struct {
+    resource_type resource;
+    int values[LEDGER_HEADER_BUTTON_COUNT];
+} ledger_resource_row;
+
 static color_t balance_font_red = 0;
 static font_t balance_font = FONT_NORMAL_RED;
 static font_t balance_font_green = FONT_NORMAL_GREEN;
 static color_t bg_color_window = COLOR_MASK_PASTEL_GRAY;
 static color_t brown_correction = 0; // white atlas inversion test
 static color_t green_correction = 0; // white atlas inversion test
+static ledger_resource_row displayed_rows[RESOURCE_MAX];
+static int displayed_row_count = 0;
 
+static int active_sort_header = -1;
+static int active_sort_direction = LEDGER_SORT_NONE;
 
 static void button_close(int param1, int param2);
 static void placeholder_content_draw(tab_view *view, tab *active_tab);
@@ -76,7 +93,7 @@ static void handle_tooltip(tooltip_context *c);
 static tab_view ledger_tabs;
 static int tabs_initialized = 0;
 static const resource_list *resources;
-static resource_list filtered_resources;
+static resource_list displayed_resources;
 static grid_box_type resource_table;
 static dropdown_button ledger_year_dropdown;
 static int selected_year_index = 0;
@@ -106,11 +123,11 @@ static image_button image_buttons[] = {
 };
 
 static checkbox_button hide_irrelevant_checkbox = {
-        .x = 12,
-        .y = 430,
-        .width = 250,
-        .height = 20,
-        .left_click_handler = hide_irrelevant_checkbox_clicked,
+    .x = 12,
+    .y = 430,
+    .width = 250,
+    .height = 20,
+    .left_click_handler = hide_irrelevant_checkbox_clicked,
     .font = FONT_NORMAL_BLACK,
     .sequence = hide_irrelevant_sequence,
     .sequence_size = 1,
@@ -159,6 +176,8 @@ static void draw_resource_row(const grid_box_item *item);
 static void hide_irrelevant_checkbox_clicked(checkbox_button *btn);
 static int handle_resource_table_mouse(const mouse *m, void *user_data);
 static int handle_trade_tab_mouse(const mouse *m, void *user_data);
+static void refresh_displayed_rows(void);
+static int compare_displayed_rows(const void *a, const void *b);
 
 static int dropdown_to_years_ago(int selected_index)
 {
@@ -171,21 +190,93 @@ static int dropdown_to_years_ago(int selected_index)
 static void dropdown_selected_callback(dropdown_button *dd)
 {
     selected_year_index = dropdown_to_years_ago(dd->selected_index);
+
+    refresh_irrelevant_resources();
+    refresh_displayed_rows();
+
+    grid_box_update_total_items(&resource_table, displayed_row_count);
+
+    grid_box_request_refresh(&resource_table);
     window_invalidate();
+}
+
+static int compare_displayed_rows(const void *a, const void *b)
+{
+    const ledger_resource_row *row_a = a;
+    const ledger_resource_row *row_b = b;
+
+    int value_a = row_a->values[active_sort_header];
+    int value_b = row_b->values[active_sort_header];
+
+    int result;
+
+    if (value_a < value_b) {
+        result = -1;
+    } else if (value_a > value_b) {
+        result = 1;
+    } else {
+        if (row_a->resource < row_b->resource) {
+            result = -1;
+        } else if (row_a->resource > row_b->resource) {
+            result = 1;
+        } else {
+            result = 0;
+        }
+    }
+    if (active_sort_direction == LEDGER_SORT_DESCENDING) {
+        result = -result;
+    }
+
+    return result;
+}
+
+static void refresh_displayed_rows(void)
+{
+    const resource_list *source =
+        hide_irrelevant ? &displayed_resources : resources;
+
+    displayed_row_count = 0;
+
+    for (unsigned int i = 0; i < source->size; i++) {
+        resource_type resource = source->items[i];
+        ledger_resource_row *row = &displayed_rows[displayed_row_count++];
+
+        row->resource = resource;
+        row->values[LEDGER_HEADER_IMPORTED] =
+            city_finance_trade_ledger_get_imported(resource, selected_year_index);
+        row->values[LEDGER_HEADER_PRODUCED] =
+            city_finance_trade_ledger_get_produced(resource, selected_year_index);
+        row->values[LEDGER_HEADER_CONSUMED] =
+            city_finance_trade_ledger_get_consumed(resource, selected_year_index);
+        row->values[LEDGER_HEADER_EXPORTED] =
+            city_finance_trade_ledger_get_exported(resource, selected_year_index);
+        row->values[LEDGER_HEADER_STOCK] =
+            city_finance_trade_ledger_get_stock(resource, selected_year_index);
+        row->values[LEDGER_HEADER_BALANCE] =
+            city_finance_trade_ledger_get_balance(resource, selected_year_index);
+    }
+
+    if (active_sort_header >= 0) {
+        qsort(displayed_rows, displayed_row_count, sizeof(displayed_rows[0]), compare_displayed_rows);
+    }
+
+    grid_box_update_total_items(&resource_table, displayed_row_count);
 }
 
 static void hide_irrelevant_checkbox_clicked(checkbox_button *btn)
 {
     hide_irrelevant = btn->is_checked;
     refresh_irrelevant_resources();
-    int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
-    grid_box_update_total_items(&resource_table, total_items);
+    refresh_displayed_rows();
+    grid_box_update_total_items(&resource_table, displayed_row_count);
+
+    grid_box_request_refresh(&resource_table);
     window_invalidate();
 }
 
 static void refresh_irrelevant_resources(void)
 {
-    filtered_resources.size = 0;
+    displayed_resources.size = 0;
 
     for (unsigned int i = 0; i < resources->size; i++) {
         resource_type current_resource = resources->items[i];
@@ -198,7 +289,7 @@ static void refresh_irrelevant_resources(void)
         int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
 
         if (imported || produced || consumed || exported || stock || balance) {
-            filtered_resources.items[filtered_resources.size++] = current_resource;
+            displayed_resources.items[displayed_resources.size++] = current_resource;
         }
     }
 }
@@ -233,13 +324,6 @@ static void setup_header_buttons(void)
 
         button->states[1].image_after = down_arrow;
         button->states[2].image_after = up_arrow;
-    }
-}
-
-static void ledger_header_button_click(cycling_button *button)
-{
-    if (button->state_index == 0) {
-        button->state_index = 1;
     }
 }
 
@@ -387,14 +471,12 @@ static void trade_ledger_init(void)
     // get resource list for the scenario
     city_resource_determine_available(1);
     resources = city_resource_get_available();
-    filtered_resources = *resources;
     hide_irrelevant_checkbox.is_checked = hide_irrelevant;
+
     refresh_irrelevant_resources();
-    if (hide_irrelevant) {
-        grid_box_init(&resource_table, filtered_resources.size);
-    } else {
-        grid_box_init(&resource_table, resources->size);
-    }
+    refresh_displayed_rows();
+
+    grid_box_init(&resource_table, displayed_row_count);
 }
 
 static void draw_background(void)
@@ -482,13 +564,13 @@ static void button_close(int param1, int param2)
 
 static void on_resource_row_click(const grid_box_item *item)
 {
-    unsigned int real_index = item->index;
-    unsigned int total_items = hide_irrelevant ? filtered_resources.size : resources->size;
-    if (real_index >= total_items) {
+    unsigned int index = item->index;
+
+    if (index >= (unsigned int) displayed_row_count) {
         return;
     }
-    resource_type resource = hide_irrelevant ? filtered_resources.items[real_index] : resources->items[real_index];
-    window_resource_settings_show(resource);
+
+    window_resource_settings_show(displayed_rows[index].resource);
 }
 
 static void placeholder_content_draw(tab_view *view, tab *active_tab)
@@ -501,24 +583,25 @@ static void placeholder_content_draw(tab_view *view, tab *active_tab)
 
 static void draw_resource_row(const grid_box_item *item)
 {
-    // Placeholder for drawing a resource row in the trade ledger
-    // This function will be called for each item in the grid box
-    // You can access the resource data using item->index
-    // For example, you might want to draw the resource name, quantity, etc.
-
-
     int real_index = item->index;
-    resource_type current_resource = hide_irrelevant ? filtered_resources.items[real_index] : resources->items[real_index];
+
+    if (real_index < 0 || real_index >= displayed_row_count) {
+        return;
+    }
+
+    const ledger_resource_row *row = &displayed_rows[real_index];
+    resource_type current_resource = row->resource;
 
     int resource_img_id = resource_get_data(current_resource)->image.icon;
     const uint8_t *name = resource_get_data(current_resource)->text;
-    int imported = city_finance_trade_ledger_get_imported(current_resource, selected_year_index);
-    int produced = city_finance_trade_ledger_get_produced(current_resource, selected_year_index);
-    int consumed = city_finance_trade_ledger_get_consumed(current_resource, selected_year_index);
-    int exported = city_finance_trade_ledger_get_exported(current_resource, selected_year_index);
-    int stock = city_finance_trade_ledger_get_stock(current_resource, selected_year_index);
-    int balance = city_finance_trade_ledger_get_balance(current_resource, selected_year_index);
-    // sort this out or wrap it into some helper
+
+    int imported = row->values[LEDGER_HEADER_IMPORTED];
+    int produced = row->values[LEDGER_HEADER_PRODUCED];
+    int consumed = row->values[LEDGER_HEADER_CONSUMED];
+    int exported = row->values[LEDGER_HEADER_EXPORTED];
+    int stock = row->values[LEDGER_HEADER_STOCK];
+    int balance = row->values[LEDGER_HEADER_BALANCE];
+
     font_t bal_font;
     color_t bal_color;
 
@@ -532,25 +615,27 @@ static void draw_resource_row(const grid_box_item *item)
 
     int number_y = item->y + 10;
     int is_focused = item->is_focused;
+
     inner_panel_draw_colored(item->x, item->y, item->width, item->height, COLOR_MASK_NONE);
     button_border_draw(item->x, item->y, item->width, item->height, is_focused);
 
     image_draw(resource_img_id, item->x + 5, item->y + 5, COLOR_MASK_NONE, SCALE_NONE);
     text_draw(name, item->x + 40, item->y + 10, FONT_NORMAL_GREEN, brown_correction);
-    text_draw_number_centered_colored(imported, header_button_x_positions[LEDGER_HEADER_IMPORTED], number_y,
-        header_button_widths[LEDGER_HEADER_IMPORTED], FONT_NORMAL_GREEN, brown_correction);
-    text_draw_number_centered_colored(produced, header_button_x_positions[LEDGER_HEADER_PRODUCED], number_y,
-        header_button_widths[LEDGER_HEADER_PRODUCED], FONT_NORMAL_GREEN, brown_correction);
-    text_draw_number_centered_colored(consumed, header_button_x_positions[LEDGER_HEADER_CONSUMED], number_y,
-        header_button_widths[LEDGER_HEADER_CONSUMED], FONT_NORMAL_GREEN, brown_correction);
-    text_draw_number_centered_colored(exported, header_button_x_positions[LEDGER_HEADER_EXPORTED], number_y,
-        header_button_widths[LEDGER_HEADER_EXPORTED], FONT_NORMAL_GREEN, brown_correction);
+
+    text_draw_number_centered_colored(imported, header_button_x_positions[LEDGER_HEADER_IMPORTED],
+        number_y, header_button_widths[LEDGER_HEADER_IMPORTED], FONT_NORMAL_GREEN, brown_correction);
+    text_draw_number_centered_colored(produced, header_button_x_positions[LEDGER_HEADER_PRODUCED],
+        number_y, header_button_widths[LEDGER_HEADER_PRODUCED], FONT_NORMAL_GREEN, brown_correction);
+    text_draw_number_centered_colored(consumed, header_button_x_positions[LEDGER_HEADER_CONSUMED],
+        number_y, header_button_widths[LEDGER_HEADER_CONSUMED], FONT_NORMAL_GREEN, brown_correction);
+    text_draw_number_centered_colored(exported, header_button_x_positions[LEDGER_HEADER_EXPORTED],
+        number_y, header_button_widths[LEDGER_HEADER_EXPORTED], FONT_NORMAL_GREEN, brown_correction);
     text_draw_number_centered_colored(stock, header_button_x_positions[LEDGER_HEADER_STOCK], number_y,
         header_button_widths[LEDGER_HEADER_STOCK], FONT_NORMAL_GREEN, brown_correction);
-    text_draw_number_centered_colored(balance, header_button_x_positions[LEDGER_HEADER_BALANCE], number_y,
-        header_button_widths[LEDGER_HEADER_BALANCE], bal_font, bal_color);
-    draw_trade_status_column(current_resource, item->y, item->height);
+    text_draw_number_centered_colored(balance, header_button_x_positions[LEDGER_HEADER_BALANCE],
+        number_y, header_button_widths[LEDGER_HEADER_BALANCE], bal_font, bal_color);
 
+    draw_trade_status_column(current_resource, item->y, item->height);
 }
 
 static void trade_draw_content(tab_view *view, tab *active_tab)
@@ -583,9 +668,39 @@ static void handle_tooltip(tooltip_context *c)
     cycling_button_handle_tooltip_array(header_buttons, c, LEDGER_HEADER_BUTTON_COUNT);
 }
 
+static void ledger_header_button_click(cycling_button *button)
+{
+    int clicked_header = (int) (button - header_buttons);
+
+    if (clicked_header < 0 ||
+        clicked_header >= LEDGER_HEADER_BUTTON_COUNT) {
+        return;
+    }
+
+    if (active_sort_header == clicked_header &&
+        button->state_index == LEDGER_SORT_DESCENDING) {
+        active_sort_direction = LEDGER_SORT_ASCENDING;
+    } else {
+        active_sort_direction = LEDGER_SORT_DESCENDING;
+    }
+
+    for (int i = 0; i < LEDGER_HEADER_BUTTON_COUNT; i++) {
+        header_buttons[i].state_index = LEDGER_SORT_NONE;
+    }
+
+    active_sort_header = clicked_header;
+    button->state_index = active_sort_direction;
+
+    refresh_displayed_rows();
+
+    grid_box_update_total_items(&resource_table, displayed_row_count);
+
+    grid_box_request_refresh(&resource_table);
+    window_invalidate();
+}
+
 void window_trade_ledger_show(void)
 {
-
     window_type window = {
         WINDOW_TRADE_LEDGER,
         draw_background,
