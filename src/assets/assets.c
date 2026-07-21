@@ -123,7 +123,7 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_FONT_BROWN_DOWN_ARROW] = assets_get_image_id("UI", "Font_Brown_Down_Arrow");
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_EXPORT] = assets_get_image_id("UI", "Trade_Ledger_Export");
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_IMPORT] = assets_get_image_id("UI", "Trade_Ledger_Import");
-
+    data.asset_lookup[ASSET_UI_RESOURCE_PICKER] = assets_get_image_id("UI", "resource_picker");
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
     data.font_lookup[ASSET_FONT_SQ_BRACKET_RIGHT] = assets_get_image_id("UI", "rightbracket_white_l");

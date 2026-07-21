@@ -2147,17 +2147,17 @@ static translation_string all_strings[] = {
     {TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP, "View selected year's Trade Records"},
     {TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP_LOST, "Your scribes don't hold onto the records that long!"},
     {TR_UI_LEDGER_BTN_IMPORTED, "Imp"},
-    {TR_UI_LEDGER_TT_IMPORTED, "Imported"},
+    {TR_UI_LEDGER_TT_IMPORTED, "Sort by Imported"},
     {TR_UI_LEDGER_BTN_PRODUCED, "Pro"},
-    {TR_UI_LEDGER_TT_PRODUCED, "Produced"},
+    {TR_UI_LEDGER_TT_PRODUCED, "Sort by Produced"},
     {TR_UI_LEDGER_BTN_CONSUMED, "Con"},
-    {TR_UI_LEDGER_TT_CONSUMED, "Consumed"},
+    {TR_UI_LEDGER_TT_CONSUMED, "Sort by Consumed"},
     {TR_UI_LEDGER_BTN_EXPORTED, "Exp"},
-    {TR_UI_LEDGER_TT_EXPORTED, "Exported"},
+    {TR_UI_LEDGER_TT_EXPORTED, "Sort by Exported"},
     {TR_UI_LEDGER_BTN_STOCK, "Stock"},
-    {TR_UI_LEDGER_TT_STOCK, "Stock"},
+    {TR_UI_LEDGER_TT_STOCK, "Sort by Stock"},
     {TR_UI_LEDGER_BTN_BALANCE, "Dn Balance"},
-    {TR_UI_LEDGER_TT_BALANCE, "Denarii Balance"},
+    {TR_UI_LEDGER_TT_BALANCE, "Sort by Denarii Balance"},
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

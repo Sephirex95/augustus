@@ -434,11 +434,14 @@ static void setup_resource_picker(void)
         .type = TOOLTIP_BUTTON,
         .translation_key = TR_UI_TOOLTIP_SELECT_RESOURCE_FILTER,
     };
+
     grid_picker_anchor_init(&resource_picker_anchor, 0, 0, SIDEBAR_HEADER_BUTTON_HEIGHT, SIDEBAR_HEADER_BUTTON_HEIGHT,
          NULL, 0, COMPLEX_BUTTON_STYLE_GRAY, &tooltip_c);
     grid_picker_init(&resource_picker_anchor, &resource_picker, (const grid_picker_cell *) resource_picker_cells,
          potential_count, column_count, row_count, cell_side, cell_side, cell_spacing, GRID_PICKER_STYLE_GRAY); // no cells yet
     resource_picker.selected_callback = resource_picker_selected;
+    resource_picker_anchor.image.id = assets_lookup_image_id(ASSET_UI_RESOURCE_PICKER);
+    resource_picker_anchor.image.auto_center = 1;
 }
 
 static void setup_header_footer_buttons(void)

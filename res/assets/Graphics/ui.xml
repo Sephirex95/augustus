@@ -1637,4 +1637,5 @@
 	<image id="Font_Brown_Down_Arrow" src = "Font_Brown_Down_Arrow"/>
 	<image id="Trade_Ledger_Export" src = "Trade_Ledger_Export"/>
 	<image id="Trade_Ledger_Import" src = "Trade_Ledger_Import"/>
+	<image id="resource_picker" src = "resource_picker"/>
 </assetlist>
