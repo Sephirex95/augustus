@@ -950,7 +950,12 @@ static void sidebar_collapse(void)
 }
 static void sidebar_expand(void)
 {
-    data.sidebar.width_percent = sidebar_width_percent_for_content_width(data.sidebar.default_width);
+    data.sidebar.dragging = 0;
+    data.sidebar.dragging_width = 0;
+    data.sidebar.width_percent = sidebar_width_percent_for_content_width(data.sidebar.minimum_width);
+    data.sidebar.width = sidebar_outer_width_from_percent(data.sidebar.width_percent);
+    data.sidebar.x_max = data.x_max - WIDTH_BORDER;
+    data.sidebar.x_min = data.sidebar.x_max - data.sidebar.width;
     data.sidebar.border_btn.is_collapsed = 0;
     window_invalidate();
 }
