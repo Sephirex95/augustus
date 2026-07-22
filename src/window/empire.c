@@ -440,8 +440,8 @@ static void setup_resource_picker(void)
     grid_picker_init(&resource_picker_anchor, &resource_picker, (const grid_picker_cell *) resource_picker_cells,
          potential_count, column_count, row_count, cell_side, cell_side, cell_spacing, GRID_PICKER_STYLE_GRAY); // no cells yet
     resource_picker.selected_callback = resource_picker_selected;
-    resource_picker_anchor.image.id = assets_lookup_image_id(ASSET_UI_RESOURCE_PICKER);
-    resource_picker_anchor.image.auto_center = 1;
+    resource_picker.anchor.image.id = assets_lookup_image_id(ASSET_UI_RESOURCE_PICKER);
+    resource_picker.anchor.image.auto_center = 1;
 }
 
 static void setup_header_footer_buttons(void)
@@ -695,7 +695,13 @@ static void refresh_header_and_footer_buttons(void)
         dropdown_buttons[DD_TRADE_BUY_SELL].selected_index = 1;
     }
     sync_resource_picker_from_filter();
+    if (window_empire_sidebar_sort_get_selected_filter_resource() == RESOURCE_NONE) {
+        resource_picker.anchor.image.id = assets_lookup_image_id(ASSET_UI_RESOURCE_PICKER);
+        resource_picker.anchor.image.auto_center = 1;
+    }
+
     // TODO: find a way to reset the grid_picker index after selectin 'clear selection'.
+    // update 21/07 - still relevant. The grid picker still needs some work internally, not callsite
     // can defo be done via selection_handler callback, but it should be doable without that?
     cycling_buttons[BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
