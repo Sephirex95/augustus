@@ -1014,7 +1014,7 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
         scenario_events_migrate_to_buys_sells();
     }
     if (version > SAVE_GAME_LAST_NO_LEDGER) {
-        city_finance_ledger_load_state(state->finance_ledger);
+        city_finance_ledger_load_state(state->finance_ledger, version);
     }
 }
 

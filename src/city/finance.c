@@ -74,15 +74,19 @@ static tourism_for_type tourism_modifiers[] = {
 };
 
 #define TRANSACTION_STEP_SIZE 100
+#define FINANCE_OVERVIEW_HISTORY_YEARS 6
 
 static trade_ledger_data trade_ledgers[8]; // 7 years of data + current year
 static short trade_ledgers_count;
+static finance_overview finance_overviews[FINANCE_OVERVIEW_HISTORY_YEARS];
+static unsigned char finance_overview_years_stored;
 static array(transaction_t) current_year_transactions; // array of transaction structs for the current year
 static array(transaction_t) last_year_transactions; // array of transaction structs for the last year
 // transaction histories are only stored for current and last year - throw in a joke to explain 'why' to the players
 // we could store more but i dont want crudelios to blame me for the savegame bloat
 
 static void trade_ledger_year_change(void);
+static void archive_last_year_finance_overview(void);
 
 
 int city_finance_treasury(void)
@@ -658,6 +662,7 @@ int city_finance_trade_ledger_get_stock(resource_type resource, int years_ago)
 
 void city_finance_handle_year_change(void)
 {
+    archive_last_year_finance_overview();
     reset_taxes();
     trade_ledger_year_change();
     copy_amounts_to_last_year();
@@ -781,6 +786,23 @@ static void trade_ledger_year_change(void)
     }
 }
 
+static void archive_last_year_finance_overview(void)
+{
+    if (finance_overview_years_stored >= FINANCE_OVERVIEW_HISTORY_YEARS) {
+        finance_overview_years_stored = FINANCE_OVERVIEW_HISTORY_YEARS;
+    } else if (trade_ledgers_count > 0 || finance_overview_years_stored > 0) {
+        finance_overview_years_stored++;
+    } else {
+        return;
+    }
+
+    for (int i = finance_overview_years_stored - 1; i > 0; i--) {
+        finance_overviews[i] = finance_overviews[i - 1];
+    }
+
+    finance_overviews[0] = city_data.finance.last_year;
+}
+
 int city_finance_tourism_income_last_month(void)
 {
     return city_data.finance.tourism_last_month;
@@ -801,12 +823,76 @@ const finance_overview *city_finance_overview_this_year(void)
     return &city_data.finance.this_year;
 }
 
+const finance_overview *city_finance_overview_for_year(int years_ago)
+{
+    if (years_ago <= 0) {
+        return &city_data.finance.this_year;
+    }
+    if (years_ago == 1) {
+        return &city_data.finance.last_year;
+    }
+    if (years_ago - 2 < finance_overview_years_stored) {
+        return &finance_overviews[years_ago - 2];
+    }
+    return 0;
+}
+
+int city_finance_overview_years_stored(void)
+{
+    return finance_overview_years_stored;
+}
+
 void city_finance_ledger_init(void)
 {
     trade_ledgers_count = 0;
     memset(trade_ledgers, 0, sizeof(trade_ledgers));
+    finance_overview_years_stored = 0;
+    memset(finance_overviews, 0, sizeof(finance_overviews));
     array_init(current_year_transactions, TRANSACTION_STEP_SIZE, 0, 0);
     array_init(last_year_transactions, TRANSACTION_STEP_SIZE, 0, 0);
+}
+
+static size_t finance_overview_saved_size(void)
+{
+    return sizeof(int32_t) * 15;
+}
+
+static void write_finance_overview(buffer *buf, const finance_overview *overview)
+{
+    buffer_write_i32(buf, overview->income.taxes);
+    buffer_write_i32(buf, overview->income.exports);
+    buffer_write_i32(buf, overview->income.donated);
+    buffer_write_i32(buf, overview->income.total);
+    buffer_write_i32(buf, overview->expenses.imports);
+    buffer_write_i32(buf, overview->expenses.wages);
+    buffer_write_i32(buf, overview->expenses.construction);
+    buffer_write_i32(buf, overview->expenses.interest);
+    buffer_write_i32(buf, overview->expenses.salary);
+    buffer_write_i32(buf, overview->expenses.sundries);
+    buffer_write_i32(buf, overview->expenses.tribute);
+    buffer_write_i32(buf, overview->expenses.total);
+    buffer_write_i32(buf, overview->expenses.levies);
+    buffer_write_i32(buf, overview->net_in_out);
+    buffer_write_i32(buf, overview->balance);
+}
+
+static void read_finance_overview(buffer *buf, finance_overview *overview)
+{
+    overview->income.taxes = buffer_read_i32(buf);
+    overview->income.exports = buffer_read_i32(buf);
+    overview->income.donated = buffer_read_i32(buf);
+    overview->income.total = buffer_read_i32(buf);
+    overview->expenses.imports = buffer_read_i32(buf);
+    overview->expenses.wages = buffer_read_i32(buf);
+    overview->expenses.construction = buffer_read_i32(buf);
+    overview->expenses.interest = buffer_read_i32(buf);
+    overview->expenses.salary = buffer_read_i32(buf);
+    overview->expenses.sundries = buffer_read_i32(buf);
+    overview->expenses.tribute = buffer_read_i32(buf);
+    overview->expenses.total = buffer_read_i32(buf);
+    overview->expenses.levies = buffer_read_i32(buf);
+    overview->net_in_out = buffer_read_i32(buf);
+    overview->balance = buffer_read_i32(buf);
 }
 
 void city_finance_ledger_save_state(buffer *buf)
@@ -817,7 +903,8 @@ void city_finance_ledger_save_state(buffer *buf)
     size_t total_size = sizeof(int16_t) // trade_ledgers_count
         + 8 * (sizeof(int32_t) * 2 + sizeof(int32_t) * RESOURCE_MAX * 6) // 8 ledger entries
         + sizeof(int32_t) + current_count * tx_size // current year transactions
-        + sizeof(int32_t) + last_count * tx_size;   // last year transactions
+        + sizeof(int32_t) + last_count * tx_size    // last year transactions
+        + sizeof(uint8_t) + FINANCE_OVERVIEW_HISTORY_YEARS * finance_overview_saved_size();
 
     buffer_init_dynamic(buf, total_size);
 
@@ -857,9 +944,14 @@ void city_finance_ledger_save_state(buffer *buf)
         buffer_write_u16(buf, tx->trader_id);
         buffer_write_i8(buf, tx->quantity);
     }
+
+    buffer_write_u8(buf, finance_overview_years_stored);
+    for (int i = 0; i < FINANCE_OVERVIEW_HISTORY_YEARS; i++) {
+        write_finance_overview(buf, &finance_overviews[i]);
+    }
 }
 
-void city_finance_ledger_load_state(buffer *buf)
+void city_finance_ledger_load_state(buffer *buf, savegame_version_t version)
 {
     buffer_load_dynamic(buf);
 
@@ -909,6 +1001,20 @@ void city_finance_ledger_load_state(buffer *buf)
         tx->resource_id = buffer_read_u8(buf);
         tx->trader_id = buffer_read_u16(buf);
         tx->quantity = buffer_read_i8(buf);
+    }
+
+    finance_overview_years_stored = 0;
+    memset(finance_overviews, 0, sizeof(finance_overviews));
+    if (version <= SAVE_GAME_LAST_NO_FINANCE_OVERVIEW_HISTORY) {
+        return;
+    }
+
+    finance_overview_years_stored = buffer_read_u8(buf);
+    if (finance_overview_years_stored > FINANCE_OVERVIEW_HISTORY_YEARS) {
+        finance_overview_years_stored = FINANCE_OVERVIEW_HISTORY_YEARS;
+    }
+    for (int i = 0; i < FINANCE_OVERVIEW_HISTORY_YEARS; i++) {
+        read_finance_overview(buf, &finance_overviews[i]);
     }
 }
 

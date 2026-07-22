@@ -4,6 +4,7 @@
 #include "building/type.h"
 #include "city/resource.h"
 #include "core/buffer.h"
+#include "game/save_version.h"
 
 #define SMALL_TEMPLE_LEVY_MONTHLY 4
 #define FORT_LEVY_MONTHLY 8
@@ -162,12 +163,16 @@ const finance_overview *city_finance_overview_last_year(void);
 
 const finance_overview *city_finance_overview_this_year(void);
 
+const finance_overview *city_finance_overview_for_year(int years_ago);
+
+int city_finance_overview_years_stored(void);
+
 void city_finance_ledger_init(void);
 
 int city_finance_spawn_tourist(void);
 
 void city_finance_ledger_save_state(buffer *buf);
 
-void city_finance_ledger_load_state(buffer *buf);
+void city_finance_ledger_load_state(buffer *buf, savegame_version_t version);
 
 #endif // CITY_FINANCE_H
