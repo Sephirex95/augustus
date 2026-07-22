@@ -350,7 +350,6 @@ static void complex_button_ellipsized(complex_button *button, int was_ellipsized
     button->is_ellipsized = was_ellipsized;
 }
 
-
 // === Draw a single button ===
 void complex_button_draw(const complex_button *button)
 {
@@ -367,10 +366,6 @@ void complex_button_draw(const complex_button *button)
     color_t font_secondary;
     font_t base_font;
     font_and_colours(button->style, button->is_disabled, is_large, &base_font, &font_primary, &font_secondary);
-    // if (is_large) {
-    //     // swap the font out to large variant
-    //     base_font = font_enlarge(base_font);
-    // }
 
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
@@ -391,12 +386,14 @@ void complex_button_draw_array(const complex_button *buttons, unsigned int num_b
 
 int complex_button_handle_mouse(complex_button *btn, const mouse *m)
 {
-    if (btn->is_hidden || btn->is_disabled) {
-        btn->is_focused = 0;
+    if (btn->is_disabled) {
         btn->is_clicked = 0;
         return 0;
     }
-
+    if (btn->is_hidden) {
+        btn->is_clicked = 0;
+        return 0;
+    }
     int handled = 0;
 
     // Expanded hitbox

@@ -565,8 +565,8 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
     complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
     complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
-    complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP;
-
+    complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_1;
+    // TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP
     static lang_fragment set_date_dd_frag[9] = { 0 };
 
     for (int i = 0; i < 3; i++) {

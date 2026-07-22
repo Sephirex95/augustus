@@ -2157,7 +2157,9 @@ static translation_string all_strings[] = {
     {TR_UI_LEDGER_BTN_STOCK, "Stock"},
     {TR_UI_LEDGER_TT_STOCK, "Sort by Stock"},
     {TR_UI_LEDGER_BTN_BALANCE, "Dn Balance"},
-    {TR_UI_LEDGER_TT_BALANCE, "Sort by Denarii Balance"},
+    {TR_UI_LEDGER_TT_BALANCE, "Sort by Denarii Balance" },
+    {TR_UI_LEDGER_DISABLED_1, "This feature is not yet available." },
+    {TR_UI_LEDGER_DISABLED_2, "Your scribes are working hard to build this feature, but they need more time."}
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

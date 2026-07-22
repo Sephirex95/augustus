@@ -11,19 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//draft implementation of drawing made by gpt - review the algortihm he outline and make sure it's relevant and necssary
-//drawing parts look good, but the naming convention will be off. Check against other UI elements to make sure API fits
-
-/* Notes: tab view has to be informed whether its expected to draw background of the content area or not.
-If yes - it should probably be an indented area, or seemeless blend with the tab buttons. Good to test on several styles.
-if not - content area background drawing function is null, and the content area 'inherits' the background from the window
-it's positioned in.
-Then, the content drawing callback for tabs should focus on exactly that - content only. Interactive elements, etc.
-Might have to check structures to ensure that the definitions match this approach.
-
-Styles shouldnt live with complex buttons I feel like. Or if they do, we need widget_styles, button_styles and window_styles.
-Either that or a global styles structure that will handle parameters for all UI elements - widgets, buttons, windows alike.
-
+/*
 EDIT: not a bad idea tbh but adjusting all exisintg windows to use the styles might be a mammoth excercise.
 Won't kill us to define a few styles for larger structures, to make sure they use consistent:
 Backgroud drawing, colours, fonts, sizes, titles, etc. It already exists for windows, right? <-reserach this
@@ -48,6 +36,10 @@ Other considerations should be style-specific I reckon. Next time, continue iter
 tab_view, ensure that the test trade ledger looks good and proceed with specifics in the trade_ledger itself.
 
 Next iteration - FINISH tab_view as a structure!!
+
+22/07 notes:
+Needs tooltip handling for buttons and content. Might be a bit tricky.
+UI API standrardisation mentioned above - should be done in a separate PR.
 */
 
 #define TAB_VIEW_MIN_TAB_WIDTH 50
@@ -98,7 +90,7 @@ static color_t color_for_active_tab_button(tab_view_style style, int is_active)
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
         case TAB_VIEW_STYLE_GRAY:
         default:
-            return COLOR_MASK_NONE; // uniform color for default and wood styles
+            return 0; // using 0 instead of COLOR_MASK_NONE
     }
 }
 
@@ -174,6 +166,7 @@ void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, i
         view->tabs[i].button.style = button_style_for_tab_style(style);
         view->tabs[i].button.font = button_font_for_tab_style(style);
         view->tabs[i].button.sequence_position = SEQUENCE_POSITION_CENTER;
+        view->tabs[i].button.color_mask = 0; // default color mask, can be overridden later
         view->tabs[i].button.sequence_size = 1;
         view->tabs[i].visible = 1;
         view->tabs[i].enabled = 1;

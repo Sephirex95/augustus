@@ -316,7 +316,7 @@ static void setup_resource_header_button(void)
 {
     resource_header_button.width =
         lang_text_get_width(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, FONT_NORMAL_BLACK) + 8;
-    resource_header_button.color_mask = brown_correction;
+    //    resource_header_button.color_mask = brown_correction;
     resource_header_button.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
     resource_header_button.is_active = 0;
     resource_header_button.is_focused = 0;
@@ -346,7 +346,7 @@ static void setup_header_buttons(void)
             button->states[state].image_before = 0;
             button->states[state].image_after = 0;
             button->states[state].font = FONT_NORMAL_BLACK;
-            button->states[state].color_mask = brown_correction;
+            //button->states[state].color_mask = brown_correction;
             button->states[state].tooltip_c.translation_key = header_button_tooltips[i];
         }
 
@@ -539,8 +539,14 @@ static void draw_foreground(void)
         ledger_tabs.view_properties.width_mode = TAB_WIDTH_MAX; // make tabs take up all available width
         tab_view_init_tab(&ledger_tabs, 0, trade_draw_content, tab_text_trade);
         tab_view_init_tab(&ledger_tabs, 1, placeholder_content_draw, tab_text_production);
+
+        //disabled tab:
         ledger_tabs.tabs[1].enabled = 0; // disable the production tab - interface not implemented
-        // Tab_view - add treatment of disabled tabs - draw the button as unavailable, add tooltip explanation.
+        ledger_tabs.tabs[1].button.is_disabled = 1; // disable the button
+        ledger_tabs.tabs[1].button.tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_2; // tooltip for disabled tab
+        ledger_tabs.tabs[1].button.tooltip_c.type = TOOLTIP_BUTTON;
+        ledger_tabs.tabs[1].button.font = FONT_NORMAL_PLAIN;
+        ledger_tabs.tabs[1].button.font_color = COLOR_FONT_GRAY;
 
         tabs_initialized = tab_view_layout(&ledger_tabs) == TAB_LAYOUT_OK; // layout tabs and set initialized flag based on success  
     }

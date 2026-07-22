@@ -4,9 +4,12 @@
 #include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/panel.h"
+#include "graphics/screen.h"
 #include "graphics/tooltip.h"
 #include "graphics/window.h"
 #include <string.h>
+
+#define GRID_PICKER_SCREEN_MARGIN 10
 
 int grid_picker_row_column_to_index(grid_picker *picker, int row, int column);
 int grid_picker_index_to_row_column(grid_picker *picker, int index, int *row, int *column);
@@ -63,6 +66,9 @@ void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, in
 
 static void grid_picker_geometry(grid_picker *picker)
 {
+    int s_width = screen_width();
+    int s_height = screen_height();
+
     // calculate the grid width and height:
     picker->grid_width = picker->columns * picker->cell_width + (picker->columns - 1) * picker->spacing_h;
     picker->grid_height = picker->rows * picker->cell_height + (picker->rows - 1) * picker->spacing_v;
@@ -93,6 +99,19 @@ static void grid_picker_geometry(grid_picker *picker)
 
         cell->x = picker->grid_x + picker->margin + row_x_offset + column * (picker->cell_width + picker->spacing_h);
         cell->y = picker->grid_y + picker->margin + row * (picker->cell_height + picker->spacing_v);
+    }
+    // Clamp horizontally
+    if (picker->grid_x < GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_x = GRID_PICKER_SCREEN_MARGIN;
+    } else if (picker->grid_x + picker->calculated_width > s_width - GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_x = s_width - GRID_PICKER_SCREEN_MARGIN - picker->calculated_width;
+    }
+
+    // Clamp vertically
+    if (picker->grid_y < GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_y = GRID_PICKER_SCREEN_MARGIN;
+    } else if (picker->grid_y + picker->calculated_height > s_height - GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_y = s_height - GRID_PICKER_SCREEN_MARGIN - picker->calculated_height;
     }
 }
 
