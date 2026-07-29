@@ -95,8 +95,6 @@
 #define NO_POSITION ((unsigned int) -1) //used as an alterntive to 0 for some of new pointers
 //to avoid confusion with when relying on external indexing, which can be 0-based
 
-int debug_fundsborder_1 = 0;
-int debug_fundsborder_2 = 0;
 //typedefs
 typedef enum {
     TRADE_ICON_NONE = -1,
@@ -2325,7 +2323,7 @@ static void draw_funds_panel(void)
     top_menu_black_panel_draw(x, y, width);
     lang_text_draw_colored(6, 0, draw_x, y + 5, FONT_NORMAL_PLAIN, treasury_color);
     text_draw_number(treasury, '@', "\0", draw_x + label_width, y + 5, FONT_NORMAL_PLAIN, treasury_color);
-    button_border_draw(x - 3, y - 3, width + debug_fundsborder_2, FUNDS_PANEL_HEIGHT + debug_fundsborder_1, 0);
+    button_border_draw(x - 3, y - 3, width + 4, FUNDS_PANEL_HEIGHT + 8, 0); // minor adjustments to fit border 
     graphics_reset_clip_rectangle();
 }
 
@@ -2726,8 +2724,10 @@ static void handle_input(const mouse *m, const hotkeys *h)
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!data.sidebar.border_btn.is_collapsed) {
         // since we have multiple buttons of same type, they should be array'd to call array input handlers
-        if (dropdown_button_handle_mouse_array(dropdown_buttons, m, DD_COUNT)) {
-            return;
+        if (!resource_picker.is_expanded) { // only handle dropdowns if the resource picker is not expanded
+            if (dropdown_button_handle_mouse_array(dropdown_buttons, m, DD_COUNT)) {
+                return;
+            }
         }
         if (grid_picker_handle_mouse(&resource_picker, m)) {
             return;

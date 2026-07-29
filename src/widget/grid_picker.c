@@ -82,6 +82,20 @@ static void grid_picker_geometry(grid_picker *picker)
     picker->grid_x = anchor_center_x - picker->calculated_width / 2 + picker->picker_x_offset;
     picker->grid_y = picker->anchor.y + picker->anchor.height + picker->picker_y_offset;
 
+
+    // Clamp horizontally
+    if (picker->grid_x < GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_x = GRID_PICKER_SCREEN_MARGIN;
+    } else if (picker->grid_x + picker->calculated_width > s_width - GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_x = s_width - GRID_PICKER_SCREEN_MARGIN - picker->calculated_width;
+    }
+
+    // Clamp vertically
+    if (picker->grid_y < GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_y = GRID_PICKER_SCREEN_MARGIN;
+    } else if (picker->grid_y + picker->calculated_height > s_height - GRID_PICKER_SCREEN_MARGIN) {
+        picker->grid_y = s_height - GRID_PICKER_SCREEN_MARGIN - picker->calculated_height;
+    }
     for (unsigned int i = 0; i < picker->cell_count; i++) {
         int row = (int) i / picker->columns;
         int column = (int) i % picker->columns;
@@ -99,19 +113,6 @@ static void grid_picker_geometry(grid_picker *picker)
 
         cell->x = picker->grid_x + picker->margin + row_x_offset + column * (picker->cell_width + picker->spacing_h);
         cell->y = picker->grid_y + picker->margin + row * (picker->cell_height + picker->spacing_v);
-    }
-    // Clamp horizontally
-    if (picker->grid_x < GRID_PICKER_SCREEN_MARGIN) {
-        picker->grid_x = GRID_PICKER_SCREEN_MARGIN;
-    } else if (picker->grid_x + picker->calculated_width > s_width - GRID_PICKER_SCREEN_MARGIN) {
-        picker->grid_x = s_width - GRID_PICKER_SCREEN_MARGIN - picker->calculated_width;
-    }
-
-    // Clamp vertically
-    if (picker->grid_y < GRID_PICKER_SCREEN_MARGIN) {
-        picker->grid_y = GRID_PICKER_SCREEN_MARGIN;
-    } else if (picker->grid_y + picker->calculated_height > s_height - GRID_PICKER_SCREEN_MARGIN) {
-        picker->grid_y = s_height - GRID_PICKER_SCREEN_MARGIN - picker->calculated_height;
     }
 }
 
@@ -343,6 +344,7 @@ int grid_picker_handle_mouse(grid_picker *picker, const mouse *m)
     }
 
     if (picker->is_expanded) {
+        handled = 1; // if picker is expanded, swallow all mouse input. 
         if (m->right.went_up) {
             picker->is_expanded = 0;
             window_request_refresh();
@@ -350,9 +352,10 @@ int grid_picker_handle_mouse(grid_picker *picker, const mouse *m)
         }
         int inside = (m->x >= picker->grid_x && m->x < picker->grid_x + picker->calculated_width &&
             m->y >= picker->grid_y && m->y < picker->grid_y + picker->calculated_height);
-        if (inside) {
-            handled = 1;
-
+        if (m->left.went_up && !inside) {
+            picker->is_expanded = 0;
+            window_request_refresh();
+            return 1;
         }
         for (unsigned int i = 0; i < picker->cell_count; i++) {
             int row = (int) i / picker->columns;

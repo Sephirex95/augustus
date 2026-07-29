@@ -366,7 +366,7 @@ int dropdown_button_handle_mouse(dropdown_button *dd, const mouse *m)
 
     // Handle options if expanded
     if (dd->expanded) {
-        handled = 1;
+        handled = 1; // if expanded, swallow all mouse input.
         if (!dd->rightclick_expanded_callback && m->right.went_up) {
             dd->expanded = 0;
             window_request_refresh();
