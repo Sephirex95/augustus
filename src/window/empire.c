@@ -2626,7 +2626,7 @@ static void resource_picker_selected(grid_picker *picker)
     if (picker->selected_index < 0 || picker->selected_index >= clear_selection_index) {
         window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE);
     } else {
-        window_empire_sidebar_sort_set_selected_filter_resource(potential_resources->items[picker->selected_index]);
+        window_empire_sidebar_sort_set_selected_filter_resource(potential_resources->items[(int) picker->selected_index]);
     }
 
     sync_trade_filters_from_controls();
