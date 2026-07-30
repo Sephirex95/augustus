@@ -3,6 +3,7 @@
 #include "empire/city.h"
 #include "empire/trade_prices.h"
 #include "empire/trade_route.h"
+#include "core/config.h"
 #include "game/resource.h"
 #include "graphics/button.h"
 #include "graphics/graphics.h"
@@ -75,6 +76,83 @@ typedef struct {
 static arrow_button_info sorting_arrow_button;
 static int sorting_arrow_focused = 0;
 
+static filter_method filters_from_config(void)
+{
+    filter_method filters = FILTER_NONE;
+
+    switch (config_get(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_ROUTE_TYPE)) {
+        case 1:
+            filters |= FILTER_BY_LAND;
+            break;
+        case 2:
+            filters |= FILTER_BY_SEA;
+            break;
+    }
+
+    switch (config_get(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_ROUTE_OPEN)) {
+        case 1:
+            filters |= FILTER_BY_OPEN;
+            break;
+        case 2:
+            filters |= FILTER_BY_CLOSED;
+            break;
+    }
+
+    switch (config_get(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_RESOURCE_TYPE)) {
+        case 1:
+            filters |= FILTER_BY_RESOURCE;
+            break;
+        case 2:
+            filters |= FILTER_BY_RESOURCE_BUY;
+            break;
+        case 3:
+            filters |= FILTER_BY_RESOURCE_SELL;
+            break;
+    }
+
+    return filters;
+}
+
+static void save_filters_to_config(filter_method filters)
+{
+    int route_type = 0;
+    int route_open = 0;
+    int resource_type = 0;
+
+    if (filters & FILTER_BY_LAND) {
+        route_type = 1;
+    } else if (filters & FILTER_BY_SEA) {
+        route_type = 2;
+    }
+
+    if (filters & FILTER_BY_OPEN) {
+        route_open = 1;
+    } else if (filters & FILTER_BY_CLOSED) {
+        route_open = 2;
+    }
+
+    if (filters & FILTER_BY_RESOURCE_BUY) {
+        resource_type = 2;
+    } else if (filters & FILTER_BY_RESOURCE_SELL) {
+        resource_type = 3;
+    } else if (filters & FILTER_BY_RESOURCE) {
+        resource_type = 1;
+    }
+
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_ROUTE_TYPE, route_type);
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_ROUTE_OPEN, route_open);
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_RESOURCE_TYPE, resource_type);
+}
+
+static resource_type filter_resource_from_config(void)
+{
+    int resource = config_get(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_RESOURCE);
+    if (resource < RESOURCE_NONE || resource >= RESOURCE_MAX) {
+        return RESOURCE_NONE;
+    }
+    return resource;
+}
+
 
 int window_empire_sidebar_sort_count_trade_resources(const empire_city *city, int is_sell)
 {
@@ -121,11 +199,12 @@ static int sorting_button_count = 0;
 // Initialization
 void window_empire_sidebar_sort_init(void)
 {
-    sort_data.current_sorting = SORT_BY_NAME;
-    sort_data.current_filtering = FILTER_NONE;
-    sort_data.selected_filter_resource = RESOURCE_NONE;
+    int sorting = config_get(CONFIG_UI_EMPIRE_SIDEBAR_SORT_METHOD);
+    sort_data.current_sorting = sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY ? sorting : SORT_BY_NAME;
+    sort_data.current_filtering = filters_from_config();
+    sort_data.selected_filter_resource = filter_resource_from_config();
     sort_data.hovered_sorting_button = NO_POSITION;
-    sort_data.sorting_reversed = 0;
+    sort_data.sorting_reversed = config_get(CONFIG_UI_EMPIRE_SIDEBAR_SORT_REVERSED) ? 1 : 0;
     sort_data.expanded_main = -1;
     sorting_button_count = 0;
 }
@@ -139,11 +218,31 @@ int window_empire_sidebar_sort_get_sorting_reversed(void) { return sort_data.sor
 int window_empire_sidebar_sort_get_expanded_main(void) { return sort_data.expanded_main; }
 
 // Setter functions
-void window_empire_sidebar_sort_set_current_sorting(int sorting) { sort_data.current_sorting = sorting; }
-void window_empire_sidebar_sort_set_current_filtering(int filtering) { sort_data.current_filtering = filtering; }
-void window_empire_sidebar_sort_set_selected_filter_resource(resource_type resource) { sort_data.selected_filter_resource = resource; }
+void window_empire_sidebar_sort_set_current_sorting(int sorting)
+{
+    sort_data.current_sorting = sorting;
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_SORT_METHOD, sorting);
+}
+
+void window_empire_sidebar_sort_set_current_filtering(int filtering)
+{
+    sort_data.current_filtering = filtering;
+    save_filters_to_config(filtering);
+}
+
+void window_empire_sidebar_sort_set_selected_filter_resource(resource_type resource)
+{
+    sort_data.selected_filter_resource = resource;
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_FILTER_RESOURCE, resource);
+}
+
 void window_empire_sidebar_sort_set_hovered_sorting_button(int button) { sort_data.hovered_sorting_button = button; }
-void window_empire_sidebar_sort_set_sorting_reversed(int reversed) { sort_data.sorting_reversed = reversed; }
+void window_empire_sidebar_sort_set_sorting_reversed(int reversed)
+{
+    sort_data.sorting_reversed = reversed;
+    config_set(CONFIG_UI_EMPIRE_SIDEBAR_SORT_REVERSED, reversed);
+}
+
 void window_empire_sidebar_sort_set_expanded_main(int expanded) { sort_data.expanded_main = expanded; }
 
 // Reset functions

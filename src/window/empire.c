@@ -636,8 +636,7 @@ static void setup_sidebar(void)
 
 {
     if (!data.sidebar.initialised) {
-        window_empire_sidebar_sort_set_current_filtering(FILTER_NONE); // default to no filtering
-        window_empire_sidebar_sort_set_selected_filter_resource(RESOURCE_NONE); // no resource selected
+        window_empire_sidebar_sort_init();
     }
     data.sidebar.dragging = 0; // not dragging initially
     data.sidebar.dragging_width = 0;
