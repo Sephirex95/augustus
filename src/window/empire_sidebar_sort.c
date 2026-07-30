@@ -20,25 +20,12 @@
 #define NO_POSITION ((unsigned int) -1)
 #define WIDTH_BORDER 16
 
-/* Next time start here:
-INVESTIGATE: Why does tradebuysell dropdown swallow mouse when expanded but sorting dd doesnt?
-when sorting dd is expanded, you can still click other buttons. Unacceptable REEEEEEE!!!!!!!!!!!!!!!!
-
-Fix the hover logic directly in complex_button.c code - if not hovered, return original properties.
-styling - add complex_button_style for no border no fill - test for sort and filter resets.
-grid box - measure the height of the grid_box and screen to determine how many items to show.
-consider adjusting the height of items to fill the gridbox. Dont want the empty space below entries.
-* Dropdown button for sorting:
-    * if sorting selected, leave only selected text + icon before, no 'Sort by' text
-* In filter section:
-    * Resource picker - dropdown as placeholder,
-    *       > think about a grid selector for the future - could be used with other things, like roadblock styles
-* Trade history button and year dropdown go under the grid_box.
-* if time allows, move out everything relating to the sidebar to this file, rename it to empire_sidebar.c
+/* next Refactor notes:
+* move out everything relating to the sidebar to this file, rename it to empire_sidebar.c
 * complex_button.c should be split into separate files for cycling and checkbox buttons
 * then all of them including dropdown_button should be moved to widget folder for clarity and simplicty
+* simplify the sort/filter getting/setting/reading/saving logic - too many functions. should be one for read one for write.
 */
-
 
 // Forward declaration of sidebar_city_entry structure
 typedef struct {
@@ -75,6 +62,10 @@ typedef struct {
 
 static arrow_button_info sorting_arrow_button;
 static int sorting_arrow_focused = 0;
+
+// Sorting buttons state
+static sorting_button sorting_buttons[MAX_SORTING_BUTTONS];
+static int sorting_button_count = 0;
 
 static filter_method filters_from_config(void)
 {
@@ -188,13 +179,6 @@ static int get_city_trade_quota_fill(const empire_city *city, int is_sell)
     if (total_max == 0) return 0;
     return (100 * total_now) / total_max;
 }
-
-// Sorting buttons state
-static sorting_button sorting_buttons[MAX_SORTING_BUTTONS];
-static int sorting_button_count = 0;
-
-// External helper functions that need to be provided by the empire window
-
 
 // Initialization
 void window_empire_sidebar_sort_init(void)
