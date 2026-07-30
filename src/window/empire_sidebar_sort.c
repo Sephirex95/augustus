@@ -1,9 +1,10 @@
 #include "empire_sidebar_sort.h"
 
+#include "core/config.h"
+#include "core/string.h"
 #include "empire/city.h"
 #include "empire/trade_prices.h"
 #include "empire/trade_route.h"
-#include "core/config.h"
 #include "game/resource.h"
 #include "graphics/button.h"
 #include "graphics/graphics.h"
@@ -11,7 +12,6 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/text.h"
-#include "core/string.h"
 #include "input/mouse.h"
 #include "translation/translation.h"
 
