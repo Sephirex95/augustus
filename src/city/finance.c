@@ -23,7 +23,7 @@
 #include "map/terrain.h"
 
 #define MAX_HOUSE_LEVELS 20
-
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static building_levy_for_type building_levies[] = {
     {BUILDING_FORT_ARCHERS, FORT_LEVY_MONTHLY},
@@ -35,27 +35,27 @@ static building_levy_for_type building_levies[] = {
     {BUILDING_SMALL_TEMPLE_NEPTUNE, SMALL_TEMPLE_LEVY_MONTHLY },
     {BUILDING_SMALL_TEMPLE_MERCURY, SMALL_TEMPLE_LEVY_MONTHLY },
     {BUILDING_SMALL_TEMPLE_MARS, SMALL_TEMPLE_LEVY_MONTHLY },
-    {BUILDING_SMALL_TEMPLE_VENUS, SMALL_TEMPLE_LEVY_MONTHLY },
+    {BUILDING_SMALL_TEMPLE_VENUS, SMALL_TEMPLE_LEVY_MONTHLY },//10
     {BUILDING_LARGE_TEMPLE_CERES, LARGE_TEMPLE_LEVY_MONTHLY },
     {BUILDING_LARGE_TEMPLE_NEPTUNE, LARGE_TEMPLE_LEVY_MONTHLY },
     {BUILDING_LARGE_TEMPLE_MERCURY, LARGE_TEMPLE_LEVY_MONTHLY },
-    {BUILDING_LARGE_TEMPLE_MARS, LARGE_TEMPLE_LEVY_MONTHLY }, // 10
+    {BUILDING_LARGE_TEMPLE_MARS, LARGE_TEMPLE_LEVY_MONTHLY },
     {BUILDING_LARGE_TEMPLE_VENUS, LARGE_TEMPLE_LEVY_MONTHLY },
     {BUILDING_ORACLE, SMALL_TEMPLE_LEVY_MONTHLY },
     {BUILDING_TOWER, TOWER_LEVY_MONTHLY },
     {BUILDING_LIGHTHOUSE, LIGHTHOUSE_LEVY_MONTHLY },
     {BUILDING_GRAND_TEMPLE_CERES, GRAND_TEMPLE_LEVY_MONTHLY},
-    {BUILDING_GRAND_TEMPLE_NEPTUNE, GRAND_TEMPLE_LEVY_MONTHLY},
+    {BUILDING_GRAND_TEMPLE_NEPTUNE, GRAND_TEMPLE_LEVY_MONTHLY},//20
     {BUILDING_GRAND_TEMPLE_MERCURY, GRAND_TEMPLE_LEVY_MONTHLY},
     {BUILDING_GRAND_TEMPLE_MARS, GRAND_TEMPLE_LEVY_MONTHLY},
     {BUILDING_GRAND_TEMPLE_VENUS, GRAND_TEMPLE_LEVY_MONTHLY},
-    {BUILDING_PANTHEON, PANTHEON_LEVY_MONTHLY}, // 20
+    {BUILDING_PANTHEON, PANTHEON_LEVY_MONTHLY},
     {BUILDING_COLOSSEUM, COLOSSEUM_LEVY_MONTHLY},
     {BUILDING_HIPPODROME, HIPPODROME_LEVY_MONTHLY},
     {BUILDING_SMALL_MAUSOLEUM, SMALL_MAUSOLEUM_LEVY_MONTHLY},
     {BUILDING_LARGE_MAUSOLEUM, SMALL_MAUSOLEUM_LEVY_MONTHLY},
     {BUILDING_NYMPHAEUM, SMALL_TEMPLE_LEVY_MONTHLY},
-    {BUILDING_CARAVANSERAI, CARAVANSERAI_LEVY_MONTHLY },
+    {BUILDING_CARAVANSERAI, CARAVANSERAI_LEVY_MONTHLY },//30
 };
 
 static tourism_for_type tourism_modifiers[] = {
@@ -371,7 +371,7 @@ static void pay_monthly_salary(void)
 static void pay_monthly_building_levies(void)
 {
     int levies = 0;
-    for (int i = 0; i < BUILDINGS_WITH_LEVIES; i++) {
+    for (int i = 0; i < (int) ARRAY_SIZE(building_levies); i++) {
         building_type type = building_levies[i].type;
         for (building *b = building_first_of_type(type); b; b = b->next_of_type) {
             b->monthly_levy = building_levies[i].amount;
@@ -401,7 +401,7 @@ static void pay_monthly_building_levies(void)
 
 static void activate_monthly_tourism(void)
 {
-    for (int i = 0; i < BUILDINGS_WITH_TOURISM; i++) {
+    for (int i = 0; i < (int) ARRAY_SIZE(tourism_modifiers); i++) {
         building_type type = tourism_modifiers[i].type;
         for (building *b = building_first_of_type(type); b; b = b->next_of_type) {
             if (b->state != BUILDING_STATE_IN_USE || !b->num_workers) {

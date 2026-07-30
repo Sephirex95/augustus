@@ -300,21 +300,21 @@ int window_empire_sidebar_sort_city_matches_current_filter(const empire_city *ci
                 }
             }
         } else {
-        for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
-            if (sort_data.selected_filter_resource != r) {
-                continue;
+            for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
+                if (sort_data.selected_filter_resource != r) {
+                    continue;
+                }
+                if ((filters & FILTER_BY_RESOURCE) && (city->buys_resource[r] || city->sells_resource[r])) {
+                    matches_resource = 1;
+                }
+                if ((filters & FILTER_BY_RESOURCE_SELL) && city->sells_resource[r]) {
+                    matches_resource = 1;
+                }
+                if ((filters & FILTER_BY_RESOURCE_BUY) && city->buys_resource[r]) {
+                    matches_resource = 1;
+                }
+                break;
             }
-            if ((filters & FILTER_BY_RESOURCE) && (city->buys_resource[r] || city->sells_resource[r])) {
-                matches_resource = 1;
-            }
-            if ((filters & FILTER_BY_RESOURCE_SELL) && city->sells_resource[r]) {
-                matches_resource = 1;
-            }
-            if ((filters & FILTER_BY_RESOURCE_BUY) && city->buys_resource[r]) {
-                matches_resource = 1;
-            }
-            break;
-        }
         }
 
         if (!matches_resource) {
