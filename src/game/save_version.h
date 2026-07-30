@@ -106,7 +106,7 @@ typedef enum {
     SAVE_GAME_LAST_NO_HIGHWAY_STATION = 0xb2,
     SAVE_GAME_LAST_NO_TRIUMPHAL_ARCH_MONUMENT = 0xb3,
     SAVE_GAME_LAST_NO_FORT_ORIENTATION = 0xb4,
-    SAVE_GAME_LAST_NO_LEDGER = 0xb5,
+    SAVE_GAME_LAST_NO_LEDGER = 0xb5, // only existed in test versions, never on master. 
     SAVE_GAME_LAST_NO_FINANCE_OVERVIEW_HISTORY = 0xb6,
 } savegame_version_t;
 
