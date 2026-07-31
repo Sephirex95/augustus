@@ -52,12 +52,9 @@ static void check_camera_boundaries(void)
         city_view_set_scale(max_scale);
         return;
     }
-    // Allow scrolling 10% of the map size beyond the diamond corners.
-    // The map is a square rendered as a diamond: each diagonal step is 1 x-view tile and 2 y-view rows.
-    // So the y boundary uses allowance * 2 to correctly extend the corners rather than the sides.
     int allowance = map_grid_width() / 10; // extra 10%
     if (!config_get(CONFIG_UI_SCROLL_CAMERA_UNLOCKED)) {
-        allowance = 0;
+        allowance = 0; // disable allowance, use original bounds calculations
     }
     int grid_height = map_grid_height() * 2;
     int x_min = (VIEW_X_MAX - map_grid_width()) / 2;
