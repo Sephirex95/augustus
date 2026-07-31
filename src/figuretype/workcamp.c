@@ -65,6 +65,9 @@ static int take_resource_from_warehouse(figure *f, int warehouse_id)
     int amount_taken = building_warehouse_try_remove_resource(warehouse, resource, num_loads);
     if (amount_taken <= 0) {
         return 0;
+    } else {
+        int units_taken = amount_taken * RESOURCE_ONE_LOAD;
+        city_finance_trade_ledger_add_consumed(resource, units_taken);
     }
 
     // create slave workers
