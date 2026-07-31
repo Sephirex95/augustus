@@ -62,7 +62,7 @@ static void check_camera_boundaries(void)
     int grid_height = map_grid_height() * 2;
     int x_min = (VIEW_X_MAX - map_grid_width()) / 2;
     int y_min = (VIEW_Y_MAX - grid_height) / 2;
-    if (data.viewport.width_tiles >= map_grid_width() + allowance) {
+    if (data.viewport.width_tiles >= map_grid_width() + allowance + 4) {
         data.camera.tile.x = x_min - 1 - (data.viewport.width_tiles - map_grid_width()) / 2;
         data.camera.pixel.x = TILE_WIDTH_PIXELS -
             ((calc_adjust_with_percentage(data.viewport.width_pixels + 2, data.scale) / 2) % TILE_WIDTH_PIXELS);
@@ -89,8 +89,8 @@ static void check_camera_boundaries(void)
     } else {
         if (data.camera.tile.y < y_min - allowance * 2 - 2) {
             data.camera.tile.y = y_min - allowance * 2 - 1;
-            data.camera.pixel.y = 0 - ((calc_adjust_with_percentage(data.viewport.height_pixels, data.scale) + TILE_HEIGHT_PIXELS) / 2) %
-                TILE_HEIGHT_PIXELS;
+            int y_zoom_adjust = ((calc_adjust_with_percentage(data.viewport.height_pixels, data.scale) + TILE_HEIGHT_PIXELS) / 2) % TILE_HEIGHT_PIXELS;
+            data.camera.pixel.y = 0 - (allowance ? y_zoom_adjust : 0);
         }
         int max_y_tile = (VIEW_Y_MAX - y_min - data.viewport.height_tiles + allowance * 2) & ~1;
         int max_y_pixel = TILE_HEIGHT_PIXELS -
