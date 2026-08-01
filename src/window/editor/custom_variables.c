@@ -229,11 +229,11 @@ static void update_item_buttons_positions(void)
     if (grid_box_has_scrollbar(&variable_buttons)) {
         item_buttons[4].x -= 2 * BLOCK_SIZE;
         for (int i = 0; i < MAX_VISIBLE_GRID_ITEMS; i++) {
-            color_dropdown_options[i][0].x = 568 - 2 * BLOCK_SIZE;
+            color_dropdowns[i].buttons[0].x = 568 - 2 * BLOCK_SIZE;
         }
     } else {
         for (int i = 0; i < MAX_VISIBLE_GRID_ITEMS; i++) {
-            color_dropdown_options[i][0].x = 568;
+            color_dropdowns[i].buttons[0].x = 568;
         }
     }
 
@@ -310,11 +310,11 @@ static void update_dd_anchor(int variable_id, int grid_box_position)
     int pos = grid_box_position;
     int color_group = scenario_custom_variable_get_color_group(id);
     color_dropdowns[pos].selected_index = scenario_custom_variable_get_color_group(id); // selcted index color
-    color_dropdown_options[pos][0].parameters[0] = id; //set the variable id as parameter for the color dropdown
-    color_dropdown_options[pos][0].color_mask = scenario_custom_variable_get_color(id); //set the selected colour option
-    color_dropdown_options[pos][0].is_hidden = 0; //unhide the associated color dropdown
-    color_dropdown_options[pos][0].sequence = &color_fragments[color_group]; //select text
-    color_dropdown_options[pos][0].font = (color_group > 8) ? FONT_SMALL_PLAIN : FONT_NORMAL_BLACK; //match font
+    color_dropdowns[pos].buttons[0].parameters[0] = id; //set the variable id as parameter for the color dropdown
+    color_dropdowns[pos].buttons[0].color_mask = scenario_custom_variable_get_color(id); //set the selected colour option
+    color_dropdowns[pos].buttons[0].is_hidden = 0; //unhide the associated color dropdown
+    color_dropdowns[pos].buttons[0].sequence = &color_fragments[color_group]; //select text
+    color_dropdowns[pos].buttons[0].font = (color_group > 8) ? FONT_SMALL_PLAIN : FONT_NORMAL_BLACK; //match font
 }
 
 static void draw_variable_item(const grid_box_item *item)
