@@ -142,10 +142,12 @@ static void init_color_dropdown(void)
             color_dropdown_options[dd_anchors][j].left_click_handler = dropdown_button_default_option_click;
             color_dropdown_options[dd_anchors][j].user_data = &color_dropdowns[dd_anchors]; //backref to parent dropdown
             color_dropdown_options[dd_anchors][j].parameters[0] = dd_anchors;
+            color_dropdown_options[dd_anchors][j].style = COMPLEX_BUTTON_STYLE_CUSTOM;
             // draw_variable_item will reestablish the correct variable id with scroll offset
             color_dropdown_options[dd_anchors][j].color_mask = complex_button_basic_colors(j - 1);
+            color_dropdown_options[dd_anchors][j].font = FONT_NORMAL_BLACK;
             if (j > 8) {
-                color_dropdown_options[dd_anchors][j].font = FONT_SMALL_PLAIN; //white font for dark colors
+                color_dropdown_options[dd_anchors][j].font = FONT_NORMAL_WHITE; //white font for dark colors
             }
         }
         dropdown_button_init(&color_dropdowns[dd_anchors], color_dropdown_options[dd_anchors], COLOR_BUTTONS_COUNT, COLOR_DROPDOWN_WIDTH, 0, 2, 4);
@@ -229,11 +231,15 @@ static void update_item_buttons_positions(void)
     if (grid_box_has_scrollbar(&variable_buttons)) {
         item_buttons[4].x -= 2 * BLOCK_SIZE;
         for (int i = 0; i < MAX_VISIBLE_GRID_ITEMS; i++) {
-            color_dropdowns[i].buttons[0].x = 568 - 2 * BLOCK_SIZE;
+            for (int j = 0; j < COLOR_BUTTONS_COUNT; j++) {
+                color_dropdowns[i].buttons[j].x = 568 - 2 * BLOCK_SIZE;
+            }
         }
     } else {
         for (int i = 0; i < MAX_VISIBLE_GRID_ITEMS; i++) {
-            color_dropdowns[i].buttons[0].x = 568;
+            for (int j = 0; j < COLOR_BUTTONS_COUNT; j++) {
+                color_dropdowns[i].buttons[j].x = 568;
+            }
         }
     }
 

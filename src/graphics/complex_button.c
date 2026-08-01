@@ -281,12 +281,17 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
     }
 }
 
-static void draw_default_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
+static void draw_default_style(const complex_button *button, font_t base_font,
+    color_t font_primary, color_t font_secondary, color_t color_mask)
 {
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
     int height_blocks = button->height / BLOCK_SIZE;
     switch (button->style) {
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
+            unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
+                height_blocks + 1, color_mask);
+            break;
         case COMPLEX_BUTTON_STYLE_NO_FILL:
         case COMPLEX_BUTTON_STYLE_RAW:
             break; // no bg fill
@@ -358,7 +363,7 @@ void complex_button_draw(const complex_button *button)
     }
     if (button->font || button->color_mask || button->style == COMPLEX_BUTTON_STYLE_CUSTOM) {
         // bypasses the default selection of colors/fonts
-        draw_default_style(button, button->font, button->font_color, COLOR_MASK_NONE);
+        draw_default_style(button, button->font, button->font_color, COLOR_MASK_NONE, button->color_mask);
         return;
     }
     int is_large = button->height > 32 && !button->dont_enlarge_font;
@@ -373,7 +378,7 @@ void complex_button_draw(const complex_button *button)
             draw_main_menu_style(button, base_font, font_primary, font_secondary);
             break;
         default: // all other variants housed in the default style draw function 
-            draw_default_style(button, base_font, font_primary, font_secondary);
+            draw_default_style(button, base_font, font_primary, font_secondary, button->color_mask);
     }
 }
 
