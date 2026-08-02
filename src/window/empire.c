@@ -61,6 +61,7 @@
 #define LOW_RES_SIDEBAR_ENTRY_HEIGHT 110
 #define RESOURCE_ICON_WIDTH 26 //dimensions the resource icon in px, informative only
 #define RESOURCE_ICON_HEIGHT 26
+#define CITY_BADGE_MARGIN 14 // margin between edges of the badge and start/end of the city name
 
 #define VERTICAL_TILE_WIDTH 40 //dimensions the vertical background tile in px, informative only
 #define VERTICAL_TILE_HEIGHT 72
@@ -309,6 +310,8 @@ static void trade_ledger_hover(complex_button *button);
 //sidebar-related arrays and variables
 static scrollbar_type sidebar_scrollbar;
 static sidebar_city_entry sidebar_cities[MAX_SIDEBAR_CITIES];
+static complex_button sidebar_city_badges[MAX_SIDEBAR_CITIES];
+static lang_fragment sidebar_city_names[MAX_SIDEBAR_CITIES];
 static int sidebar_city_count = 0;
 static grid_box_type sidebar_grid_box;
 static int trade_history_years_stored;
@@ -1486,6 +1489,65 @@ void window_empire_draw_resource_shields(int trade_max, int x_offset, int y_offs
     int gold_shield = assets_lookup_image_id(ASSET_GOLD_SHIELD);
     for (int i = 0; i < num_gold_shields; i++) {
         image_draw(gold_shield, top_left_x + i * 3, top_left_y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+}
+
+void set_city_badge_complex_button(const empire_city *city, complex_button *button, int available_width)
+{
+    if (!city || !button) {
+        return;
+    }
+    int wont_fit = 0;
+    const uint8_t *name = empire_city_get_name(city);
+    int name_width = text_get_width(name, FONT_LARGE_BLACK);
+    image *badge = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
+    int standard_width = badge->width;
+    int badge_width = standard_width;
+    int additional_segments = 0;
+    image *repeat_segment = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
+    if (name_width > badge_width - 2 * CITY_BADGE_MARGIN) {
+        while (name_width > badge_width - 2 * CITY_BADGE_MARGIN) {
+            if (badge_width + repeat_segment->width > available_width) {
+                wont_fit = 1;
+                break;
+            }
+            badge_width += repeat_segment->width; // increment badge width by repeat segment width until easy fit
+            additional_segments++;
+        }
+    }
+    button->style = COMPLEX_BUTTON_STYLE_RAW;
+    button->width = badge_width;
+    button->height = badge->height;
+    button->font = FONT_LARGE_BLACK;
+    button->parameters[0] = city->route_id;
+    button->parameters[1] = additional_segments; // stretched badge
+    button->parameters[2] = wont_fit;
+    button->is_disabled = 1; // no interactions except for tooltip
+    sidebar_city_names[city->route_id].text = name;
+    sidebar_city_names[city->route_id].type = LANG_FRAG_TEXT;
+    button->sequence = &sidebar_city_names[city->route_id];
+    button->sequence_size = 1;
+    //if wontfit is 1, button content needs to be elipsized. Best leave complex button handling to do it.
+}
+
+void draw_city_badge(int route_id)
+{
+    // we still draw the complex_button, since that function will handle text and elipsizing
+    // this helper just draws a custom background badge
+    complex_button *badge_button = &sidebar_city_badges[route_id];
+    int repeats = badge_button->parameters[1];
+    if (repeats) { // stretched badge
+        image *l_end = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_LEFT_END);
+        image *repeat_seg = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
+        image *rest = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REST);
+        image_draw(l_end, badge_button->x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+        for (int i = 0; i < repeats; i++) {
+            image_draw(repeat_seg, badge_button->x + l_end->width + i * repeat_seg->width, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+        }
+        image_draw(rest, badge_button->x + l_end->width + repeats * repeat_seg->width, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+    } else {
+        image *badge = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
+        image_draw(badge, badge_button->x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
     }
 }
 

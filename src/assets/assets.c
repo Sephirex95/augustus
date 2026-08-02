@@ -124,6 +124,10 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_EXPORT] = assets_get_image_id("UI", "Trade_Ledger_Export");
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_IMPORT] = assets_get_image_id("UI", "Trade_Ledger_Import");
     data.asset_lookup[ASSET_UI_RESOURCE_PICKER] = assets_get_image_id("UI", "resource_picker");
+    data.asset_lookup[ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT] = assets_get_image_id("UI", "Empire_sidebar_city_badge_repeat_segment");
+    data.asset_lookup[ASSET_UI_EMPIRE_CITY_BADGE_LEFT_END] = assets_get_image_id("UI", "Empire_sidebar_city_badge_corner");
+    data.asset_lookup[ASSET_UI_EMPIRE_CITY_BADGE_REST] = assets_get_image_id("UI", "Empire_sidebar_city_badge_rest");
+    data.asset_lookup[ASSET_UI_EMPIRE_CITY_BADGE_FULL] = assets_get_image_id("UI", "Empire_sidebar_city_badge");
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
     data.font_lookup[ASSET_FONT_SQ_BRACKET_RIGHT] = assets_get_image_id("UI", "rightbracket_white_l");
