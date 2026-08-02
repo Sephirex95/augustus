@@ -1526,7 +1526,9 @@ static int set_city_badge_complex_button(const empire_city *city, complex_button
     // if (text_width < 1) {
     //     text_width = 1;
     // }
-
+    // delete the above and check what happens with really long names - currently it looks like the longest
+    // name is still easy fit without ellipsizing, within minimum sidebar bounds.
+    // sidebar drawing does fck up when you hide sidebar though - check that
     button->style = COMPLEX_BUTTON_STYLE_RAW;
     button->width = badge_width;
     button->height = badge->height;
