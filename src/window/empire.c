@@ -1493,64 +1493,94 @@ void window_empire_draw_resource_shields(int trade_max, int x_offset, int y_offs
     }
 }
 
-int set_city_badge_complex_button(const empire_city *city, complex_button *button, int available_width)
+static int set_city_badge_complex_button(const empire_city *city, complex_button *button,
+    lang_fragment *name_fragment, int available_width)
 {
-    if (!city || !button) {
+    if (!city || !button || !name_fragment || available_width <= 0) {
         return 0;
     }
     int wont_fit = 0;
     const uint8_t *name = empire_city_get_name(city);
     int name_width = text_get_width(name, FONT_LARGE_BLACK);
-    image *badge = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
+    int badge_image_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
+    const image *badge = assets_get_image(badge_image_id);
     int standard_width = badge->width;
-    int badge_width = standard_width;
+    int badge_width = standard_width < available_width ? standard_width : available_width;
     int additional_segments = 0;
-    image *repeat_segment = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
+    int repeat_segment_image_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
+    const image *repeat_segment = assets_get_image(repeat_segment_image_id);
+
     if (name_width > badge_width - 2 * CITY_BADGE_MARGIN) {
         while (name_width > badge_width - 2 * CITY_BADGE_MARGIN) {
             if (badge_width + repeat_segment->width > available_width) {
-                wont_fit = 1;
+                wont_fit = 1; // wont fit!
                 break;
             }
             badge_width += repeat_segment->width; // increment badge width by repeat segment width until easy fit
             additional_segments++;
         }
     }
+
+    int text_margin = badge_width > 2 * CITY_BADGE_MARGIN ? CITY_BADGE_MARGIN : 0;
+    int text_width = badge_width - 2 * text_margin;
+    // if (text_width < 1) {
+    //     text_width = 1;
+    // }
+
     button->style = COMPLEX_BUTTON_STYLE_RAW;
     button->width = badge_width;
     button->height = badge->height;
     button->font = FONT_LARGE_BLACK;
     button->parameters[0] = city->route_id;
     button->parameters[1] = additional_segments; // stretched badge
-    button->parameters[2] = wont_fit;
+    button->parameters[2] = badge_width;
+    button->parameters[3] = text_margin;
+    button->is_hidden = 0;
     button->is_disabled = 1; // no interactions except for tooltip
-    sidebar_city_names[city->route_id].text = name;
-    sidebar_city_names[city->route_id].type = LANG_FRAG_TEXT;
-    button->sequence = &sidebar_city_names[city->route_id];
+    button->sequence_position = SEQUENCE_POSITION_CENTER_LEFT;
+    if (name_width > text_width) {
+        button->tooltip_c.type = TOOLTIP_BUTTON;
+        button->tooltip_c.precomposed_text = name;
+    } else {
+        button->tooltip_c.type = TOOLTIP_NONE;
+        button->tooltip_c.precomposed_text = 0;
+    }
+    name_fragment->text = name;
+    name_fragment->type = LANG_FRAG_TEXT;
+    button->sequence = name_fragment;
     button->sequence_size = 1;
-    //if wontfit is 1, button content needs to be elipsized. Best leave complex button handling to do it.
     return badge_width;
 }
 
-void draw_city_badge(int route_id)
+static void draw_city_badge(const complex_button *badge_button)
 {
     // we still draw the complex_button, since that function will handle text and elipsizing
     // this helper just draws a custom background badge
-    complex_button *badge_button = &sidebar_city_badges[route_id];
+    int badge_width = badge_button->parameters[2];
+    int text_margin = badge_button->parameters[3];
+    int badge_x = badge_button->x - text_margin;
     int repeats = badge_button->parameters[1];
+
+    graphics_set_clip_rectangle(badge_x, badge_button->y, badge_width, badge_button->height);
     if (repeats) { // stretched badge
-        image *l_end = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_LEFT_END);
-        image *repeat_seg = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
-        image *rest = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_REST);
-        image_draw(l_end, badge_button->x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+        int l_end_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_LEFT_END);
+        int repeat_seg_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_REPEAT_SEGMENT);
+        int rest_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_REST);
+        const image *l_end = assets_get_image(l_end_id);
+        const image *repeat_seg = assets_get_image(repeat_seg_id);
+        image_draw(l_end_id, badge_x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
         for (int i = 0; i < repeats; i++) {
-            image_draw(repeat_seg, badge_button->x + l_end->width + i * repeat_seg->width, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+            image_draw(repeat_seg_id, badge_x + l_end->width + i * repeat_seg->width, badge_button->y,
+                COLOR_MASK_NONE, SCALE_NONE);
         }
-        image_draw(rest, badge_button->x + l_end->width + repeats * repeat_seg->width, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(rest_id, badge_x + l_end->width + repeats * repeat_seg->width, badge_button->y,
+            COLOR_MASK_NONE, SCALE_NONE);
     } else {
-        image *badge = assets_get_image(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
-        image_draw(badge, badge_button->x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
+        int badge_image_id = assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_FULL);
+        image_draw(badge_image_id, badge_x, badge_button->y, COLOR_MASK_NONE, SCALE_NONE);
     }
+    graphics_reset_clip_rectangle();
+    complex_button_draw(badge_button);
 }
 
 void draw_open_trade_button(const empire_city *city, const open_trade_button_style *style, trade_icon_type icon_type)
@@ -1785,7 +1815,6 @@ static void draw_sidebar_city_item(const grid_box_item *item)
 {
     sidebar_city_entry *entry = &sidebar_cities[item->index];
     empire_city *city = empire_city_get(entry->city_id);
-    const uint8_t *name = empire_city_get_name(city);
     int was_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
     int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) - SIDEBAR_MARGIN_HORIZONTAL * 2;
 
@@ -1814,42 +1843,36 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     if (entry->city_id == data.selected_city) {
         button_border_draw(item->x, item->y, item_usable_width, item_usable_height, 1); // margin/2 to not be exactly the same size as the item
     }
-    sidebar_city_badges[item->index].x = x_offset + CITY_BADGE_OUTER_MARGIN;
-    sidebar_city_badges[item->index].y = y_offset + CITY_BADGE_OUTER_MARGIN;
-
-    int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
-    int badge_width = image_get(badge_id)->width;
     int image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1 - city->is_sea_trade;
-    int available_width = item_usable_width - data.sidebar.margin_right;
-    int badge_and_icon_width = badge_width + 2 + 34;
 
     open_trade_button_style open_trade_style = get_open_trade_button_style(item->x, y_offset, TRADE_STYLE_SIDEBAR);
     int draw_icon_on_top = !open_trade_button_icon_fits(city, &open_trade_style, (trade_icon_type) (city->is_sea_trade));
+    int draw_trade_route_icon = was_city_open || draw_icon_on_top;
+    int badge_x = x_offset + CITY_BADGE_OUTER_MARGIN;
+    int badge_y = y_offset + CITY_BADGE_OUTER_MARGIN;
+    int badge_available_width = item_usable_width - 2 * CITY_BADGE_OUTER_MARGIN;
+    int icon_gap = BLOCK_SIZE;
+    const image *trade_route_icon = image_get(image_id);
+    int icon_reserve = icon_gap + trade_route_icon->width;
+    int standard_badge_width = assets_get_image(
+        assets_lookup_image_id(ASSET_UI_EMPIRE_CITY_BADGE_FULL))->width;
+    if (draw_trade_route_icon && standard_badge_width + icon_reserve <= badge_available_width) {
+        badge_available_width -= icon_reserve;
+    }
 
-    if (badge_and_icon_width <= available_width) {
-        // Everything fits
-        image_draw(badge_id, x_offset + badge_margin, y_offset + badge_margin, COLOR_MASK_NONE, SCALE_NONE);
+    complex_button *badge_button = &sidebar_city_badges[item->index];
+    int badge_width = set_city_badge_complex_button(city, badge_button, &sidebar_city_names[item->index],
+        badge_available_width);
+    if (badge_width > 0) {
+        badge_button->x = badge_x + badge_button->parameters[3];
+        badge_button->y = badge_y;
+        draw_city_badge(badge_button);
 
-        text_draw_centered_ellipsized(name, x_offset + badge_margin + 8, y_offset + 9, 262 - 8, FONT_LARGE_BLACK, 0);
-        if (was_city_open || draw_icon_on_top) {
-            //if city is open, draw trade route icon to remind of type, same if it doesnt fit in the button
-            int trade_route_icon_offset = badge_width + BLOCK_SIZE;
-            if ((trade_route_icon_offset + badge_margin + 2 + 34) <= item_usable_width) {
-                image_draw(image_id, x_offset + trade_route_icon_offset + badge_margin, y_offset + 9 + 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
-            }
+        if (draw_trade_route_icon && badge_width + icon_reserve <= item_usable_width - 2 * CITY_BADGE_OUTER_MARGIN) {
+            int icon_x = badge_x + badge_width + icon_gap;
+            int icon_y = badge_y + (badge_button->height - trade_route_icon->height) / 2 + 2 * city->is_sea_trade;
+            image_draw(image_id, icon_x, icon_y, COLOR_MASK_NONE, SCALE_NONE);
         }
-
-    } else if (badge_width <= available_width) {
-        // Only badge fits, check if the icon fits inside it
-        image_draw(badge_id, x_offset + badge_margin, y_offset + badge_margin, COLOR_MASK_NONE, SCALE_NONE);
-        int city_name_end = text_draw_centered_ellipsized(name, x_offset + badge_margin + 8, y_offset + 9, 262 - 8, FONT_LARGE_BLACK, 0);
-        int icon_fits_in_badge = (city_name_end + badge_margin + 2 + 34) <= (x_offset + badge_margin + badge_width);
-        if (icon_fits_in_badge) {
-            image_draw(image_id, x_offset + badge_margin + city_name_end + BLOCK_SIZE + 2, y_offset + 9 + 2 * city->is_sea_trade, COLOR_MASK_NONE, SCALE_NONE);
-        }
-
-    } else { // Not enough room for badge + icon
-        text_draw_ellipsized(name, x_offset + badge_margin, y_offset + 9, 262, FONT_LARGE_BLACK, 0);
     }
     // Move y_offset down for trade info rows
     y_offset += 44 + content_offset;
@@ -2325,6 +2348,9 @@ static void draw_sidebar_grid_box(void)
         data.sidebar.height
     );
 
+    for (int i = 0; i < sidebar_city_count; i++) {
+        sidebar_city_badges[i].is_hidden = 1;
+    }
     grid_box_draw(&sidebar_grid_box);
     if (sidebar_is_visible()) {
         int x = data.sidebar.sort_section.x_min;
@@ -2808,6 +2834,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
         if (complex_button_handle_mouse_array(complex_buttons, m, CMPLX_BTN_COUNT)) {
             return;
         }
+        complex_button_handle_mouse_array(sidebar_city_badges, m, sidebar_city_count);
 
         grid_box_handle_input(&sidebar_grid_box, m, 1);
     }
@@ -2968,72 +2995,6 @@ static void get_tooltip_trade_route_type(tooltip_context *c)
     }
 }
 
-static int get_city_name_tooltip_sidebar(tooltip_context *c)
-{
-    const mouse *m = mouse_get();
-    if (!is_sidebar(m)) {
-        return 0;
-    }
-    if (data.hovered_object <= 0) {
-        return 0;
-    }
-    int hovered_object = data.hovered_object - 1; // data.hovered_object always is one more than the actual object id
-    if (!empire_object_get(hovered_object)) { // Ensure the object is valid
-        return 0;
-    }
-    if (empire_object_get(hovered_object)->type != EMPIRE_OBJECT_CITY) {
-        return 0;
-    }
-    int city_id = empire_city_get_for_object(hovered_object);
-    if (!city_id) {
-        return 0;
-    }
-    empire_city *city = empire_city_get(city_id);
-    if (!city || city->type != EMPIRE_CITY_TRADE) {
-        return 0;
-    }
-    const uint8_t *name = empire_city_get_name(city);
-    if (!name) {
-        return 0;
-    }
-    int box_width = 262 - 8;
-    uint8_t name_ellipsized[54]; // 50 max city name and +4 for ellipsize characters
-    string_copy(name, name_ellipsized, 54);
-    text_ellipsize(name_ellipsized, FONT_LARGE_BLACK, box_width);
-
-    int x_offset = 0;
-    int y_offset = 0;
-
-    // find coordinates of the current sidebar panel
-    for (int i = 0; i < sidebar_city_count; i++) {
-        sidebar_city_entry *entry = &sidebar_cities[i];
-        if (entry->empire_object_id == hovered_object) {
-            x_offset = entry->x;
-            y_offset = SIDEBAR_ENTRY_HEIGHT * (i - sidebar_grid_box.scrollbar.scroll_position)
-                + data.sidebar.y_min + data.sidebar.margin_top;
-        }
-    }
-
-    int badge_margin = 5;
-    int side_x_offset = x_offset + badge_margin + 8;
-    int side_y_offset = y_offset + 9;
-    int name_width = text_get_width(name_ellipsized, FONT_LARGE_BLACK);
-
-    int centered_offset = (box_width - text_get_width(name_ellipsized, FONT_LARGE_BLACK)) / 2;
-    if (centered_offset < 0) {
-        centered_offset = 0;
-    }
-
-    if (m->x >= side_x_offset + centered_offset && m->x <= side_x_offset + centered_offset + name_width &&
-        m->y >= side_y_offset && m->y <= side_y_offset + 26) {
-        c->type = TOOLTIP_BUTTON;
-        c->precomposed_text = name;
-        return 1;
-    }
-
-    return 0;
-}
-
 static int get_city_name_tooltip(tooltip_context *c)
 {
     int selected_object = empire_selected_object();
@@ -3100,7 +3061,7 @@ static void get_tooltip(tooltip_context *c)
         c->text_id = 60;
     } else if (get_city_name_tooltip(c)) {
         return;
-    } else if (get_city_name_tooltip_sidebar(c)) {
+    } else if (complex_button_handle_tooltip_array(sidebar_city_badges, c, sidebar_city_count)) {
         return;
     } else if (grid_picker_handle_tooltip(&resource_picker, c)) {
         return;
