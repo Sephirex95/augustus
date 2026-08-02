@@ -669,6 +669,7 @@ static void setup_sidebar(void)
 static void refresh_header_and_footer_buttons(void)
 {
     data.sidebar.trade_year = dropdown_buttons[DD_SET_DATE].selected_index - 1; // 0 index is anchor, so -1
+    window_empire_sidebar_sort_set_trade_year(data.sidebar.trade_year); // update the year in the sorting module
     int sorting = window_empire_sidebar_sort_get_current_sorting();
     if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
         dropdown_buttons[DD_TRADE_SORT].selected_index = sorting + 1;
@@ -740,7 +741,11 @@ static void refresh_header_and_footer_buttons(void)
     dropdown_button_update_dimensions(date_dd_x, date_dd_y, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
     if (!trade_history_years_stored) {
         dropdown_buttons[DD_SET_DATE].buttons[0].is_disabled = 1; // disable anchor button if no history
+        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.translation_key = TR_UI_LEDGER_ONLY_CURRENT_YEAR;
+        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.type = TOOLTIP_BUTTON;
     } else {
+        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.type = TOOLTIP_NONE;
+        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.translation_key = 0;
         for (int i = 0; i < trade_history_years_stored; i++) {
             dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_hidden = 0;
             dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_disabled = 0; // enable all years that have data
@@ -990,11 +995,12 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
 {
     int is_main_bar = (variant == TRADE_STYLE_MAIN_BAR);
     int font_space_width = font_definition_for(FONT_NORMAL_GREEN)->space_width;
+    int was_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
     // === Initial struct ===
     trade_row_style style = {
-        .x_offset_text = is_main_bar ? (city->is_open ? (is_sell ? 0 : 0) : 0)
+        .x_offset_text = is_main_bar ? (was_city_open ? (is_sell ? 0 : 0) : 0)
         /*sidebar*/ : (10),
-        .y_offset_text = is_main_bar ? (city->is_open ? (is_sell ? 40 : 71) : 42)
+        .y_offset_text = is_main_bar ? (was_city_open ? (is_sell ? 40 : 71) : 42)
         //open compact (sell) = 40 : open non-compact (buy) = 71 closed (both compact & non-compact) = 42
         /*sidebar*/ : (6 /*26 icon height, 4 is shields, 2 is gap*/),
         .row_width = max_draw_width,
@@ -1011,10 +1017,10 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
 
     int is_compact = is_main_bar
         ? (is_sell ? compact_sells : compact_buys)
-        : (city->is_open ? (is_sell ? compact_sells : compact_buys) : any_compact);
+        : (was_city_open ? (is_sell ? compact_sells : compact_buys) : any_compact);
 
     // === Label indent ===
-    if (!city->is_open) {
+    if (!was_city_open) {
         int label_id = is_sell ? 5 : 4;
         style.label_indent = lang_text_get_width(47, label_id, FONT_NORMAL_GREEN) + (is_compact ? 5 : 20);
     } else { // labels
@@ -1027,18 +1033,18 @@ static trade_row_style get_trade_row_style(const empire_city *city, int is_sell,
     if (is_main_bar) {
         style.seg_space_0 = 0;
         // (open compact : open non-compact) : (closed compact closed non-compact)
-        style.seg_space_1 = city->is_open ? (is_compact ? 2 : 8) : (is_compact ? 0 : 6);
-        style.seg_space_2 = city->is_open ? (is_compact ? 0 : -1) : (is_compact ? 0 : 3);
-        style.seg_space_3 = city->is_open ? (is_compact ? 0 : -1) : (is_compact ? 0 : 3);
-        style.seg_space_4 = city->is_open ? (is_compact ? 0 : 14) : (is_compact ? 0 : 10);
-        style.segment_width_adjust = city->is_open ? (is_compact ? -3 : 0) : (is_compact ? -4 : -2);
+        style.seg_space_1 = was_city_open ? (is_compact ? 2 : 8) : (is_compact ? 0 : 6);
+        style.seg_space_2 = was_city_open ? (is_compact ? 0 : -1) : (is_compact ? 0 : 3);
+        style.seg_space_3 = was_city_open ? (is_compact ? 0 : -1) : (is_compact ? 0 : 3);
+        style.seg_space_4 = was_city_open ? (is_compact ? 0 : 14) : (is_compact ? 0 : 10);
+        style.segment_width_adjust = was_city_open ? (is_compact ? -3 : 0) : (is_compact ? -4 : -2);
     } else {//sidebar styles
         style.seg_space_0 = 0;
-        style.seg_space_1 = city->is_open ? (is_compact ? 2 : 6) : (is_compact ? 0 : 4);
-        style.seg_space_2 = city->is_open ? (is_compact ? (0 - font_space_width / 2) : 0) : (is_compact ? 0 : 5);
-        style.seg_space_3 = city->is_open ? (is_compact ? (0 - font_space_width / 2) : 0) : (is_compact ? 0 : 5);
-        style.seg_space_4 = city->is_open ? (is_compact ? (0 - font_space_width / 2) : 10) : (is_compact ? 0 : 7);
-        style.segment_width_adjust = city->is_open ? (is_compact ? 0 : 0) : (is_compact ? 0 : 0);
+        style.seg_space_1 = was_city_open ? (is_compact ? 2 : 6) : (is_compact ? 0 : 4);
+        style.seg_space_2 = was_city_open ? (is_compact ? (0 - font_space_width / 2) : 0) : (is_compact ? 0 : 5);
+        style.seg_space_3 = was_city_open ? (is_compact ? (0 - font_space_width / 2) : 0) : (is_compact ? 0 : 5);
+        style.seg_space_4 = was_city_open ? (is_compact ? (0 - font_space_width / 2) : 10) : (is_compact ? 0 : 7);
+        style.segment_width_adjust = was_city_open ? (is_compact ? 0 : 0) : (is_compact ? 0 : 0);
     }
 
     return style;
@@ -1069,7 +1075,7 @@ static int measure_trade_row_width(const empire_city *city, int is_sell, const t
 {
     const int ICON_WIDTH = 26;
     int width = 0;
-
+    int was_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
     for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
         if (!resource_is_storable(r)) continue;
         if ((is_sell && !city->sells_resource[r]) || (!is_sell && !city->buys_resource[r])) continue;
@@ -1077,7 +1083,7 @@ static int measure_trade_row_width(const empire_city *city, int is_sell, const t
         int w_max = text_get_number_width(trade_route_limit(city->route_id, r, !is_sell), '\0', "", FONT_NORMAL_GREEN);
         int segment_width;
 
-        if (city->is_open) {
+        if (was_city_open) {
             // Also need width of current amount and "of" label
             int w_now = text_get_number_width(trade_route_traded(city->route_id, r, !is_sell), '\0', "", FONT_NORMAL_GREEN);
             int w_of = lang_text_get_width(47, 11, FONT_NORMAL_GREEN);
@@ -1592,7 +1598,6 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
         x_cursor += label_width;
     }
 
-
     for (resource_type r = RESOURCE_MIN; r < RESOURCE_MAX; r++) {
         if (!resource_is_storable(r)) continue;
         if ((is_sell && !city->sells_resource[r]) || (!is_sell && !city->buys_resource[r])) continue;
@@ -1601,15 +1606,15 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
             trade_max = trade_route_limit(city->route_id, r, !is_sell);
             trade_now = trade_route_traded(city->route_id, r, !is_sell);
         } else {
-            trade_max = trade_route_history_limit(city->route_id, r, !is_sell, data.sidebar.trade_year - 1);
-            trade_now = trade_route_history_traded(city->route_id, r, !is_sell, data.sidebar.trade_year - 1);
+            trade_max = trade_route_history_limit(city->route_id, r, !is_sell, data.sidebar.trade_year);
+            trade_now = trade_route_history_traded(city->route_id, r, !is_sell, data.sidebar.trade_year);
         }
 
         int icon_y = y + style->y_offset_icon;
 
         int segment_width, text_x;
 
-        if (city->is_open) {
+        if (is_city_open) {
             // Calculate widths
             int w_now = text_get_number_width(trade_now, '\0', "", FONT_NORMAL_GREEN); // '\0' - 0 length suffix.
             int w_max = text_get_number_width(trade_max, '\0', "", FONT_NORMAL_GREEN);
@@ -1643,7 +1648,7 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
         // Draw numeric info
         text_x = x_cursor + style->seg_space_0 + RESOURCE_ICON_WIDTH + style->seg_space_1;
 
-        if (city->is_open) {
+        if (is_city_open) {
             int w_now = text_draw_number(trade_now, '\0', "", text_x, y_cursor, FONT_NORMAL_GREEN, 0);
             int of_x = text_x + w_now + style->seg_space_2;
             int w_of = lang_text_draw(47, 11, of_x, y_cursor, FONT_NORMAL_GREEN);
@@ -1659,7 +1664,7 @@ static int draw_trade_row(const empire_city *city, int is_sell, int x, int y, co
             segment_width,
             RESOURCE_ICON_HEIGHT,
             r,
-            city->is_open
+            is_city_open
         );
 
         // Advance
@@ -1678,7 +1683,8 @@ static void draw_trade_city_info(const empire_object *object, const empire_city 
     trade_row_style style_sells = get_trade_row_style(city, 1, max_draw_width, TRADE_STYLE_MAIN_BAR);
     trade_row_style style_buys = get_trade_row_style(city, 0, max_draw_width, TRADE_STYLE_MAIN_BAR);
     // === OPEN CITY ===
-    if (city->is_open) {
+    int is_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
+    if (is_city_open) {
         int width_sells = measure_trade_row_width(city, 1, &style_sells);
         int width_buys = measure_trade_row_width(city, 0, &style_buys);
         int total_width = (width_sells > width_buys) ? width_sells : width_buys;
@@ -1707,7 +1713,6 @@ static void draw_trade_city_info(const empire_object *object, const empire_city 
         // Draw cost + type icon
         open_trade_button_style style = get_open_trade_button_style(x_base, y_offset + 73, TRADE_STYLE_MAIN_BAR);
         draw_open_trade_button(city, &style, (trade_icon_type) (city->is_sea_trade));
-
     }
 
 }
@@ -1717,7 +1722,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     sidebar_city_entry *entry = &sidebar_cities[item->index];
     empire_city *city = empire_city_get(entry->city_id);
     const uint8_t *name = empire_city_get_name(city);
-
+    int was_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
     int item_usable_width = grid_box_get_usable_width(&sidebar_grid_box) - SIDEBAR_MARGIN_HORIZONTAL * 2;
 
     int item_usable_height = item->height;
@@ -1760,7 +1765,7 @@ static void draw_sidebar_city_item(const grid_box_item *item)
         image_draw(badge_id, x_offset + badge_margin, y_offset + badge_margin, COLOR_MASK_NONE, SCALE_NONE);
 
         text_draw_centered_ellipsized(name, x_offset + badge_margin + 8, y_offset + 9, 262 - 8, FONT_LARGE_BLACK, 0);
-        if (city->is_open || draw_icon_on_top) {
+        if (was_city_open || draw_icon_on_top) {
             //if city is open, draw trade route icon to remind of type, same if it doesnt fit in the button
             int trade_route_icon_offset = badge_width + BLOCK_SIZE;
             if ((trade_route_icon_offset + badge_margin + 2 + 34) <= item_usable_width) {
@@ -1782,7 +1787,8 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     }
     // Move y_offset down for trade info rows
     y_offset += 44 + content_offset;
-    if (city->is_open) {
+    int was_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
+    if (was_open) {
         y_offset += 8; // For Sells
         draw_trade_row(city, 1, x_offset, y_offset, &style_sells);
         y_offset += 26; // For Buys
@@ -2795,17 +2801,19 @@ static void handle_input(const mouse *m, const hotkeys *h)
 
     }
     data.selected_button = NO_POSITION;
-    for (int i = 0; i < trade_open_button_count; i++) {
-        const trade_open_button *btn = &trade_open_buttons[i];
+    if (!data.sidebar.trade_year) { // only allow trade route opening if the trade year is current
+        for (int i = 0; i < trade_open_button_count; i++) {
+            const trade_open_button *btn = &trade_open_buttons[i];
 
-        if (m->x >= btn->x && m->x < btn->x + btn->width &&
-            m->y >= btn->y && m->y < btn->y + btn->height) {
-            data.selected_button = i;
-            if (m->left.went_up) {
-                button_open_trade_by_route(btn->route_id);  // <-- Trigger popup
-                data.selected_button = NO_POSITION; //reset to get rid of the highlight
+            if (m->x >= btn->x && m->x < btn->x + btn->width &&
+                m->y >= btn->y && m->y < btn->y + btn->height) {
+                data.selected_button = i;
+                if (m->left.went_up) {
+                    button_open_trade_by_route(btn->route_id);  // <-- Trigger popup
+                    data.selected_button = NO_POSITION; //reset to get rid of the highlight
+                }
+                break;  // Only process one button at a time
             }
-            break;  // Only process one button at a time
         }
     }
 
@@ -2876,10 +2884,10 @@ static void get_tooltip_trade_route_type(tooltip_context *c)
     if (!selected_object || empire_object_get(selected_object - 1)->type != EMPIRE_OBJECT_CITY) {
         return;
     }
-
     data.selected_city = empire_city_get_for_object(selected_object - 1);
     const empire_city *city = empire_city_get(data.selected_city);
-    if (city->type != EMPIRE_CITY_TRADE || city->is_open) {
+    int was_city_open = trade_route_was_open(city->route_id, data.sidebar.trade_year);
+    if (city->type != EMPIRE_CITY_TRADE || was_city_open) {
         return;
     }
 

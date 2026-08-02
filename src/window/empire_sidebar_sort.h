@@ -60,7 +60,7 @@ void window_empire_sidebar_sort_set_sorting_reversed(int reversed);
 void window_empire_sidebar_sort_set_expanded_main(int expanded);
 
 void window_empire_sidebar_sort_reset_hovered_sorting_button(void);
-
+void window_empire_sidebar_sort_set_trade_year(int year);
 // Button management
 void window_empire_sidebar_sort_register_sorting_button(int x, int y, int width, int height, int button_type);
 void window_empire_sidebar_sort_reset_sorting_button_count(void);

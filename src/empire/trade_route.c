@@ -119,10 +119,13 @@ int trade_route_set_open(int route_id)
 
 int trade_route_was_open(int route_id, int year)
 {
-    if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
+    if (year < 0 || year > MAX_TRADE_HISTORY_YEARS) {
         return 0;
     }
-    return array_item(trade_history[year], route_id)->open;
+    if (year == 0) {
+        return array_item(routes, route_id)->open;
+    }
+    return array_item(trade_history[year - 1], route_id)->open;
 }
 
 int trade_route_new(void)
@@ -172,28 +175,39 @@ int trade_route_get_history_years_stored(void)
 
 int trade_route_history_limit(int route_id, resource_type resource, int buying, int year)
 {
-    if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
+    if (year < 0 || year > MAX_TRADE_HISTORY_YEARS) {
         return 0;
     }
+    if (year == 0) {
+        return buying ? array_item(routes, route_id)->buys.limit[resource] :
+            array_item(routes, route_id)->sells.limit[resource];
+    }
     if (buying) {
-        return array_item(trade_history[year], route_id)->buys.limit[resource];
+        return array_item(trade_history[year - 1], route_id)->buys.limit[resource];
     } else {
-        return array_item(trade_history[year], route_id)->sells.limit[resource];
+        return array_item(trade_history[year - 1], route_id)->sells.limit[resource];
     }
 }
 
 int trade_route_history_traded(int route_id, resource_type resource, int buying, int year)
 {
-    if (year < 0 || year >= MAX_TRADE_HISTORY_YEARS) {
+    if (year < 0 || year > MAX_TRADE_HISTORY_YEARS) {
         return 0;
     }
-    if (array_item(trade_history[year], route_id)->open == 0) {
+    if (year == 0) {
+        if (array_item(routes, route_id)->open == 0) {
+            return -1;
+        }
+        return buying ? array_item(routes, route_id)->buys.traded[resource] :
+            array_item(routes, route_id)->sells.traded[resource];
+    }
+    if (array_item(trade_history[year - 1], route_id)->open == 0) {
         return -1;
     }
     if (buying) {
-        return array_item(trade_history[year], route_id)->buys.traded[resource];
+        return array_item(trade_history[year - 1], route_id)->buys.traded[resource];
     } else {
-        return array_item(trade_history[year], route_id)->sells.traded[resource];
+        return array_item(trade_history[year - 1], route_id)->sells.traded[resource];
     }
 }
 

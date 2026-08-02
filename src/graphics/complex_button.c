@@ -123,9 +123,9 @@ static void font_and_colours(complex_button_style style, int is_disabled, int is
             *font = FONT_NORMAL_GREEN;
             if (is_large) {
                 *font = FONT_LARGE_PLAIN;
-                *font_primary = debug_color_primary; //COLOR_FONT_GRAY_50;
-                *font_secondary = debug_color_secondary; //COLOR_FONT_GRAY_GREEN;
             }
+            *font_primary = debug_color_primary; //COLOR_FONT_GRAY_50;
+            *font_secondary = debug_color_secondary; //COLOR_FONT_GRAY_GREEN;
             break;
         case COMPLEX_BUTTON_STYLE_RAW:
             *font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
@@ -391,13 +391,11 @@ void complex_button_draw_array(const complex_button *buttons, unsigned int num_b
 
 int complex_button_handle_mouse(complex_button *btn, const mouse *m)
 {
-    if (btn->is_disabled) {
+    if (btn->is_disabled || btn->is_hidden) {
         btn->is_clicked = 0;
-        return 0;
-    }
-    if (btn->is_hidden) {
-        btn->is_clicked = 0;
-        return 0;
+        if (btn->is_hidden) {
+            return 0; // hidden buttons do not handle mouse events
+        }
     }
     int handled = 0;
 
@@ -410,14 +408,17 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
     int inside = (m->x >= left && m->x < right && m->y >= top && m->y < bottom);
     if (btn->is_focused != inside) {
         btn->is_focused = inside;
-        if (btn->hover_handler) {
+
+        if (btn->hover_handler && !btn->is_disabled) {
             btn->hover_handler(btn); // run the hover handler on hover state change
         }
         window_request_refresh(); // redraw to show focus change
     } else {
         btn->is_focused = inside;
     }
-
+    if (btn->is_disabled) {
+        return 0; // disabled buttons do not handle mouse past establishing focus state for tooltip
+    }
     if (btn->is_ellipsized && btn->is_focused) { //if the button is ellipsized, show tooltip
         static uint8_t tooltip_text[512];
         lang_text_concatenate_sequence(btn->sequence, btn->sequence_size, tooltip_text, 512);
