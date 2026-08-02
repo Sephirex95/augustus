@@ -62,6 +62,7 @@
 #define RESOURCE_ICON_WIDTH 26 //dimensions the resource icon in px, informative only
 #define RESOURCE_ICON_HEIGHT 26
 #define CITY_BADGE_MARGIN 14 // margin between edges of the badge and start/end of the city name
+#define CITY_BADGE_OUTER_MARGIN 5 // margin between the badge and the edge of the sidebar entry
 
 #define VERTICAL_TILE_WIDTH 40 //dimensions the vertical background tile in px, informative only
 #define VERTICAL_TILE_HEIGHT 72
@@ -1492,10 +1493,10 @@ void window_empire_draw_resource_shields(int trade_max, int x_offset, int y_offs
     }
 }
 
-void set_city_badge_complex_button(const empire_city *city, complex_button *button, int available_width)
+int set_city_badge_complex_button(const empire_city *city, complex_button *button, int available_width)
 {
     if (!city || !button) {
-        return;
+        return 0;
     }
     int wont_fit = 0;
     const uint8_t *name = empire_city_get_name(city);
@@ -1528,6 +1529,7 @@ void set_city_badge_complex_button(const empire_city *city, complex_button *butt
     button->sequence = &sidebar_city_names[city->route_id];
     button->sequence_size = 1;
     //if wontfit is 1, button content needs to be elipsized. Best leave complex button handling to do it.
+    return badge_width;
 }
 
 void draw_city_badge(int route_id)
@@ -1812,13 +1814,15 @@ static void draw_sidebar_city_item(const grid_box_item *item)
     if (entry->city_id == data.selected_city) {
         button_border_draw(item->x, item->y, item_usable_width, item_usable_height, 1); // margin/2 to not be exactly the same size as the item
     }
+    sidebar_city_badges[item->index].x = x_offset + CITY_BADGE_OUTER_MARGIN;
+    sidebar_city_badges[item->index].y = y_offset + CITY_BADGE_OUTER_MARGIN;
 
     int badge_id = assets_get_image_id("UI", "Empire_sidebar_city_badge");
     int badge_width = image_get(badge_id)->width;
     int image_id = image_group(GROUP_EMPIRE_TRADE_ROUTE_TYPE) + 1 - city->is_sea_trade;
     int available_width = item_usable_width - data.sidebar.margin_right;
     int badge_and_icon_width = badge_width + 2 + 34;
-    int badge_margin = 5;
+
     open_trade_button_style open_trade_style = get_open_trade_button_style(item->x, y_offset, TRADE_STYLE_SIDEBAR);
     int draw_icon_on_top = !open_trade_button_icon_fits(city, &open_trade_style, (trade_icon_type) (city->is_sea_trade));
 
