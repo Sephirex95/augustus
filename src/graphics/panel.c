@@ -173,7 +173,6 @@ void scrollbar_panel_draw(int x, int y, int height_px)
         image_draw(mid_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
         drawing_y += BLOCK_SIZE;
     }
-    //drawing_y -= BLOCK_SIZE; // adjust for an extra drawing_y increment in the loop
     image_draw(end_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
     graphics_reset_clip_rectangle();
 }

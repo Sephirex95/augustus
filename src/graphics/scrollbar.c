@@ -32,7 +32,7 @@ void scrollbar_init(scrollbar_type *scrollbar, unsigned int scroll_position, uns
     scrollbar->touch_drag_state = TOUCH_DRAG_NONE;
     int scrollup_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_UP);
     int scrolldown_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_DOWN);
-    // GROUP_OK_CANCEL_SCROLL_BUTTONS
+
     scrollbar->image_button_scroll_up = (image_button) { 0, 0, SCROLL_BUTTON_SIDE, SCROLL_BUTTON_SIDE, IB_SCROLL,
         0 , scrollup_id, text_scroll, button_none, 0, 1, 1 };
     scrollbar->image_button_scroll_down = (image_button) { 0, 0, SCROLL_BUTTON_SIDE, SCROLL_BUTTON_SIDE, IB_SCROLL,
