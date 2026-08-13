@@ -1574,6 +1574,9 @@
 	<image id="Scrollbar_Plus_04" src="Scrollbar_Plus_04"/>
 	<image id="Scrollbar_Dark_End" src="Scrollbar_Dark_End"/>
 	<image id="Scrollbar_Dark_Mid" src="Scrollbar_Dark_Mid"/>
+	<image id="Scrollbar_Dark_Start">
+		<layer src="Scrollbar_Dark_End" invert="vertical"/>
+	</image>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>

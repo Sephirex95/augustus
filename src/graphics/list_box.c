@@ -93,7 +93,7 @@ static void draw_scrollbar(list_box_type *list_box)
     scrollbar->y = list_box->y;
     scrollbar->on_scroll_callback = window_request_refresh;
     scrollbar->has_y_margin = 1;
-    scrollbar->dot_padding = list_box->decorate_scrollbar ? 8 : 0;
+    scrollbar->dot_padding = 0;
 
     scrollbar->height = list_box->height_blocks * BLOCK_SIZE;
     int scrollable_height_pixels = scrollbar->height;
@@ -106,7 +106,7 @@ static void draw_scrollbar(list_box_type *list_box)
     scrollbar_update_total_elements(scrollbar, list_box->total_items);
 
     if (list_box->decorate_scrollbar && list_box->total_items > scrollbar->elements_in_view) {
-        inner_panel_draw(scrollbar->x + 4, scrollbar->y + 32, 2, scrollbar->height / BLOCK_SIZE - 4);
+        scrollbar_panel_draw(scrollbar->x, scrollbar->y + SCROLL_BUTTON_SIDE, scrollbar->height);
     }
     scrollbar_draw(&list_box->scrollbar);
 }
@@ -115,7 +115,7 @@ void list_box_draw(list_box_type *list_box)
 {
     draw_scrollbar(list_box);
 
-    if(!list_box->refresh_requested) {
+    if (!list_box->refresh_requested) {
         return;
     }
     list_box->refresh_requested = 0;

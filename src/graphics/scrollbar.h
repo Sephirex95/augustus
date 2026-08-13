@@ -6,6 +6,11 @@
 #include "graphics/image_button.h"
 #include "input/mouse.h"
 
+#define SCROLL_BUTTON_SIDE 24 // square
+#define SCROLL_DOT_HEIGHT 48
+#define SCROLL_DOT_WIDTH 24
+#define TOTAL_SCROLL_BUTTON_HEIGHT (2 * SCROLL_BUTTON_SIDE + SCROLL_DOT_HEIGHT)
+
 typedef struct {
     int x;
     int y;
@@ -22,7 +27,7 @@ typedef struct {
     int scrollbar_dot_drag_offset;
     int touch_drag_state;
     int position_on_touch;
-    
+
     image_button image_button_scroll_up;
     image_button image_button_scroll_down;
 } scrollbar_type;
