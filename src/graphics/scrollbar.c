@@ -142,6 +142,9 @@ void scrollbar_init(scrollbar_type *scrollbar, unsigned int scroll_position, uns
         img_group, scrolldown_id, text_scroll, button_none, 1, 1, 1 };
     scrollbar->image_button_scroll_dot = (image_button) { 0, 0, scroll_dot_width, scroll_dot_height, IB_SCROLL,
         0, scroll_dot_id, button_none, button_none, 0, 0, 1 };
+    if (scrollbar->legacy) {
+        scrollbar->image_button_scroll_dot.static_image = 1; // disabled animation and hover effects
+    }
 }
 
 void scrollbar_reset(scrollbar_type *scrollbar, unsigned int scroll_position)

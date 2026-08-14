@@ -1,5 +1,6 @@
 #include "grid_box.h"
 
+#include "core/config.h"
 #include "graphics/button.h"
 #include "graphics/font.h"
 #include "graphics/panel.h"
@@ -76,25 +77,28 @@ void grid_box_request_refresh(grid_box_type *grid_box)
 
 int grid_box_has_scrollbar(const grid_box_type *grid_box)
 {
-    return grid_box->width > SCROLL_BUTTON_SIDE && (!grid_box->extend_to_hidden_scrollbar ||
-        calculate_scrollable_items(grid_box) > grid_box->scrollbar.elements_in_view);
+    return grid_box->width > 2 * BLOCK_SIZE && (!grid_box->extend_to_hidden_scrollbar ||
+    calculate_scrollable_items(grid_box) > grid_box->scrollbar.elements_in_view);
 }
 
 static void draw_scrollbar(grid_box_type *grid_box)
 {
+    int legacy = config_get(CONFIG_UI_SCROLL_LEGACY_SCROLLBAR);
+    int arrow_height = legacy ? LEGACY_SCROLL_BUTTON_HEIGHT : SCROLL_BUTTON_SIDE;
+    int arrow_width = legacy ? LEGACY_SCROLL_BUTTON_WIDTH : SCROLL_BUTTON_SIDE;
     scrollbar_type *scrollbar = &grid_box->scrollbar;
-    scrollbar->x = grid_box->x + grid_box->width - SCROLL_BUTTON_SIDE + grid_box->offset_scrollbar_x;
+    scrollbar->x = grid_box->x + grid_box->width - arrow_height + grid_box->offset_scrollbar_x;
     scrollbar->y = grid_box->y + grid_box->offset_scrollbar_y;
     scrollbar->on_scroll_callback = window_request_refresh;
     scrollbar->has_y_margin = 1;
-    scrollbar->dot_padding = 0;
+    scrollbar->dot_padding = legacy ? (grid_box->decorate_scrollbar ? 8 : 0) : 0;
 
     scrollbar->height = grid_box->height;
     int scrollable_height_pixels = scrollbar->height;
     if (grid_box->draw_inner_panel) {
         scrollable_height_pixels -= BLOCK_SIZE;
     }
-    scrollbar->scrollable_width = grid_box->width - SCROLL_BUTTON_SIDE;
+    scrollbar->scrollable_width = grid_box->width - arrow_width;
     scrollbar->elements_in_view = scrollable_height_pixels / grid_box->item_height;
 
     scrollbar_update_total_elements(scrollbar, calculate_scrollable_items(grid_box));
@@ -107,7 +111,9 @@ static void draw_scrollbar(grid_box_type *grid_box)
 
 unsigned int grid_box_get_usable_width(const grid_box_type *grid_box)
 {
-    return grid_box_has_scrollbar(grid_box) ? grid_box->width - SCROLL_BUTTON_SIDE : grid_box->width;
+    int legacy = config_get(CONFIG_UI_SCROLL_LEGACY_SCROLLBAR);
+    int arrow_width = legacy ? LEGACY_SCROLL_BUTTON_WIDTH : SCROLL_BUTTON_SIDE;
+    return grid_box_has_scrollbar(grid_box) ? grid_box->width - arrow_width : grid_box->width;
 }
 
 void grid_box_draw(grid_box_type *grid_box)

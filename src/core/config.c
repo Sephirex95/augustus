@@ -144,7 +144,7 @@ static const char *ini_keys[] = {
     [CONFIG_UI_AUTO_CYCLE_GARDENS] = "ui_auto_cycle_gardens",
     [CONFIG_UI_AUTO_DELETE_OLD_COMMON_MESSAGES] = "ui_auto_delete_old_common_messages",
     [CONFIG_UI_SCROLL_CAMERA_UNLOCKED] = "ui_scroll_camera_unlocked",
-    [CONFIG_UI_SCROLL_LEGACY_SCROLLBAR] = "ui_scroll_old_scroll",
+    [CONFIG_UI_SCROLL_LEGACY_SCROLLBAR] = "ui_scroll_old_scroll", // keep comma after last entry please
 };
 
 static const char *ini_string_keys[] = {

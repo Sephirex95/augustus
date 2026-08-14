@@ -1,5 +1,6 @@
 #include "list_box.h"
 
+#include "core/config.h"
 #include "core/direction.h"
 #include "graphics/button.h"
 #include "graphics/font.h"
@@ -88,12 +89,12 @@ static int get_actual_width_blocks(const list_box_type *list_box)
 static void draw_scrollbar(list_box_type *list_box)
 {
     scrollbar_type *scrollbar = &list_box->scrollbar;
-
+    int legacy = config_get(CONFIG_UI_SCROLL_LEGACY_SCROLLBAR);
     scrollbar->x = list_box->x + (list_box->width_blocks - 2) * BLOCK_SIZE + 4;
     scrollbar->y = list_box->y;
     scrollbar->on_scroll_callback = window_request_refresh;
     scrollbar->has_y_margin = 1;
-    scrollbar->dot_padding = 0;
+    scrollbar->dot_padding = legacy ? (list_box->decorate_scrollbar ? 8 : 0) : 0;
 
     scrollbar->height = list_box->height_blocks * BLOCK_SIZE;
     int scrollable_height_pixels = scrollbar->height;
