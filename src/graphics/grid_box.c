@@ -100,7 +100,7 @@ static void draw_scrollbar(grid_box_type *grid_box)
     scrollbar_update_total_elements(scrollbar, calculate_scrollable_items(grid_box));
 
     if (grid_box->decorate_scrollbar && grid_box->total_items > scrollbar->elements_in_view) {
-        scrollbar_panel_draw(scrollbar->x, scrollbar->y + SCROLL_BUTTON_SIDE, scrollbar->height);
+        scrollbar->decorate_scrollbar = 1; // panel drawing moved to the scrollbar directly
     }
     scrollbar_draw(&grid_box->scrollbar);
 }

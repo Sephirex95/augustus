@@ -106,7 +106,7 @@ static void draw_scrollbar(list_box_type *list_box)
     scrollbar_update_total_elements(scrollbar, list_box->total_items);
 
     if (list_box->decorate_scrollbar && list_box->total_items > scrollbar->elements_in_view) {
-        scrollbar_panel_draw(scrollbar->x, scrollbar->y + SCROLL_BUTTON_SIDE, scrollbar->height);
+        scrollbar->decorate_scrollbar = 1; // panel drawing moved to the scrollbar directly
     }
     scrollbar_draw(&list_box->scrollbar);
 }
