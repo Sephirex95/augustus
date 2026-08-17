@@ -32,7 +32,7 @@ static scrollbar_type *current;
 
 static void text_scroll(int is_down, int num_lines);
 
-static int get_scrollbar_width(scroll_element element, int legacy)
+static int get_element_width(scroll_element element, int legacy)
 {
     switch (element) {
         case SCROLL_UP_ARROW:
@@ -46,7 +46,7 @@ static int get_scrollbar_width(scroll_element element, int legacy)
     return 0; // default return value if no case matches
 }
 
-static int get_scrollbar_height(scroll_element element, int legacy)
+static int get_element_height(scroll_element element, int legacy)
 {
     switch (element) {
         case SCROLL_UP_ARROW:
@@ -94,7 +94,7 @@ static int get_scrollbar_dot_offset(const scrollbar_type *scrollbar)
         pct = calc_percentage(scrollbar->scroll_position, scrollbar->max_scroll_position);
     }
     int offset = calc_adjust_with_percentage(
-        scrollbar->height - get_total_button_height(scrollbar->legacy) - 2 * scrollbar->dot_padding, pct);
+        scrollbar->length - get_total_button_height(scrollbar->legacy) - 2 * scrollbar->dot_padding, pct);
     if (scrollbar->is_dragging_scrollbar_dot) {
         offset = scrollbar->scrollbar_dot_drag_offset;
     }
@@ -103,13 +103,42 @@ static int get_scrollbar_dot_offset(const scrollbar_type *scrollbar)
 
 static void position_scrollbar_dot_button(scrollbar_type *scrollbar)
 {
-    int scroll_btn_width = get_scrollbar_width(SCROLL_UP_ARROW, scrollbar->legacy);
-    int scroll_btn_height = get_scrollbar_height(SCROLL_UP_ARROW, scrollbar->legacy);
-    int scroll_dot_width = get_scrollbar_width(SCROLL_DOT, scrollbar->legacy);
+    int scroll_btn_width = get_element_width(SCROLL_UP_ARROW, scrollbar->legacy);
+    int scroll_btn_height = get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
+    int scroll_dot_width = get_element_width(SCROLL_DOT, scrollbar->legacy);
     short x_offset = ((scroll_btn_width - scroll_dot_width) / 2);
     short y_offset = (short) (scroll_btn_height + scrollbar->dot_padding + get_scrollbar_dot_offset(scrollbar));
     scrollbar->image_button_scroll_dot.x_offset = x_offset;
     scrollbar->image_button_scroll_dot.y_offset = y_offset;
+}
+
+static int get_default_thumb_move_px(scrollbar_type *scrollbar)
+{
+    if (scrollbar->legacy) {
+        return LEGACY_SCROLL_DOT_SIZE;
+    }
+    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE))->height;
+}
+
+static int calculate_thumb_midsections_count(scrollbar_type *scrollbar)
+{
+    if (scrollbar->step_size > 0) {
+        return scrollbar->step_size;
+    }
+    int ratio = scrollbar->elements_in_view / (scrollbar->elements_in_view + scrollbar->max_scroll_position) * 100;
+
+    int mid_section_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED);
+    // thumb_middle_section_height is an unwieldy name, so 'tmsh' it is
+    int tmsh = image_get(mid_section_id)->height;
+    // thumb_end_section_height is an unwieldy name, so 'tesh' it is
+    int tesh = image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP))->height;
+
+    int padding = 2 * scrollbar->dot_padding;
+    int total_scrollable_px = scrollbar->length - padding - 2 * get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
+    int total_steps = total_scrollable_px / scrollbar->max_scroll_position;
+    int ideal_thumb_size = ratio / 100 * total_scrollable_px;
+    int mid_sections_count = (ideal_thumb_size - 2 * tesh) / tmsh;
+    return mid_sections_count > 0 ? mid_sections_count : 1;
 }
 
 void scrollbar_init(scrollbar_type *scrollbar, unsigned int scroll_position, unsigned int total_elements)
@@ -125,16 +154,18 @@ void scrollbar_init(scrollbar_type *scrollbar, unsigned int scroll_position, uns
     scrollbar->is_dragging_scrollbar_dot = 0;
     scrollbar->touch_drag_state = TOUCH_DRAG_NONE;
     scrollbar->legacy = config_get(CONFIG_UI_SCROLL_LEGACY_SCROLLBAR); // save in struct to access everywhere
+    if (!scrollbar->step_size) {
 
+    }
     int scrollup_id, scrolldown_id, scroll_dot_id, img_group, scroll_btn_width, scroll_btn_height, scroll_dot_width, scroll_dot_height;
     scrollup_id = get_scrollbar_image_id(SCROLL_UP_ARROW, scrollbar->legacy);
     scrolldown_id = get_scrollbar_image_id(SCROLL_DOWN_ARROW, scrollbar->legacy);
     scroll_dot_id = get_scrollbar_image_id(SCROLL_DOT, scrollbar->legacy);
     img_group = scrollbar->legacy ? GROUP_OK_CANCEL_SCROLL_BUTTONS : 0;
-    scroll_btn_width = get_scrollbar_width(SCROLL_UP_ARROW, scrollbar->legacy);
-    scroll_btn_height = get_scrollbar_height(SCROLL_UP_ARROW, scrollbar->legacy);
-    scroll_dot_width = get_scrollbar_width(SCROLL_DOT, scrollbar->legacy);
-    scroll_dot_height = get_scrollbar_height(SCROLL_DOT, scrollbar->legacy);
+    scroll_btn_width = get_element_width(SCROLL_UP_ARROW, scrollbar->legacy);
+    scroll_btn_height = get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
+    scroll_dot_width = get_element_width(SCROLL_DOT, scrollbar->legacy);
+    scroll_dot_height = get_element_height(SCROLL_DOT, scrollbar->legacy);
 
 
     scrollbar->image_button_scroll_up = (image_button) { 0, 0, scroll_btn_width, scroll_btn_height, IB_SCROLL,
@@ -172,16 +203,16 @@ void scrollbar_update_total_elements(scrollbar_type *scrollbar, unsigned int tot
 void scrollbar_draw(scrollbar_type *scrollbar)
 {
     if (scrollbar->max_scroll_position > 0 || scrollbar->always_visible) {
-        int scroll_btn_height = get_scrollbar_height(SCROLL_UP_ARROW, scrollbar->legacy);
+        int scroll_btn_height = get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
         if (scrollbar->decorate_scrollbar) {
             if (scrollbar->legacy) {
-                inner_panel_draw(scrollbar->x + 4, scrollbar->y + 2 * BLOCK_SIZE, 2, scrollbar->height / BLOCK_SIZE - 4);
+                inner_panel_draw(scrollbar->x + 4, scrollbar->y + 2 * BLOCK_SIZE, 2, scrollbar->length / BLOCK_SIZE - 4);
             } else { // default
-                scrollbar_panel_draw(scrollbar->x, scrollbar->y, scrollbar->height);
+                scrollbar_panel_draw(scrollbar->x, scrollbar->y, scrollbar->length);
             }
         }
         image_buttons_draw(scrollbar->x, scrollbar->y, &scrollbar->image_button_scroll_up, 1);
-        image_buttons_draw(scrollbar->x, scrollbar->y + scrollbar->height - scroll_btn_height,
+        image_buttons_draw(scrollbar->x, scrollbar->y + scrollbar->length - scroll_btn_height,
             &scrollbar->image_button_scroll_down, 1);
         position_scrollbar_dot_button(scrollbar);
         image_buttons_draw(scrollbar->x, scrollbar->y, &scrollbar->image_button_scroll_dot, 1);
@@ -199,7 +230,7 @@ static int touch_inside_scrollable_area(const scrollbar_type *scrollbar, const t
     }
     return scrollbar->max_scroll_position > 0 &&
         x >= scrollbar->x - scrollbar->scrollable_width && x <= scrollbar->x - 2 &&
-        y >= scrollbar->y && y < scrollbar->y + scrollbar->height;
+        y >= scrollbar->y && y < scrollbar->y + scrollbar->length;
 }
 
 static int handle_touch(scrollbar_type *scrollbar, const touch *t, int in_dialog)
@@ -213,7 +244,7 @@ static int handle_touch(scrollbar_type *scrollbar, const touch *t, int in_dialog
     }
     if (t->has_moved && scrollbar->touch_drag_state != TOUCH_DRAG_NONE) {
         scrollbar->touch_drag_state = TOUCH_DRAG_IN_PROGRESS;
-        int element_height = (scrollbar->height - 8 * scrollbar->has_y_margin) / scrollbar->elements_in_view;
+        int element_height = (scrollbar->length - 8 * scrollbar->has_y_margin) / scrollbar->elements_in_view;
         int current_y = t->current_point.y - ((t->current_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
         int start_y = t->start_point.y - ((t->start_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
         int touch_scrolled = (current_y - start_y) / element_height;
@@ -250,15 +281,15 @@ static int handle_scrollbar_dot(scrollbar_type *scrollbar, const mouse *m)
         return 0;
     }
 
-    int scroll_btn_width = get_scrollbar_width(SCROLL_UP_ARROW, scrollbar->legacy);
-    int scroll_btn_height = get_scrollbar_height(SCROLL_UP_ARROW, scrollbar->legacy);
-    int scroll_dot_height = get_scrollbar_height(SCROLL_DOT, scrollbar->legacy);
-    int track_height = scrollbar->height - get_total_button_height(scrollbar->legacy) - 2 * scrollbar->dot_padding;
+    int scroll_btn_width = get_element_width(SCROLL_UP_ARROW, scrollbar->legacy);
+    int scroll_btn_height = get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
+    int scroll_dot_height = get_element_height(SCROLL_DOT, scrollbar->legacy);
+    int track_height = scrollbar->length - get_total_button_height(scrollbar->legacy) - 2 * scrollbar->dot_padding;
     if (m->x < scrollbar->x || m->x >= scrollbar->x + scroll_btn_width) {
         return 0;
     }
     if (m->y < scrollbar->y + scroll_btn_height + scrollbar->dot_padding ||
-        m->y > scrollbar->y + scrollbar->height - scroll_btn_height - scrollbar->dot_padding) {
+        m->y > scrollbar->y + scrollbar->length - scroll_btn_height - scrollbar->dot_padding) {
         return 0;
     }
     int dot_offset = m->y - scrollbar->y - scroll_dot_height / 2 - scroll_btn_height;
@@ -292,7 +323,7 @@ int scrollbar_handle_mouse(scrollbar_type *scrollbar, const mouse *m, int in_dia
         scrollbar->touch_drag_state = TOUCH_DRAG_NONE;
     }
     if (scrollbar->touch_drag_state != TOUCH_DRAG_IN_PROGRESS) {
-        int scroll_btn_height = get_scrollbar_height(SCROLL_UP_ARROW, scrollbar->legacy);
+        int scroll_btn_height = get_element_height(SCROLL_UP_ARROW, scrollbar->legacy);
         if (m->scrolled == SCROLL_DOWN) {
             text_scroll(1, 3);
         } else if (m->scrolled == SCROLL_UP) {
@@ -303,7 +334,7 @@ int scrollbar_handle_mouse(scrollbar_type *scrollbar, const mouse *m, int in_dia
             scrollbar->x, scrollbar->y, &scrollbar->image_button_scroll_up, 1, 0)) {
             return 1;
         }
-        if (image_buttons_handle_mouse(m, scrollbar->x, scrollbar->y + scrollbar->height - scroll_btn_height,
+        if (image_buttons_handle_mouse(m, scrollbar->x, scrollbar->y + scrollbar->length - scroll_btn_height,
             &scrollbar->image_button_scroll_down, 1, 0)) {
             return 1;
         }

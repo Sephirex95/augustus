@@ -177,6 +177,133 @@ void scrollbar_panel_draw(int x, int y, int height_px)
     graphics_reset_clip_rectangle();
 }
 
+void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, int frame)
+{
+    if (middle_sections < 0) {
+        middle_sections = 0;
+    }
+
+    if (frame < 1 || frame > 4) {
+        frame = 1;
+    }
+
+    static const asset_id vertical_start_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP,
+        ASSET_UI_SCROLLBAR_MIDDLE_02_END_TOP,
+        ASSET_UI_SCROLLBAR_MIDDLE_03_END_TOP,
+        ASSET_UI_SCROLLBAR_MIDDLE_04_END_TOP,
+    };
+    static const asset_id vertical_end_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01_END_BOTTOM,
+        ASSET_UI_SCROLLBAR_MIDDLE_02_END_BOTTOM,
+        ASSET_UI_SCROLLBAR_MIDDLE_03_END_BOTTOM,
+        ASSET_UI_SCROLLBAR_MIDDLE_04_END_BOTTOM,
+    };
+    static const asset_id vertical_mid_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_02_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_03_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_04_TRIMMED,
+    };
+    static const asset_id vertical_mid_mirror_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_02_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_03_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_04_TRIMMED_MIRROR,
+    };
+
+    static const asset_id horizontal_start_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01B_END_LEFT,
+        ASSET_UI_SCROLLBAR_MIDDLE_02B_END_LEFT,
+        ASSET_UI_SCROLLBAR_MIDDLE_03B_END_LEFT,
+        ASSET_UI_SCROLLBAR_MIDDLE_04B_END_LEFT,
+    };
+    static const asset_id horizontal_end_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01B_END_RIGHT,
+        ASSET_UI_SCROLLBAR_MIDDLE_02B_END_RIGHT,
+        ASSET_UI_SCROLLBAR_MIDDLE_03B_END_RIGHT,
+        ASSET_UI_SCROLLBAR_MIDDLE_04B_END_RIGHT,
+    };
+    static const asset_id horizontal_mid_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01B_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_02B_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_03B_TRIMMED,
+        ASSET_UI_SCROLLBAR_MIDDLE_04B_TRIMMED,
+    };
+    static const asset_id horizontal_mid_mirror_ids[4] = {
+        ASSET_UI_SCROLLBAR_MIDDLE_01B_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_02B_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_03B_TRIMMED_MIRROR,
+        ASSET_UI_SCROLLBAR_MIDDLE_04B_TRIMMED_MIRROR,
+    };
+
+    const int frame_index = frame - 1;
+    const int end_size = 8;
+    const int middle_span = 32;
+    const int thumb_width = is_vertical ? 24 : (2 * end_size + middle_sections * middle_span);
+    const int thumb_height = is_vertical ? (2 * end_size + middle_sections * middle_span) : 24;
+
+    if (thumb_width <= 0 || thumb_height <= 0) {
+        return;
+    }
+
+    int start_id;
+    int end_id;
+    int mid_id;
+    int mid_mirror_id;
+    if (is_vertical) {
+        start_id = assets_lookup_image_id(vertical_start_ids[frame_index]);
+        end_id = assets_lookup_image_id(vertical_end_ids[frame_index]);
+        mid_id = assets_lookup_image_id(vertical_mid_ids[frame_index]);
+        mid_mirror_id = assets_lookup_image_id(vertical_mid_mirror_ids[frame_index]);
+    } else {
+        start_id = assets_lookup_image_id(horizontal_start_ids[frame_index]);
+        end_id = assets_lookup_image_id(horizontal_end_ids[frame_index]);
+        mid_id = assets_lookup_image_id(horizontal_mid_ids[frame_index]);
+        mid_mirror_id = assets_lookup_image_id(horizontal_mid_mirror_ids[frame_index]);
+    }
+
+    graphics_set_clip_rectangle(x, y, thumb_width, thumb_height);
+
+    if (is_vertical) {
+        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+
+        int middle_y = y + end_size;
+        for (int i = 0; i < middle_sections; ++i) {
+            int draw_id = (i % 2 == 0) ? mid_id : mid_mirror_id;
+            image_draw(draw_id, x, middle_y, COLOR_MASK_NONE, SCALE_NONE);
+            middle_y += middle_span;
+        }
+
+        image_draw(end_id, x, middle_y, COLOR_MASK_NONE, SCALE_NONE);
+    } else {
+        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+
+        int middle_x = x + end_size;
+        for (int i = 0; i < middle_sections; ++i) {
+            int draw_id = (i % 2 == 0) ? mid_id : mid_mirror_id;
+            image_draw(draw_id, middle_x, y, COLOR_MASK_NONE, SCALE_NONE);
+            middle_x += middle_span;
+        }
+
+        image_draw(end_id, middle_x, y, COLOR_MASK_NONE, SCALE_NONE);
+    }
+
+    if (middle_sections > 0) {
+        int lines_alpha_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_LINES_ALPHA);
+        int center_index = (middle_sections - 1) / 2;
+        if (is_vertical) {
+            int lines_y = y + end_size + center_index * middle_span;
+            image_draw(lines_alpha_id, x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
+        } else {
+            int lines_x = x + end_size + center_index * middle_span;
+            image_draw(lines_alpha_id, lines_x, y, COLOR_MASK_NONE, SCALE_NONE);
+        }
+    }
+
+    graphics_reset_clip_rectangle();
+}
+
 void inner_panel_draw(int x, int y, int width_blocks, int height_blocks)
 {
     int image_base = image_group(GROUP_SUNKEN_TEXTBOX_BACKGROUND);

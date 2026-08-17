@@ -562,7 +562,7 @@ void window_building_draw_dock(building_info_context *c)
     if (data.showing_special_orders || data.building_id != c->building_id) {
         scrollbar.x = c->x_offset + (c->width_blocks - 4) * BLOCK_SIZE;
         scrollbar.y = c->y_offset + 240;
-        scrollbar.height = panel_height * BLOCK_SIZE;
+        scrollbar.length = panel_height * BLOCK_SIZE;
         scrollbar.scrollable_width = (c->width_blocks - 5) * BLOCK_SIZE;
         scrollbar.elements_in_view = data.dock_max_cities_visible;
         scrollbar_init(&scrollbar, 0, dock_distribution_permissions_buttons_count);
@@ -745,7 +745,7 @@ void window_building_draw_distributor_orders(building_info_context *c, const uin
 
         scrollbar.x = c->x_offset + (c->width_blocks - 3) * BLOCK_SIZE;
         scrollbar.y = y_offset + 42;
-        scrollbar.height = 21 * BLOCK_SIZE;
+        scrollbar.length = 21 * BLOCK_SIZE;
         scrollbar.scrollable_width = (c->width_blocks - 2) * BLOCK_SIZE;
         scrollbar.elements_in_view = 21 * BLOCK_SIZE / 22;
         scrollbar_init(&scrollbar, 0, data.stored_resources.size);
@@ -1373,7 +1373,7 @@ void window_building_draw_storage_orders(building_info_context *c)
 
         scrollbar.x = c->x_offset + (c->width_blocks - 3) * BLOCK_SIZE;
         scrollbar.y = y_offset + 42;
-        scrollbar.height = 21 * BLOCK_SIZE;
+        scrollbar.length = 21 * BLOCK_SIZE;
         scrollbar.scrollable_width = (c->width_blocks - 2) * BLOCK_SIZE;
         scrollbar.elements_in_view = 21 * BLOCK_SIZE / 22;
         scrollbar_init(&scrollbar, 0, list->size);
