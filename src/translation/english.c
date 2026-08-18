@@ -2326,7 +2326,8 @@ static translation_string all_strings[] = {
     {TR_ACTION_TYPE_SEND_CITY_WARNING, "Send city warning"},
     {TR_PARAMETER_MESSAGE, "Message"},
     {TR_PARAMETER_PLAY_FANFARE, "Play fanfare"},
-    {TR_CONFIG_UI_SCROLL_LEGACY_SCROLLBAR, "Enable classic scrollbars" }
+    {TR_CONFIG_UI_SCROLL_LEGACY_SCROLLBAR, "Enable classic scrollbars"},
+    {TR_BUILDING_WILLOW_TREE, "Willow tree"}
 };
 
 void translation_english(const translation_string **strings, int *num_strings)

@@ -807,6 +807,7 @@ int building_construction_is_updatable(void)
         case BUILDING_PLUM_TREE:
         case BUILDING_PALM_TREE:
         case BUILDING_DATE_TREE:
+        case BUILDING_WILLOW_TREE:
         case BUILDING_PINE_PATH:
         case BUILDING_FIR_PATH:
         case BUILDING_OAK_PATH:
@@ -879,16 +880,16 @@ static int should_mark_for_construction(building_type type)
 // "updatable": bridges and statues.
 static int auto_clear_handled_by_explicit_branch(building_type type)
 {
-  if (building_construction_is_updatable()) {
-      return 1;
-  }
-  if (type == BUILDING_LOW_BRIDGE || type == BUILDING_SHIP_BRIDGE) {
-      return 1;
-  }
-  if (type >= BUILDING_GODDESS_STATUE && type <= BUILDING_SENATOR_STATUE) {
-      return 1;
-  }
-  return 0;
+    if (building_construction_is_updatable()) {
+        return 1;
+    }
+    if (type == BUILDING_LOW_BRIDGE || type == BUILDING_SHIP_BRIDGE) {
+        return 1;
+    }
+    if (type >= BUILDING_GODDESS_STATUE && type <= BUILDING_SENATOR_STATUE) {
+        return 1;
+    }
+    return 0;
 }
 
 void building_construction_update(int x, int y, int grid_offset)
@@ -957,7 +958,7 @@ void building_construction_update(int x, int y, int grid_offset)
         if (items_placed >= 0) {
             current_cost *= items_placed;
         }
-    } else if (type >= BUILDING_PINE_TREE && type <= BUILDING_DATE_TREE) {
+    } else if ((type >= BUILDING_PINE_TREE && type <= BUILDING_DATE_TREE) || type == BUILDING_WILLOW_TREE) {
         int items_placed = plot_draggable_building(data.start.x, data.start.y, x, y, 0);
         if (items_placed >= 0) {
             current_cost *= items_placed;
@@ -1322,7 +1323,7 @@ void building_construction_place(void)
         placement_cost = info.cost;
         map_tiles_update_all_aqueducts(0);
         map_routing_update_land();
-    } else if (type >= BUILDING_PINE_TREE && type <= BUILDING_DATE_TREE) {
+    } else if ((type >= BUILDING_PINE_TREE && type <= BUILDING_DATE_TREE) || type == BUILDING_WILLOW_TREE) {
         placement_cost *= place_draggable_building(x_start, y_start, x_end, y_end, type, 0);
     } else if (type >= BUILDING_PINE_PATH && type <= BUILDING_DATE_PATH) {
         int rotation = building_rotation_get_rotation_with_limit(BUILDING_CONNECTABLE_ROTATION_LIMIT_PATHS);

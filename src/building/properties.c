@@ -1564,6 +1564,16 @@ static building_properties properties[BUILDING_TYPE_MAX] = {
         .building_model_data = {.cost = 12, .desirability_value = 3, .desirability_step = 1,
             .desirability_step_size = -1, .desirability_range = 3, .laborers = 0}
      },
+     [BUILDING_WILLOW_TREE] = {
+        .venus_gt_bonus = 1,
+        .size = 1,
+        .fire_proof = 1,
+        .custom_asset.group = "Aesthetics",
+        .custom_asset.id = "ornamental willow",
+        .event_data.attr = "willow_tree",
+        .building_model_data = {.cost = 12, .desirability_value = 3, .desirability_step = 1,
+            .desirability_step_size = -1, .desirability_range = 3, .laborers = 0}
+     },
      [BUILDING_PINE_PATH] = {
         .venus_gt_bonus = 1,
         .size = 1,
