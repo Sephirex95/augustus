@@ -86,12 +86,12 @@ static int get_scrollbar_image_id(scroll_element element, int legacy)
 
 static int get_thumb_middle_section_size(void)
 {
-    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED))->height;
+    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED))->original.height;
 }
 
 static int get_thumb_end_size(void)
 {
-    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP))->height;
+    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP))->original.height;
 }
 
 static int get_scrollbar_thumb_length(const scrollbar_type *scrollbar)
