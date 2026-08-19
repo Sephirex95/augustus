@@ -228,6 +228,9 @@ typedef enum {
     BUILDING_TYPE_MAX = 213
 } building_type;
 
+/* When adding a new building increment BUILDING_TYPE_MAX
+    and create a new enum entry which is descriptive for the buidling and assign it the obvious value */
+
 /**
  * House levels
  */
