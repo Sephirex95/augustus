@@ -23,6 +23,13 @@ typedef enum slider_element {
     SLIDER_BG = 4
 } slider_element;
 
+typedef struct thumb_geometry {
+    int offset; // distance from the top/left edge of the slider to the top/left edge of the thumb
+    int length; // length of the thumb along the slider's axis
+} thumb_geometry;
+// problem to solve - when thumb is collated from multiple images, it's dimensions are not set up, they need
+// to be calculated and cached. Perhaps wrap all the thumb-related geometry into one struct and attach it to the slider.
+static thumb_geometry geometry;
 static int get_slider_image_id(const slider_t *slider, slider_element element)
 {
     int id = 0;
@@ -362,7 +369,25 @@ static void draw_slider_vertical(const slider_t *slider)
     if (slider->draw_background) {
         scrollbar_panel_draw(slider->x, slider->y, slider->length, 1);
     }
-
+    int decrease = get_slider_image_id(slider, SLIDER_DECREASE);
+    int increase = get_slider_image_id(slider, SLIDER_INCREASE);
+    int thumb = get_slider_image_id(slider, SLIDER_THUMB);
+    if (slider->hovered_element != SLIDER_NONE) {
+        switch (slider->hovered_element) {
+            case SLIDER_DECREASE:
+                decrease += slider->hovered_element_animation_frame;
+                break;
+            case SLIDER_INCREASE:
+                increase += slider->hovered_element_animation_frame;
+                break;
+            case SLIDER_THUMB:
+                thumb += slider->hovered_element_animation_frame;
+                break;
+            default:
+                break;
+        }
+        decrease = get_slider_image_id(slider, SLIDER_DECREASE) + slider->hovered_element_animation_frame;
+    }
     image_draw(get_slider_image_id(slider, SLIDER_DECREASE), slider->x, slider->y, COLOR_MASK_NONE, SCALE_NONE);
     image_draw(get_slider_image_id(slider, SLIDER_INCREASE), slider->x, slider->y + slider->length - SLIDER_BUTTON_SIDE,
         COLOR_MASK_NONE, SCALE_NONE);
@@ -372,20 +397,17 @@ static void draw_slider_vertical(const slider_t *slider)
     scrollbar_thumb_draw(slider->x, slider->y + thumb_offset, get_thumb_midsections_count(slider), 1, frame);
 }
 
-void slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
+int slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
     int value_step, int initial_value, unsigned char is_vertical)
 {
     memset(slider, 0, sizeof(*slider));
 
     if (max_value <= min_value || value_step <= 0 || length <= 2 * SLIDER_BUTTON_SIDE) {
-        /*
-         * Leave an invalid slider in a harmless state rather than as
-         * a zeroed object which could accidentally still be drawn.
-         */
+        // Leave an invalid slider in a harmless state rather than as
+        // a zeroed object which could accidentally still be drawn.
         slider->is_hidden = 1;
         slider->is_disabled = 1;
-
-        return;
+        return 0;
     }
 
     slider->x = x;
@@ -401,6 +423,7 @@ void slider_init(slider_t *slider, int x, int y, int length, int min_value, int 
 
     slider->value = slider_snap_value(slider, initial_value);
     slider_update_cached_thumb_offset(slider);
+    return 1;
 }
 
 void slider_text_block_init(text_block *block, const lang_fragment *sequence, unsigned short sequence_size,

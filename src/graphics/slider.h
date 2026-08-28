@@ -70,8 +70,8 @@ typedef struct slider {
 } slider;
 
 typedef slider slider_t;
-
-void slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
+// returns 1 if successfully initialised
+int slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
     int value_step, int initial_value, unsigned char is_vertical);
 void slider_text_block_init(text_block *block, const lang_fragment *sequence, unsigned short sequence_size,
     sequence_positioning position, int x, int y, int width, int height);

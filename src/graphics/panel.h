@@ -17,8 +17,6 @@ void scrollbar_panel_draw(int x, int y, int length, int is_vertical);
 
 void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, int frame);
 
-void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, int frame);
-
 void inner_panel_draw(int x, int y, int width_blocks, int height_blocks);
 
 void inner_panel_draw_colored(int x, int y, int width, int height, color_t color);
