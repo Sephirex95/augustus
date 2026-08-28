@@ -311,8 +311,14 @@ static int handle_touch(scrollbar_type *scrollbar, const touch *t, int in_dialog
         if (element_height <= 0) {
             return 0;
         }
-        int current_y = t->current_point.y - ((t->current_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
-        int start_y = t->start_point.y - ((t->start_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
+        int current_touch_y = t->current_point.y;
+        int start_touch_y = t->start_point.y;
+        if (in_dialog) {
+            current_touch_y -= screen_dialog_offset_y();
+            start_touch_y -= screen_dialog_offset_y();
+        }
+        int current_y = current_touch_y - ((current_touch_y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
+        int start_y = start_touch_y - ((start_touch_y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
         int touch_scrolled = (current_y - start_y) / element_height;
         scrollbar->scroll_position = calc_bound(scrollbar->position_on_touch - touch_scrolled, 0, scrollbar->max_scroll_position);
         active = 1;
