@@ -1544,10 +1544,34 @@
 	<image id="Scrollbar_Down_02" src="Scrollbar_Down_02"/>
 	<image id="Scrollbar_Down_03" src="Scrollbar_Down_03"/>
 	<image id="Scrollbar_Down_04" src="Scrollbar_Down_04"/>
+	<image id="Scrollbar_Left_01">
+		<layer group="this" image="Scrollbar_Down_01" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Left_02">
+		<layer group="this" image="Scrollbar_Down_02" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Left_03">
+		<layer group="this" image="Scrollbar_Down_03" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Left_04">
+		<layer group="this" image="Scrollbar_Down_04" rotate="90" x="0" y="0"/>
+	</image>
 	<image id="Scrollbar_Up_01" src="Scrollbar_Up_01"/>
 	<image id="Scrollbar_Up_02" src="Scrollbar_Up_02"/>
 	<image id="Scrollbar_Up_03" src="Scrollbar_Up_03"/>
 	<image id="Scrollbar_Up_04" src="Scrollbar_Up_04"/>
+	<image id="Scrollbar_Right_01">
+		<layer group="this" image="Scrollbar_Up_01" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Right_02">
+		<layer group="this" image="Scrollbar_Up_02" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Right_03">
+		<layer group="this" image="Scrollbar_Up_03" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Right_04">
+		<layer group="this" image="Scrollbar_Up_04" rotate="90" x="0" y="0"/>
+	</image>
 	<image id="Scrollbar_Lines_D_01" src="Scrollbar_Lines_D_01"/>
 	<image id="Scrollbar_Lines_L_01" src="Scrollbar_Lines_L_01"/>
 	<image id="Scrollbar_Lines_Alpha" src="Scrollbar_Lines_Alpha"/>
@@ -1711,6 +1735,22 @@
 	</image>
 	<image id="Scrollbar_Middle_04b_Trimmed_MirrorH" width="32" height="24">
 		<layer group="this" image="Scrollbar_Middle_04b_Trimmed" invert="horizontal"/>
+	</image>
+	<image id="Scrollbar_mini_thumb_01" src="Scrollbar_mini_thumb_01"/>
+	<image id="Scrollbar_mini_thumb_02" src="Scrollbar_mini_thumb_02"/>
+	<image id="Scrollbar_mini_thumb_03" src="Scrollbar_mini_thumb_03"/>
+	<image id="Scrollbar_mini_thumb_lines" src="Scrollbar_mini_thumb_lines"/>
+	<image id="Scrollbar_mini_thumb_vert_01">
+		<layer group="this" image="Scrollbar_mini_thumb_01" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_mini_thumb_02">
+		<layer group="this" image="Scrollbar_mini_thumb_02" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_mini_thumb_03">
+		<layer group="this" image="Scrollbar_mini_thumb_03" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_mini_thumb_lines">
+		<layer group="this" image="Scrollbar_mini_thumb_lines" rotate="90" x="0" y="0"/>
 	</image>
 	<image id="Scrollbar_Minus_01" src="Scrollbar_Minus_01"/>
 	<image id="Scrollbar_Minus_02" src="Scrollbar_Minus_02"/>

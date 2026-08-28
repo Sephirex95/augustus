@@ -179,12 +179,43 @@ void scrollbar_panel_draw(int x, int y, int height_px)
 
 void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, int frame)
 {
-    if (middle_sections < 0) {
-        middle_sections = 0;
+    if (middle_sections < 0 && middle_sections != -1) {
+        middle_sections = 0; // -1 is reserved for mini thumb
     }
 
     if (frame < 1 || frame > 4) {
         frame = 1;
+    }
+
+    static const asset_id mini_thumb_ids[4] = {
+        ASSET_UI_SCROLLBAR_MINI_THUMB_01,
+        ASSET_UI_SCROLLBAR_MINI_THUMB_02,
+        ASSET_UI_SCROLLBAR_MINI_THUMB_03,
+        ASSET_UI_SCROLLBAR_MINI_THUMB_04,
+    };
+
+    const int frame_index = frame - 1;
+    if (middle_sections == -1) {
+        int thumb_id = assets_lookup_image_id(mini_thumb_ids[frame_index]);
+        int lines_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_MINI_THUMB_LINES);
+        const image *thumb_img = image_get(thumb_id);
+        const image *lines_img = image_get(lines_id);
+
+        int thumb_width = thumb_img->original.width;
+        int thumb_height = thumb_img->original.height;
+        if (thumb_width <= 0 || thumb_height <= 0) {
+            return;
+        }
+
+        graphics_set_clip_rectangle(x, y, thumb_width, thumb_height);
+        image_draw(thumb_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+        if (lines_img->original.width > 0 && lines_img->original.height > 0) {
+            int lines_x = x + (thumb_width - lines_img->original.width) / 2;
+            int lines_y = y + (thumb_height - lines_img->original.height) / 2;
+            image_draw(lines_id, lines_x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
+        }
+        graphics_reset_clip_rectangle();
+        return;
     }
 
     static const asset_id vertical_start_ids[4] = {
@@ -228,7 +259,6 @@ void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, in
     int start_id;
     int end_id;
     int mid_id;
-    const int frame_index = frame - 1;
     if (is_vertical) {
         start_id = assets_lookup_image_id(vertical_start_ids[frame_index]);
         end_id = assets_lookup_image_id(vertical_end_ids[frame_index]);

@@ -163,6 +163,19 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_SCROLL_BG_01] = assets_get_image_id("UI", "Scrollbar_Dark_Start");
     data.asset_lookup[ASSET_UI_SCROLL_BG_02] = assets_get_image_id("UI", "Scrollbar_Dark_Mid");
     data.asset_lookup[ASSET_UI_SCROLL_BG_03] = assets_get_image_id("UI", "Scrollbar_Dark_End");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_LEFT_01] = assets_get_image_id("UI", "Scrollbar_Left_01");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_LEFT_02] = assets_get_image_id("UI", "Scrollbar_Left_02");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_LEFT_03] = assets_get_image_id("UI", "Scrollbar_Left_03");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_LEFT_04] = assets_get_image_id("UI", "Scrollbar_Left_04");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_RIGHT_01] = assets_get_image_id("UI", "Scrollbar_Right_01");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_RIGHT_02] = assets_get_image_id("UI", "Scrollbar_Right_02");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_RIGHT_03] = assets_get_image_id("UI", "Scrollbar_Right_03");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_RIGHT_04] = assets_get_image_id("UI", "Scrollbar_Right_04");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_01] = assets_get_image_id("UI", "Scrollbar_Thumb_01");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_02] = assets_get_image_id("UI", "Scrollbar_Thumb_02");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_03] = assets_get_image_id("UI", "Scrollbar_Thumb_03");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_04] = assets_get_image_id("UI", "Scrollbar_Thumb_04");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_LINES] = assets_get_image_id("UI", "Scrollbar_Thumb_Lines");
 
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
