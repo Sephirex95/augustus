@@ -196,6 +196,8 @@ void scrollbar_init(scrollbar_type *scrollbar, unsigned int scroll_position, uns
     scrollbar->scroll_position = calc_bound(scroll_position, 0, max_scroll_position);
     scrollbar->max_scroll_position = max_scroll_position;
     scrollbar->is_dragging_scrollbar_dot = 0;
+    scrollbar->scrollbar_dot_drag_offset = 0;
+    scrollbar->scrollbar_dot_mouse_offset = 0;
     scrollbar->touch_drag_state = TOUCH_DRAG_NONE;
     scrollbar->legacy = config_get(CONFIG_UI_SCROLL_LEGACY_SCROLLBAR); // save in struct to access everywhere
     int scrollup_id, scrolldown_id, scroll_dot_id, img_group, scroll_btn_width, scroll_btn_height, scroll_dot_width, scroll_dot_height;
@@ -224,6 +226,8 @@ void scrollbar_reset(scrollbar_type *scrollbar, unsigned int scroll_position)
 {
     scrollbar->scroll_position = calc_bound(scroll_position, 0, scrollbar->max_scroll_position);
     scrollbar->is_dragging_scrollbar_dot = 0;
+    scrollbar->scrollbar_dot_drag_offset = 0;
+    scrollbar->scrollbar_dot_mouse_offset = 0;
     scrollbar->touch_drag_state = TOUCH_DRAG_NONE;
 }
 
@@ -290,6 +294,10 @@ static int touch_inside_scrollable_area(const scrollbar_type *scrollbar, const t
 
 static int handle_touch(scrollbar_type *scrollbar, const touch *t, int in_dialog)
 {
+    if (scrollbar->elements_in_view <= 0) {
+        return 0;
+    }
+
     unsigned int old_position = scrollbar->scroll_position;
     int active = scrollbar->touch_drag_state == TOUCH_DRAG_IN_PROGRESS;
 
@@ -300,6 +308,9 @@ static int handle_touch(scrollbar_type *scrollbar, const touch *t, int in_dialog
     if (t->has_moved && scrollbar->touch_drag_state != TOUCH_DRAG_NONE) {
         scrollbar->touch_drag_state = TOUCH_DRAG_IN_PROGRESS;
         int element_height = (scrollbar->length - 8 * scrollbar->has_y_margin) / scrollbar->elements_in_view;
+        if (element_height <= 0) {
+            return 0;
+        }
         int current_y = t->current_point.y - ((t->current_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
         int start_y = t->start_point.y - ((t->start_point.y - (scrollbar->y + 8 * scrollbar->has_y_margin)) % element_height);
         int touch_scrolled = (current_y - start_y) / element_height;
@@ -326,13 +337,16 @@ static int handle_scrollbar_dot(scrollbar_type *scrollbar, const mouse *m)
     image_buttons_handle_mouse(m, scrollbar->x, scrollbar->y, &scrollbar->image_button_scroll_dot, 1, 0);
 
     if (m->left.went_down && scrollbar->image_button_scroll_dot.focused) {
-        scrollbar->is_dragging_scrollbar_dot = 0;
-        scrollbar->scrollbar_dot_drag_offset = 0;
+        scrollbar->scrollbar_dot_mouse_offset =
+            m->y - scrollbar->y - scrollbar->image_button_scroll_dot.y_offset;
+        scrollbar->scrollbar_dot_drag_offset = get_scrollbar_dot_offset(scrollbar);
+        scrollbar->is_dragging_scrollbar_dot = 1;
         return 1;
     }
 
     if (!m->left.is_down) {
         scrollbar->is_dragging_scrollbar_dot = 0;
+        scrollbar->scrollbar_dot_mouse_offset = 0;
         return 0;
     }
 
@@ -347,14 +361,21 @@ static int handle_scrollbar_dot(scrollbar_type *scrollbar, const mouse *m)
         scroll_dot_height = get_scrollbar_thumb_length(scrollbar);
         track_height = get_scrollbar_dot_travel_length(scrollbar);
     }
-    if (m->x < scrollbar->x || m->x >= scrollbar->x + scroll_btn_width) {
+    if (!scrollbar->is_dragging_scrollbar_dot &&
+        (m->x < scrollbar->x || m->x >= scrollbar->x + scroll_btn_width)) {
         return 0;
     }
-    if (m->y < scrollbar->y + scroll_btn_height + scrollbar->dot_padding ||
-        m->y > scrollbar->y + scrollbar->length - scroll_btn_height - scrollbar->dot_padding) {
+    if (!scrollbar->is_dragging_scrollbar_dot &&
+        (m->y < scrollbar->y + scroll_btn_height + scrollbar->dot_padding ||
+        m->y > scrollbar->y + scrollbar->length - scroll_btn_height - scrollbar->dot_padding)) {
         return 0;
     }
-    int dot_offset = m->y - scrollbar->y - scroll_dot_height / 2 - scroll_btn_height;
+    int dot_offset = m->y - scrollbar->y - scroll_btn_height - scrollbar->dot_padding;
+    if (scrollbar->is_dragging_scrollbar_dot) {
+        dot_offset -= scrollbar->scrollbar_dot_mouse_offset;
+    } else {
+        dot_offset -= scroll_dot_height / 2;
+    }
     if (dot_offset < 0) {
         dot_offset = 0;
     }

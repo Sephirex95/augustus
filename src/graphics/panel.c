@@ -162,14 +162,14 @@ void scrollbar_panel_draw(int x, int y, int height_px)
         return;
     }
     graphics_set_clip_rectangle(x, y, SCROLL_PANEL_WIDTH, height_px);
-    int main_blocks = (height_px - (2 * BLOCK_SIZE) + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int main_blocks = (height_px - 2 * BLOCK_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     int start_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_01);
     int mid_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_02);
     int end_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_03);
-    int drawing_y = y;
+    int drawing_y = y + BLOCK_SIZE;
     image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
-    for (int yy = 1; yy < main_blocks; yy++) {
+    for (int yy = 0; yy < main_blocks; yy++) {
         image_draw(mid_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
         drawing_y += BLOCK_SIZE;
     }
@@ -279,12 +279,12 @@ void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, in
 
     if (middle_sections > 0) {
         int lines_alpha_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_LINES_ALPHA);
-        int center_index = (middle_sections - 1) / 2;
+        const image *lines_alpha_img = image_get(lines_alpha_id);
         if (is_vertical) {
-            int lines_y = y + start_span + center_index * middle_span;
+            int lines_y = y + (thumb_height - lines_alpha_img->original.height) / 2;
             image_draw(lines_alpha_id, x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
         } else {
-            int lines_x = x + start_span + center_index * middle_span;
+            int lines_x = x + (thumb_width - lines_alpha_img->original.width) / 2;
             image_draw(lines_alpha_id, lines_x, y, COLOR_MASK_NONE, SCALE_NONE);
         }
     }
