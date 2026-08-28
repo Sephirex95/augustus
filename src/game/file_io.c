@@ -375,7 +375,11 @@ static void init_scenario_data(scenario_version_t version)
     }
     state->graphic_ids = create_scenario_piece(GRID_SIZE_BUF_U16, 0);
     state->edge = create_scenario_piece(GRID_SIZE_BUF_U8, 0);
-    state->terrain = create_scenario_piece(GRID_SIZE_BUF_U16, 0);
+    if (version > SCENARIO_LAST_LEGACY_TERRAIN) {
+        state->terrain = create_scenario_piece(GRID_SIZE_BUF_U32, 0);
+    } else {
+        state->terrain = create_scenario_piece(GRID_SIZE_BUF_U16, 0);
+    }
     if (version > SCENARIO_LAST_NO_FORMULAS_AND_MODEL_DATA) {
         state->bitfields = create_scenario_piece(GRID_SIZE_BUF_U16, 0);
     } else {
@@ -757,7 +761,7 @@ static void scenario_load_from_state(scenario_state *file, scenario_version_t ve
     resource_set_mapping(resource_version);
 
     map_image_load_state_legacy(file->graphic_ids);
-    map_terrain_load_state(file->terrain, 0, file->graphic_ids, 1);
+    map_terrain_load_state(file->terrain, version > SCENARIO_LAST_LEGACY_TERRAIN, file->graphic_ids, 1);
     if (version > SCENARIO_LAST_NO_FORMULAS_AND_MODEL_DATA) {
         map_property_load_state(file->bitfields, file->edge);
     } else {
@@ -810,7 +814,7 @@ static void scenario_load_from_state(scenario_state *file, scenario_version_t ve
     }
     model_reset();
     if (version > SCENARIO_LAST_NO_FORMULAS_AND_MODEL_DATA) {
-        model_load_model_data(file->model_data);
+        model_load_model_data(file->model_data, version);
     } else {
         scenario_events_migrate_to_formulas();
         scenario_events_migrate_to_resolved_display_names();
@@ -841,7 +845,7 @@ static void scenario_save_to_state(scenario_state *file)
     buffer_write_u32(file->resource_version, RESOURCE_CURRENT_VERSION);
 
     map_image_save_state_legacy(file->graphic_ids);
-    map_terrain_save_state_legacy(file->terrain);
+    map_terrain_save_state(file->terrain);
     map_property_save_state(file->bitfields, file->edge);
     map_random_save_state(file->random);
     map_elevation_save_state(file->elevation);
@@ -952,7 +956,7 @@ static void savegame_load_from_state(savegame_state *state, savegame_version_t v
 
     model_reset();
     if (version > SAVE_GAME_LAST_NO_FORMULAS_AND_MODEL_DATA) {
-        model_load_model_data(state->model_data);
+        model_load_model_data(state->model_data, scenario_version);
     }
     if (version <= SAVE_GAME_LAST_NO_HOUSE_MODELS) {
         model_reset_houses();
@@ -1405,7 +1409,10 @@ int game_file_io_read_scenario(const char *filename)
 
 static int scenario_terrain_at(int grid_offset)
 {
-    return map_terrain_get_from_buffer_16(scenario_data.state.terrain, grid_offset);
+    if (scenario_data.version <= SCENARIO_LAST_LEGACY_TERRAIN) {
+        return map_terrain_get_from_buffer_16(scenario_data.state.terrain, grid_offset);
+    }
+    return map_terrain_get_from_buffer_32(scenario_data.state.terrain, grid_offset);
 }
 
 static int scenario_tile_size_at(int grid_offset)

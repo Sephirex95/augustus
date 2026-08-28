@@ -373,7 +373,7 @@ static int handle_scrollbar_dot(scrollbar_type *scrollbar, const mouse *m)
     }
     if (!scrollbar->is_dragging_scrollbar_dot &&
         (m->y < scrollbar->y + scroll_btn_height + scrollbar->dot_padding ||
-        m->y > scrollbar->y + scrollbar->length - scroll_btn_height - scrollbar->dot_padding)) {
+            m->y > scrollbar->y + scrollbar->length - scroll_btn_height - scrollbar->dot_padding)) {
         return 0;
     }
     int dot_offset = m->y - scrollbar->y - scroll_btn_height - scrollbar->dot_padding;
