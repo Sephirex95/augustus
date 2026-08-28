@@ -592,17 +592,7 @@ static void setup_header_footer_buttons(void)
         set_date_dd_frag[i].number = i - 1;
     }
     int year_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
-    // dropdown_button_init_simple(0, 0, year_dd_width, SIDEBAR_HEADER_BUTTON_HEIGHT,
-    //     set_date_dd_frag, 9, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
-    // dropdown_buttons[DD_SET_DATE].width = year_dd_width;
-    // dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    // dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
-    // dropdown_buttons[DD_SET_DATE].drop_up = 1; // defy gravity and drop up instead of down
-    // for (int i = 2; i < 9; i++) {
-    //     dropdown_buttons[DD_SET_DATE].buttons[i].is_disabled = 1;
-    //     dropdown_buttons[DD_SET_DATE].buttons[i].is_hidden = 1; // disable buttons except current year and anchor
-    // }
-    slider_init(&date_slider, 0, 0, year_dd_width, 0, 7, 1, 2023, 0); // example initialization
+    slider_init(&date_slider, 0, 0, year_dd_width, 0, 7, 1, 0, 0);
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
@@ -2826,6 +2816,9 @@ static void handle_input(const mouse *m, const hotkeys *h)
             return;
         }
         if (complex_button_handle_mouse_array(complex_buttons, m, CMPLX_BTN_COUNT)) {
+            return;
+        }
+        if (slider_handle_mouse(&date_slider, m)) {
             return;
         }
 

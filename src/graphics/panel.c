@@ -321,15 +321,12 @@ void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, in
     }
 
     if (middle_sections > 0) {
-        int lines_alpha_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_LINES_ALPHA);
+        int lines_alpha_id = assets_lookup_image_id(
+            is_vertical ? ASSET_UI_SCROLLBAR_LINES_ALPHA : ASSET_UI_SCROLLBAR_LINES_ALPHA_B);
         const image *lines_alpha_img = image_get(lines_alpha_id);
-        if (is_vertical) {
-            int lines_y = y + (thumb_height - lines_alpha_img->original.height) / 2;
-            image_draw(lines_alpha_id, x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
-        } else {
-            int lines_x = x + (thumb_width - lines_alpha_img->original.width) / 2;
-            image_draw(lines_alpha_id, lines_x, y, COLOR_MASK_NONE, SCALE_NONE);
-        }
+        int lines_x = x + (thumb_width - lines_alpha_img->original.width) / 2;
+        int lines_y = y + (thumb_height - lines_alpha_img->original.height) / 2;
+        image_draw(lines_alpha_id, lines_x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
     }
 
     graphics_reset_clip_rectangle();

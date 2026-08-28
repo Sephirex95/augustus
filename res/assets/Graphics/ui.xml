@@ -1575,6 +1575,9 @@
 	<image id="Scrollbar_Lines_D_01" src="Scrollbar_Lines_D_01"/>
 	<image id="Scrollbar_Lines_L_01" src="Scrollbar_Lines_L_01"/>
 	<image id="Scrollbar_Lines_Alpha" src="Scrollbar_Lines_Alpha"/>
+	<image id="Scrollbar_Lines_Alpha_B" width="19" height="24">
+		<layer group="this" image="Scrollbar_Lines_Alpha" rotate="90" x="0" y="0"/>
+	</image>
 	<image id="Scrollbar_Middle_01" src="Scrollbar_Middle_01"/>
 	<image id="Scrollbar_Middle_02" src="Scrollbar_Middle_02"/>
 	<image id="Scrollbar_Middle_03" src="Scrollbar_Middle_03"/>

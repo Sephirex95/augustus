@@ -128,6 +128,7 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_SCROLLBAR_DOWN] = assets_get_image_id("UI", "Scrollbar_Down_01");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MIDDLE] = assets_get_image_id("UI", "Scrollbar_Middle_01");
     data.asset_lookup[ASSET_UI_SCROLLBAR_LINES_ALPHA] = assets_get_image_id("UI", "Scrollbar_Lines_Alpha");
+    data.asset_lookup[ASSET_UI_SCROLLBAR_LINES_ALPHA_B] = assets_get_image_id("UI", "Scrollbar_Lines_Alpha_B");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP] = assets_get_image_id("UI", "Scrollbar_Middle_01_End_Top");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MIDDLE_01_END_BOTTOM] = assets_get_image_id("UI", "Scrollbar_Middle_01_End_Bottom");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED] = assets_get_image_id("UI", "Scrollbar_Middle_01_Trimmed");
