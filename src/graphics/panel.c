@@ -156,24 +156,37 @@ void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int 
     button_border_draw_colored(x, y, width_px, height_px, has_focus, color_border);
 }
 
-void scrollbar_panel_draw(int x, int y, int height_px)
+void scrollbar_panel_draw(int x, int y, int length, int is_vertical)
 {
-    if (height_px <= BLOCK_SIZE * 2) { // minimum height to draw the panel is 2 blocks - start and end.
+    if (length <= BLOCK_SIZE * 2) { // minimum length to draw the panel is 2 blocks - start and end.
         return;
     }
-    graphics_set_clip_rectangle(x, y, SCROLL_PANEL_WIDTH, height_px);
-    int main_blocks = (height_px - 2 * BLOCK_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    int start_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_01);
-    int mid_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_02);
-    int end_id = assets_lookup_image_id(ASSET_UI_SCROLL_BG_03);
-    int drawing_y = y + BLOCK_SIZE;
-    image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
-    for (int yy = 0; yy < main_blocks; yy++) {
-        image_draw(mid_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
-        drawing_y += BLOCK_SIZE;
+    int main_blocks = (length - 2 * BLOCK_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int start_id = assets_lookup_image_id(is_vertical ? ASSET_UI_SCROLL_BG_01 : ASSET_UI_SCROLL_BG_01B);
+    int mid_id = assets_lookup_image_id(is_vertical ? ASSET_UI_SCROLL_BG_02 : ASSET_UI_SCROLL_BG_02B);
+    int end_id = assets_lookup_image_id(is_vertical ? ASSET_UI_SCROLL_BG_03 : ASSET_UI_SCROLL_BG_03B);
+
+    if (is_vertical) {
+        graphics_set_clip_rectangle(x, y, SCROLL_PANEL_WIDTH, length);
+        int drawing_y = y + BLOCK_SIZE;
+        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+        for (int yy = 0; yy < main_blocks; yy++) {
+            image_draw(mid_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
+            drawing_y += BLOCK_SIZE;
+        }
+        image_draw(end_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
+    } else {
+        graphics_set_clip_rectangle(x, y, length, SCROLL_PANEL_WIDTH);
+        int drawing_x = x + BLOCK_SIZE;
+        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+        for (int xx = 0; xx < main_blocks; xx++) {
+            image_draw(mid_id, drawing_x, y, COLOR_MASK_NONE, SCALE_NONE);
+            drawing_x += BLOCK_SIZE;
+        }
+        image_draw(end_id, drawing_x, y, COLOR_MASK_NONE, SCALE_NONE);
     }
-    image_draw(end_id, x, drawing_y, COLOR_MASK_NONE, SCALE_NONE);
+
     graphics_reset_clip_rectangle();
 }
 

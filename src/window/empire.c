@@ -30,6 +30,7 @@
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/screen.h"
+#include "graphics/slider.h"
 #include "graphics/scrollbar.h"
 #include "graphics/text.h"
 #include "graphics/window.h"
@@ -294,12 +295,12 @@ enum {
 enum {
     DD_TRADE_BUY_SELL,
     DD_TRADE_SORT,
-    DD_SET_DATE,
     DD_COUNT
 };
 
 static cycling_button cycling_buttons[BTN_COUNT];
 static dropdown_button dropdown_buttons[DD_COUNT];
+static slider_t date_slider;
 static complex_button complex_buttons[CMPLX_BTN_COUNT];
 static grid_picker resource_picker;
 static complex_button resource_picker_anchor;
@@ -573,7 +574,7 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
     complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
     complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_1;
-    // TR_UI_SIDEBAR_TRADE_HISTORY_TOOLTIP
+
     static lang_fragment set_date_dd_frag[9] = { 0 };
 
     for (int i = 0; i < 3; i++) {
@@ -591,16 +592,17 @@ static void setup_header_footer_buttons(void)
         set_date_dd_frag[i].number = i - 1;
     }
     int year_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
-    dropdown_button_init_simple(0, 0, year_dd_width, SIDEBAR_HEADER_BUTTON_HEIGHT,
-        set_date_dd_frag, 9, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
-    dropdown_buttons[DD_SET_DATE].width = year_dd_width;
-    dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
-    dropdown_buttons[DD_SET_DATE].drop_up = 1; // defy gravity and drop up instead of down
-    for (int i = 2; i < 9; i++) {
-        dropdown_buttons[DD_SET_DATE].buttons[i].is_disabled = 1;
-        dropdown_buttons[DD_SET_DATE].buttons[i].is_hidden = 1; // disable buttons except current year and anchor
-    }
+    // dropdown_button_init_simple(0, 0, year_dd_width, SIDEBAR_HEADER_BUTTON_HEIGHT,
+    //     set_date_dd_frag, 9, &dropdown_buttons[DD_SET_DATE], DD_BUTTON_STYLE_GRAY, NULL); //0,0 for x,y because update runs every frame
+    // dropdown_buttons[DD_SET_DATE].width = year_dd_width;
+    // dropdown_buttons[DD_SET_DATE].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
+    // dropdown_buttons[DD_SET_DATE].selected_index = 1; // default to "Current Year"
+    // dropdown_buttons[DD_SET_DATE].drop_up = 1; // defy gravity and drop up instead of down
+    // for (int i = 2; i < 9; i++) {
+    //     dropdown_buttons[DD_SET_DATE].buttons[i].is_disabled = 1;
+    //     dropdown_buttons[DD_SET_DATE].buttons[i].is_hidden = 1; // disable buttons except current year and anchor
+    // }
+    slider_init(&date_slider, 0, 0, year_dd_width, 0, 7, 1, 2023, 0); // example initialization
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
@@ -670,7 +672,8 @@ static void setup_sidebar(void)
 
 static void refresh_header_and_footer_buttons(void)
 {
-    data.sidebar.trade_year = dropdown_buttons[DD_SET_DATE].selected_index - 1; // 0 index is anchor, so -1
+
+    data.sidebar.trade_year = date_slider.value; // convert to year index
     window_empire_sidebar_sort_set_trade_year(data.sidebar.trade_year); // update the year in the sorting module
     int sorting = window_empire_sidebar_sort_get_current_sorting();
     if (sorting >= SORT_BY_NAME && sorting < MAX_SORTING_KEY) {
@@ -740,18 +743,18 @@ static void refresh_header_and_footer_buttons(void)
     int date_dd_y = y_footer + SIDEBAR_MARGIN_VERTICAL;
     int date_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
     int date_dd_height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    dropdown_button_update_dimensions(date_dd_x, date_dd_y, date_dd_width, date_dd_height, &dropdown_buttons[DD_SET_DATE]);
+    date_slider.x = date_dd_x;
+    date_slider.y = date_dd_y;
+    date_slider.length = date_dd_width;
+    date_slider.value_step = 1;
+
     if (!trade_history_years_stored) {
-        dropdown_buttons[DD_SET_DATE].buttons[0].is_disabled = 1; // disable anchor button if no history
-        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.translation_key = TR_UI_LEDGER_ONLY_CURRENT_YEAR;
-        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.type = TOOLTIP_BUTTON;
+        date_slider.is_disabled = 1; // disable anchor button if no history
+        date_slider.tooltip_c.translation_key = TR_UI_LEDGER_ONLY_CURRENT_YEAR;
+        date_slider.tooltip_c.type = TOOLTIP_BUTTON;
     } else {
-        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.type = TOOLTIP_NONE;
-        dropdown_buttons[DD_SET_DATE].buttons[0].tooltip_c.translation_key = 0;
-        for (int i = 0; i < trade_history_years_stored; i++) {
-            dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_hidden = 0;
-            dropdown_buttons[DD_SET_DATE].buttons[i + 2].is_disabled = 0; // enable all years that have data
-        }
+        date_slider.tooltip_c.type = TOOLTIP_NONE;
+        date_slider.tooltip_c.translation_key = 0;
     }
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
 
@@ -2085,7 +2088,7 @@ static void draw_empire_object(const empire_object *obj)
             return; // dont draw the icon if route is closed or hidden
         }
         if (empire_object_get_full(empire_city_get(empire_city_get_for_trade_route
-            (obj->trade_route_id))->empire_object_id + 1)->route_hidden) {
+        (obj->trade_route_id))->empire_object_id + 1)->route_hidden) {
             // perform more complex check in case it's a vanilla empire since there the icon trade route isn't always the first
             return;
         }
@@ -2357,7 +2360,7 @@ static void draw_sidebar_grid_box(void)
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
         complex_button_draw_array(complex_buttons, CMPLX_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
-
+        slider_draw(&date_slider);
     }
 
     graphics_reset_clip_rectangle();

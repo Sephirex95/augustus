@@ -1765,6 +1765,15 @@
 	<image id="Scrollbar_Dark_Start">
 		<layer src="Scrollbar_Dark_End" invert="vertical"/>
 	</image>
+	<image id="Scrollbar_Dark_End_B" width="16" height="24">
+		<layer group="this" image="Scrollbar_Dark_End" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Dark_Mid_B" width="16" height="24">
+		<layer group="this" image="Scrollbar_Dark_Mid" rotate="90" x="0" y="0"/>
+	</image>
+	<image id="Scrollbar_Dark_Start_B" width="16" height="24">
+		<layer group="this" image="Scrollbar_Dark_Start" rotate="90" x="0" y="0"/>
+	</image>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>

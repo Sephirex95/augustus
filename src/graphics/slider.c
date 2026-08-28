@@ -23,14 +23,21 @@ typedef enum slider_element {
 
 static int get_slider_image_id(const slider_t *slider, slider_element element)
 {
-    // returns the 00 frame of the needed element - add +n to get the nth frame
     int id = 0;
     switch (element) {
         case SLIDER_DECREASE:
-            id = slider->show_plus_minus_buttons ? ASSET_UI_SCROLLBAR_PLUS_01 : ASSET_UI_ARROW_MASKED_UP;
+            if (slider->show_plus_minus_buttons) {
+                id = ASSET_UI_SCROLLBAR_MINUS_01;
+            } else {
+                id = slider->is_vertical ? ASSET_UI_SCROLLBAR_UP : ASSET_UI_SCROLLBAR_LEFT_01;
+            }
             break;
         case SLIDER_INCREASE:
-            id = slider->show_plus_minus_buttons ? ASSET_UI_SCROLLBAR_MINUS_01 : ASSET_UI_ARROW_MASKED_DOWN;
+            if (slider->show_plus_minus_buttons) {
+                id = ASSET_UI_SCROLLBAR_PLUS_01;
+            } else {
+                id = slider->is_vertical ? ASSET_UI_SCROLLBAR_DOWN : ASSET_UI_SCROLLBAR_RIGHT_01;
+            }
             break;
         case SLIDER_THUMB:
             id = slider->force_mini_thumb ? ASSET_UI_SCROLLBAR_MINI_THUMB_01 : 0;
@@ -44,14 +51,20 @@ static int get_slider_image_id(const slider_t *slider, slider_element element)
     return assets_lookup_image_id(id);
 }
 
-static int get_thumb_middle_section_size(void)
+static int get_thumb_middle_section_size(int is_vertical)
 {
-    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED))->original.height;
+    if (is_vertical) {
+        return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED))->original.height;
+    }
+    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01B_TRIMMED))->original.width;
 }
 
-static int get_thumb_end_size(void)
+static int get_thumb_end_size(int is_vertical)
 {
-    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP))->original.height;
+    if (is_vertical) {
+        return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP))->original.height;
+    }
+    return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MIDDLE_01B_END_LEFT))->original.width;
 }
 
 static int get_thumb_midsections_count(const slider_t *slider)
@@ -60,8 +73,8 @@ static int get_thumb_midsections_count(const slider_t *slider)
         return -1;
     }
 
-    int tmsh = get_thumb_middle_section_size();
-    int tesh = get_thumb_end_size();
+    int tmsh = get_thumb_middle_section_size(slider->is_vertical);
+    int tesh = get_thumb_end_size(slider->is_vertical);
     if (tmsh <= 0) {
         return 1;
     }
@@ -90,26 +103,65 @@ static int get_thumb_midsections_count(const slider_t *slider)
 static int get_thumb_length(const slider_t *slider)
 {
     if (slider->force_mini_thumb) {
-        return image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MINI_THUMB_01))->original.height;
+        const image *thumb = image_get(assets_lookup_image_id(ASSET_UI_SCROLLBAR_MINI_THUMB_01));
+        return slider->is_vertical ? thumb->original.height : thumb->original.width;
     }
-    return 2 * get_thumb_end_size() + get_thumb_midsections_count(slider) * get_thumb_middle_section_size();
+    return 2 * get_thumb_end_size(slider->is_vertical) +
+        get_thumb_midsections_count(slider) * get_thumb_middle_section_size(slider->is_vertical);
 }
 
-static int get_track_x(const slider_t *slider)
-{
-    return slider->x + (slider->length - SLIDER_BOX_WIDTH) / 2;
-}
-
-static int get_thumb_y(const slider_t *slider)
+static int get_thumb_offset(const slider_t *slider)
 {
     int range = slider->max_value - slider->min_value;
     int travel_length = slider->length - 2 * SLIDER_BUTTON_SIDE - get_thumb_length(slider);
     if (range <= 0 || travel_length <= 0) {
-        return slider->y + SLIDER_BUTTON_SIDE;
+        return SLIDER_BUTTON_SIDE;
     }
 
     int value = calc_bound(slider->value, slider->min_value, slider->max_value) - slider->min_value;
-    return slider->y + SLIDER_BUTTON_SIDE + calc_adjust_with_percentage(travel_length, calc_percentage(value, range));
+    return SLIDER_BUTTON_SIDE + calc_adjust_with_percentage(travel_length, calc_percentage(value, range));
+}
+
+static int get_slider_frame(const slider_t *slider)
+{
+    if (slider->is_disabled) {
+        return 4;
+    }
+    if (slider->is_clicked) {
+        return 3;
+    }
+    if (slider->is_focused) {
+        return 2;
+    }
+    return 1;
+}
+
+static void draw_slider_horizontal(const slider_t *slider)
+{
+    int frame = get_slider_frame(slider);
+    if (slider->draw_background) {
+        scrollbar_panel_draw(slider->x, slider->y, slider->length, 0);
+    }
+
+    image_draw(get_slider_image_id(slider, SLIDER_DECREASE), slider->x, slider->y, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(get_slider_image_id(slider, SLIDER_INCREASE), slider->x + slider->length - SLIDER_BUTTON_SIDE,
+        slider->y, COLOR_MASK_NONE, SCALE_NONE);
+
+    scrollbar_thumb_draw(slider->x + get_thumb_offset(slider), slider->y, get_thumb_midsections_count(slider), 0, frame);
+}
+
+static void draw_slider_vertical(const slider_t *slider)
+{
+    int frame = get_slider_frame(slider);
+    if (slider->draw_background) {
+        scrollbar_panel_draw(slider->x, slider->y, slider->length, 1);
+    }
+
+    image_draw(get_slider_image_id(slider, SLIDER_DECREASE), slider->x, slider->y, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(get_slider_image_id(slider, SLIDER_INCREASE), slider->x, slider->y + slider->length - SLIDER_BUTTON_SIDE,
+        COLOR_MASK_NONE, SCALE_NONE);
+
+    scrollbar_thumb_draw(slider->x, slider->y + get_thumb_offset(slider), get_thumb_midsections_count(slider), 1, frame);
 }
 
 void slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
@@ -137,26 +189,11 @@ void slider_draw(const slider_t *slider)
     if (slider->is_hidden) {
         return;
     }
-
-    int x = get_track_x(slider);
-    if (slider->draw_background) {
-        scrollbar_panel_draw(x, slider->y, slider->length);
+    if (slider->is_vertical) {
+        draw_slider_vertical(slider);
+    } else {
+        draw_slider_horizontal(slider);
     }
-    int decrease = get_slider_image_id(slider, SLIDER_DECREASE);
-    int increase = get_slider_image_id(slider, SLIDER_INCREASE);
-    image_draw(decrease, x, slider->y, COLOR_MASK_NONE, SCALE_NONE);
-    image_draw(increase, x, slider->y + slider->length - SLIDER_BUTTON_SIDE, COLOR_MASK_NONE, SCALE_NONE);
-
-    int frame = 1;
-    if (slider->is_disabled) {
-        frame = 4;
-    } else if (slider->is_clicked) {
-        frame = 3;
-    } else if (slider->is_focused) {
-        frame = 2;
-    }
-    scrollbar_thumb_draw(x, get_thumb_y(slider), get_thumb_midsections_count(slider), 1, frame);
-    window_invalidate();
 }
 
 void slider_draw_array(const slider_t *sliders, unsigned int num_sliders)

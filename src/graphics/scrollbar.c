@@ -253,7 +253,7 @@ void scrollbar_draw(scrollbar_type *scrollbar)
             if (scrollbar->legacy) {
                 inner_panel_draw(scrollbar->x + 4, scrollbar->y + 2 * BLOCK_SIZE, 2, scrollbar->length / BLOCK_SIZE - 4);
             } else { // default
-                scrollbar_panel_draw(scrollbar->x, scrollbar->y, scrollbar->length);
+                scrollbar_panel_draw(scrollbar->x, scrollbar->y, scrollbar->length, 1);
             }
         }
         image_buttons_draw(scrollbar->x, scrollbar->y, &scrollbar->image_button_scroll_up, 1);
