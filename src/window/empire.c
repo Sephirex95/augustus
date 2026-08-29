@@ -595,6 +595,7 @@ static void setup_header_footer_buttons(void)
         set_date_dd_frag[i].number = i - 1;
     }
     int date_slider_width = SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH; // default that will be overwritten 
+    trade_history_years_stored = trade_route_get_history_years_stored(); // refresh
     slider_init(&date_slider, 0, 0, date_slider_width, 0, trade_history_years_stored, 1, 0, 0, SLIDER_DISPLAY_TEXT_BELOW);
     slider_text_block_init(&date_slider.block, 0, 0, date_slider_width, SIDEBAR_HEADER_BUTTON_HEIGHT, set_date_dd_frag, 9, 5);
 
