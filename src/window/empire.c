@@ -18,6 +18,7 @@
 #include "empire/trade_prices.h"
 #include "empire/type.h"
 #include "game/system.h"
+#include "game/time.h"
 #include "game/tutorial.h"
 #include "graphics/arrow_button.h"
 #include "graphics/button.h"
@@ -41,6 +42,7 @@
 #include "scenario/invasion.h"
 #include "widget/dropdown_button.h"
 #include "widget/grid_picker.h"
+#include "widget/top_menu.h"
 #include "window/advisors.h"
 #include "window/city.h"
 #include "window/empire_sidebar_sort.h"
@@ -214,7 +216,7 @@ static void image_draw_silh_scaled_centered(int image_id, int x, int y, color_t 
 static void animation_draw_scaled(const image *img, int image_id, int new_animation, int x, int y, color_t color, int draw_scale_percent);
 static int open_trade_button_icon_fits(const empire_city *city, const open_trade_button_style *style, trade_icon_type icon_type);
 static void draw_sidebar_city_item(const grid_box_item *item);
-static void draw_funds_panel(void);
+static void draw_funds_and_date_panels(void);
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
     int start_x, int start_y, int end_x, int end_y, int interval, int remaining, color_t color_mask);
 void window_empire_collect_trade_edges(void);
@@ -263,6 +265,7 @@ static void process_selection(void);
 static int is_sidebar(const mouse *m);
 static int is_sidebar_border(const mouse *m);
 static int is_funds_panel(int x, int y);
+static int is_date_panel(int x, int y);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
@@ -591,8 +594,8 @@ static void setup_header_footer_buttons(void)
         set_date_dd_frag[i].text_id = TR_UI_YEAR_AGO;
         set_date_dd_frag[i].number = i - 1;
     }
-    int year_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
-    slider_init(&date_slider, 0, 0, year_dd_width, 0, 7, 1, 0, 0);
+    int date_slider_width = SIDEBAR_HEADER_BUTTON_EXTRA_WIDE_WIDTH; // default that will be overwritten 
+    slider_init(&date_slider, 0, 0, date_slider_width, 0, trade_route_get_history_years_stored(), 1, 0, 0);
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
@@ -732,11 +735,13 @@ static void refresh_header_and_footer_buttons(void)
     int date_dd_x = filter_x - SIDEBAR_HEADER_BUTTON_SPACING;
     int date_dd_y = y_footer + SIDEBAR_MARGIN_VERTICAL;
     int date_dd_width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
-    int date_dd_height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    date_slider.x = date_dd_x;
-    date_slider.y = date_dd_y;
+
+    date_slider.x = date_dd_x - 6;
+    date_slider.y = date_dd_y - 6;
     date_slider.length = date_dd_width;
     date_slider.value_step = 1;
+    date_slider.max_value = trade_history_years_stored;
+
 
     if (!trade_history_years_stored) {
         date_slider.is_disabled = 1; // disable anchor button if no history
@@ -2387,7 +2392,12 @@ static int funds_panel_width(void)
     return (blocks + 2) * BLACK_PANEL_BLOCK_WIDTH;
 }
 
-static void draw_funds_panel(void)
+static int date_panel_width(void)
+{
+    return 7 * BLACK_PANEL_BLOCK_WIDTH;
+}
+
+static void draw_funds_and_date_panels(void)
 {
     int x = data.x_min + WIDTH_BORDER;
     int y = data.y_min + WIDTH_BORDER;
@@ -2404,6 +2414,23 @@ static void draw_funds_panel(void)
     lang_text_draw_colored(6, 0, draw_x, y + 5, FONT_NORMAL_PLAIN, treasury_color);
     text_draw_number(treasury, '@', "\0", draw_x + label_width, y + 5, FONT_NORMAL_PLAIN, treasury_color);
     button_border_draw(x - 3, y - 3, width + 4, FUNDS_PANEL_HEIGHT + 8, 0); // minor adjustments to fit border
+    graphics_reset_clip_rectangle();
+
+    int date_width = date_panel_width();
+    int date_x = data.sidebar.x_min - WIDTH_BORDER - date_width;
+    int date_text_width = date_width - BLACK_PANEL_BLOCK_WIDTH - 14;
+    if (date_x <= x + width + BLACK_PANEL_BLOCK_WIDTH) {
+        return;
+    }
+
+    graphics_set_clip_rectangle(date_x - 2, y, date_width + 3, FUNDS_PANEL_HEIGHT + 10);
+    top_menu_black_panel_draw(date_x, y, date_width);
+    int month_offset = date_x + BLACK_PANEL_BLOCK_WIDTH + 14;
+    text_draw_number(widget_top_menu_get_cosmetic_day_of_month(), 0, "", date_x + 10, y + 5, FONT_NORMAL_PLAIN,
+        COLOR_FONT_YELLOW);
+    lang_text_draw_month_year_max_width(game_time_month(), game_time_year(), month_offset, y + 5,
+        date_text_width, FONT_NORMAL_PLAIN, COLOR_FONT_YELLOW);
+    button_border_draw(date_x - 3, y - 3, date_width + 4, FUNDS_PANEL_HEIGHT + 8, 0);
     graphics_reset_clip_rectangle();
 }
 
@@ -2431,7 +2458,7 @@ static void draw_foreground(void)
         data.selected_city = 0;
     }
     draw_paneling();
-    draw_funds_panel();
+    draw_funds_and_date_panels();
     if (!data.sidebar.border_btn.is_collapsed) {
         draw_sidebar_grid_box();  // grid_box uses usable_sidebar dimensions
         grid_box_request_refresh(&sidebar_grid_box);
@@ -2508,6 +2535,22 @@ static int is_funds_panel(int x, int y)
     int panel_y = data.y_min + WIDTH_BORDER;
     return x >= panel_x && x < panel_x + funds_panel_width() &&
         y >= panel_y && y < panel_y + FUNDS_PANEL_HEIGHT;
+}
+
+static int is_date_panel(int x, int y)
+{
+    int funds_x = data.x_min + WIDTH_BORDER;
+    int funds_y = data.y_min + WIDTH_BORDER;
+    int funds_width = funds_panel_width();
+    int date_width = date_panel_width();
+    int date_x = data.sidebar.x_min - WIDTH_BORDER - date_width;
+
+    if (date_x <= funds_x + funds_width + BLACK_PANEL_BLOCK_WIDTH) {
+        return 0;
+    }
+
+    return x >= date_x && x < date_x + date_width &&
+        y >= funds_y && y < funds_y + FUNDS_PANEL_HEIGHT;
 }
 
 static int is_map(const mouse *m)
@@ -3111,6 +3154,10 @@ static void get_tooltip(tooltip_context *c)
         c->type = TOOLTIP_BUTTON;
         c->text_group = 68;
         c->text_id = 60;
+    } else if (is_date_panel(c->mouse_x, c->mouse_y)) {
+        c->type = TOOLTIP_BUTTON;
+        c->text_group = 68;
+        c->text_id = 62;
     } else if (get_city_name_tooltip(c)) {
         return;
     } else if (get_city_name_tooltip_sidebar(c)) {
