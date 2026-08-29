@@ -42,7 +42,6 @@
 #include "scenario/invasion.h"
 #include "widget/dropdown_button.h"
 #include "widget/grid_picker.h"
-#include "widget/top_menu.h"
 #include "window/advisors.h"
 #include "window/city.h"
 #include "window/empire_sidebar_sort.h"
@@ -265,7 +264,7 @@ static void process_selection(void);
 static int is_sidebar(const mouse *m);
 static int is_sidebar_border(const mouse *m);
 static int is_funds_panel(int x, int y);
-static int is_date_panel(int x, int y);
+static int is_trade_year_text(int x, int y);
 static int is_map(const mouse *m);
 static void handle_sidebar_border(const mouse *m);
 static void on_sidebar_city_click(const grid_box_item *item);
@@ -2395,9 +2394,31 @@ static int funds_panel_width(void)
     return (blocks + 2) * BLACK_PANEL_BLOCK_WIDTH;
 }
 
-static int date_panel_width(void)
+static int selected_trade_year(void)
 {
-    return 7 * BLACK_PANEL_BLOCK_WIDTH;
+    return game_time_year() - date_slider.value;
+}
+
+static int trade_year_text_width(void)
+{
+    int year = selected_trade_year();
+    int absolute_year = year < 0 ? -year : year;
+    return text_get_number_width(absolute_year, ' ', "", FONT_LARGE_PLAIN) +
+        lang_text_get_width(20, year >= 0 ? 1 : 0, FONT_LARGE_PLAIN);
+}
+
+static void draw_trade_year_text(void)
+{
+    int width = trade_year_text_width();
+    int x = data.sidebar.x_min - WIDTH_BORDER - width - 1;
+    int y = data.y_min + WIDTH_BORDER;
+    int funds_right = data.x_min + WIDTH_BORDER + funds_panel_width() + BLACK_PANEL_BLOCK_WIDTH;
+
+    if (x <= funds_right) {
+        return;
+    }
+
+    lang_text_draw_year_colored(selected_trade_year(), x, y, FONT_LARGE_PLAIN, COLOR_WHITE);
 }
 
 static void draw_funds_and_date_panels(void)
@@ -2418,23 +2439,7 @@ static void draw_funds_and_date_panels(void)
     text_draw_number(treasury, '@', "\0", draw_x + label_width, y + 5, FONT_NORMAL_PLAIN, treasury_color);
     button_border_draw(x - 3, y - 3, width + 4, FUNDS_PANEL_HEIGHT + 8, 0); // minor adjustments to fit border
     graphics_reset_clip_rectangle();
-
-    int date_width = date_panel_width();
-    int date_x = data.sidebar.x_min - WIDTH_BORDER - date_width;
-    int date_text_width = date_width - BLACK_PANEL_BLOCK_WIDTH - 14;
-    if (date_x <= x + width + BLACK_PANEL_BLOCK_WIDTH) {
-        return;
-    }
-
-    graphics_set_clip_rectangle(date_x - 2, y, date_width + 3, FUNDS_PANEL_HEIGHT + 10);
-    top_menu_black_panel_draw(date_x, y, date_width);
-    int month_offset = date_x + BLACK_PANEL_BLOCK_WIDTH + 14;
-    text_draw_number(widget_top_menu_get_cosmetic_day_of_month(), 0, "", date_x + 10, y + 5, FONT_NORMAL_PLAIN,
-        COLOR_FONT_YELLOW);
-    lang_text_draw_month_year_max_width(game_time_month(), game_time_year(), month_offset, y + 5,
-        date_text_width, FONT_NORMAL_PLAIN, COLOR_FONT_YELLOW);
-    button_border_draw(date_x - 3, y - 3, date_width + 4, FUNDS_PANEL_HEIGHT + 8, 0);
-    graphics_reset_clip_rectangle();
+    draw_trade_year_text();
 }
 
 // -------------------------------------------------------------------------------------------------------
@@ -2540,20 +2545,19 @@ static int is_funds_panel(int x, int y)
         y >= panel_y && y < panel_y + FUNDS_PANEL_HEIGHT;
 }
 
-static int is_date_panel(int x, int y)
+static int is_trade_year_text(int x, int y)
 {
-    int funds_x = data.x_min + WIDTH_BORDER;
-    int funds_y = data.y_min + WIDTH_BORDER;
-    int funds_width = funds_panel_width();
-    int date_width = date_panel_width();
-    int date_x = data.sidebar.x_min - WIDTH_BORDER - date_width;
+    int width = trade_year_text_width();
+    int text_x = data.sidebar.x_min - WIDTH_BORDER - width - 1;
+    int text_y = data.y_min + WIDTH_BORDER;
+    int funds_right = data.x_min + WIDTH_BORDER + funds_panel_width() + BLACK_PANEL_BLOCK_WIDTH;
 
-    if (date_x <= funds_x + funds_width + BLACK_PANEL_BLOCK_WIDTH) {
+    if (text_x <= funds_right) {
         return 0;
     }
 
-    return x >= date_x && x < date_x + date_width &&
-        y >= funds_y && y < funds_y + FUNDS_PANEL_HEIGHT;
+    return x >= text_x && x < text_x + width &&
+        y >= text_y && y < text_y + font_definition_for(FONT_LARGE_PLAIN)->line_height;
 }
 
 static int is_map(const mouse *m)
@@ -3157,7 +3161,7 @@ static void get_tooltip(tooltip_context *c)
         c->type = TOOLTIP_BUTTON;
         c->text_group = 68;
         c->text_id = 60;
-    } else if (is_date_panel(c->mouse_x, c->mouse_y)) {
+    } else if (is_trade_year_text(c->mouse_x, c->mouse_y)) {
         c->type = TOOLTIP_BUTTON;
         c->text_group = 68;
         c->text_id = 62;

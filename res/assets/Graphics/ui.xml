@@ -1851,4 +1851,5 @@
 	<image id="Trade_Ledger_Export" src = "Trade_Ledger_Export"/>
 	<image id="Trade_Ledger_Import" src = "Trade_Ledger_Import"/>
 	<image id="resource_picker" src = "resource_picker"/>
+	<image id="hourglass_icon" src = "hourglass_v1"/>
 </assetlist>

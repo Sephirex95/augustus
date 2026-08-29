@@ -180,7 +180,7 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_03] = assets_get_image_id("UI", "Scrollbar_Thumb_03");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_04] = assets_get_image_id("UI", "Scrollbar_Thumb_04");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MINI_THUMB_LINES] = assets_get_image_id("UI", "Scrollbar_Thumb_Lines");
-
+    data.asset_lookup[ASSET_UI_HOURGLASS_ICON] = assets_get_image_id("UI", "hourglass_icon");
     data.asset_lookup[ASSET_AESTHETIC_BUILDING_WILLOW_TREE] = assets_get_image_id("Aesthetics", "ornamental willow");
     // font assets - keep last
     data.font_lookup[ASSET_FONT_SQ_BRACKET_LEFT] = assets_get_image_id("UI", "leftbracket_white_l");
