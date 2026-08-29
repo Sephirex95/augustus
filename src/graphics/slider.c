@@ -347,7 +347,7 @@ static void draw_slider_vertical(slider_t *slider)
 }
 
 int slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
-    int value_step, int initial_value, unsigned char is_vertical)
+    int value_step, int initial_value, unsigned char is_vertical, slider_display_text display_text)
 {
     memset(slider, 0, sizeof(*slider));
 
@@ -371,6 +371,7 @@ int slider_init(slider_t *slider, int x, int y, int length, int min_value, int m
     slider->is_vertical = is_vertical;
 
     slider->value = slider_snap_value(slider, initial_value);
+    slider->display_text = display_text;
     slider_update_cached_thumb_offset(slider);
     return 1;
 }
