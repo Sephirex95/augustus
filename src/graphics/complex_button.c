@@ -7,6 +7,7 @@
 #include "graphics/window.h"
 #include "input/mouse.h"
 #include "sound/effect.h"
+#include "widget/text_block.h"
 
 #include <stddef.h>
 #include <stdlib.h>

@@ -1,173 +1,51 @@
-#include "lang_text.h"
+#include "lang_sequence.h"
 
 #include "core/lang.h"
-#include "core/locale.h"
 #include "core/string.h"
+#include "graphics/lang_text.h"
 #include "graphics/text.h"
 
-int lang_text_get_width(int group, int number, font_t font)
+#include <stddef.h>
+
+void lang_text_fragment_label(lang_fragment *f, int text_group, int text_id)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    return text_get_width(str, font) + font_definition_for(font)->space_width;
+    f->type = LANG_FRAG_LABEL;
+    f->text_group = text_group;
+    f->text_id = text_id;
 }
 
-int lang_text_draw(int group, int number, int x_offset, int y_offset, font_t font)
+void lang_text_fragment_amount(lang_fragment *f, int text_group, int text_id, int number)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    return text_draw(str, x_offset, y_offset, font, 0);
+    f->type = LANG_FRAG_AMOUNT;
+    f->text_group = text_group;
+    f->text_id = text_id;
+    f->number = number;
 }
 
-int lang_text_draw_colored(int group, int number, int x_offset, int y_offset, font_t font, color_t color)
+void lang_text_fragment_number(lang_fragment *f, int number)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    return text_draw(str, x_offset, y_offset, font, color);
+    f->type = LANG_FRAG_NUMBER;
+    f->number = number;
 }
 
-void lang_text_draw_centered(int group, int number, int x_offset, int y_offset, int box_width, font_t font)
+void lang_text_fragment_float(lang_fragment *f, float number, int decimal_places)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    text_draw_centered(str, x_offset, y_offset, box_width, font, 0);
+    f->type = LANG_FRAG_FLOAT;
+    f->float_number = number;
+    f->decimal_places = decimal_places;
 }
 
-void lang_text_draw_centered_without_bounds(int group, int number, int x_offset, int y_offset, int box_width, font_t font)
+void lang_text_fragment_text(lang_fragment *f, const uint8_t *text)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    text_draw_centered_without_bounds(str, x_offset, y_offset, box_width, font, 0);
+    f->type = LANG_FRAG_TEXT;
+    f->text = text;
 }
 
-void lang_text_draw_right_aligned(int group, int number, int x_offset, int y_offset, int box_width, font_t font)
+void lang_text_fragment_space(lang_fragment *f, int space_width)
 {
-    const uint8_t *str = lang_get_string(group, number);
-    text_draw_right_aligned(str, x_offset, y_offset, box_width, font, 0);
+    f->type = LANG_FRAG_SPACE;
+    f->space_width = space_width;
 }
-
-void lang_text_draw_centered_colored(
-    int group, int number, int x_offset, int y_offset, int box_width, font_t font, color_t color)
-{
-    const uint8_t *str = lang_get_string(group, number);
-    text_draw_centered(str, x_offset, y_offset, box_width, font, color);
-}
-
-void lang_text_draw_ellipsized(int group, int number, int x_offset, int y_offset, int box_width, font_t font)
-{
-    const uint8_t *str = lang_get_string(group, number);
-    text_draw_ellipsized(str, x_offset, y_offset, box_width, font, 0);
-}
-
-int lang_text_draw_amount(int group, int number, int amount, int x_offset, int y_offset, font_t font)
-{
-    return lang_text_draw_amount_colored(group, number, amount, x_offset, y_offset, font, COLOR_MASK_NONE);
-}
-
-int lang_text_get_amount_width(int group, int number, int amount, font_t font)
-{
-    int amount_offset = (amount == 1 || amount == -1) ? 0 : 1;
-    int width;
-    if (amount >= 0) {
-        width = text_get_number_width(amount, ' ', " ", font);
-    } else {
-        width = text_get_number_width(-amount, '-', " ", font);
-    }
-    width += lang_text_get_width(group, number + amount_offset, font);
-    return width;
-}
-
-int lang_text_draw_amount_centered(int group, int number, int amount, int x_offset, int y_offset, int box_width,
-    font_t font)
-{
-    int width;
-    if (amount >= 0) {
-        width = text_get_number_width(amount, ' ', " ", font);
-    } else {
-        width = text_get_number_width(-amount, '-', " ", font);
-    }
-    int text_offset = (amount == 1 || amount == -1) ? 0 : 1;
-    width += lang_text_get_width(group, number + text_offset, font);
-    return lang_text_draw_amount_colored(group, number, amount, x_offset + (box_width - width) / 2, y_offset,
-        font, COLOR_MASK_NONE);
-}
-
-int lang_text_draw_amount_colored(int group, int number, int amount, int x_offset, int y_offset,
-    font_t font, color_t color)
-{
-    int amount_offset = 1;
-    if (amount == 1 || amount == -1) {
-        amount_offset = 0;
-    }
-    int desc_offset_x;
-    if (amount >= 0) {
-        desc_offset_x = text_draw_number(amount, ' ', " ",
-            x_offset, y_offset, font, color);
-    } else {
-        desc_offset_x = text_draw_number(-amount, '-', " ",
-            x_offset, y_offset, font, color);
-    }
-    return desc_offset_x + lang_text_draw_colored(group, number + amount_offset,
-        x_offset + desc_offset_x, y_offset, font, color);
-}
-
-int lang_text_draw_year(int year, int x_offset, int y_offset, font_t font)
-{
-    int width = 0;
-    if (year >= 0) {
-        int use_year_ad = locale_year_before_ad();
-        if (use_year_ad) {
-            width += text_draw_number(year, ' ', "", x_offset + width, y_offset, font, 0);
-            width += lang_text_draw(20, 1, x_offset + width, y_offset, font);
-        } else {
-            width += lang_text_draw(20, 1, x_offset + width, y_offset, font);
-            width += text_draw_number(year, ' ', "", x_offset + width, y_offset, font, 0);
-        }
-    } else {
-        width += text_draw_number(-year, ' ', "", x_offset + width, y_offset, font, 0);
-        width += lang_text_draw(20, 0, x_offset + width, y_offset, font);
-    }
-    return width;
-}
-
-void lang_text_draw_month_year_max_width(
-    int month, int year, int x_offset, int y_offset, int box_width, font_t font, color_t color)
-{
-    int month_width = lang_text_get_width(25, month, font);
-    int ad_bc_width = lang_text_get_width(20, year >= 0 ? 1 : 0, font);
-    int space_width = font_definition_for(font)->space_width;
-
-    int negative_padding = 0;
-    // assume 3 digits in the year times 11 pixels plus letter spacing = approx 35px
-    int total_width = month_width + ad_bc_width + 35 + 2 * space_width;
-    if (total_width > box_width) {
-        // take the overflow and divide it by two since we have two places to correct: after month, and after year
-        negative_padding = (box_width - total_width) / 2;
-        if (negative_padding < -2 * (space_width - 2)) {
-            negative_padding = -2 * (space_width - 2);
-        }
-    }
-
-    int width = negative_padding + lang_text_draw_colored(25, month, x_offset, y_offset, font, color);
-    if (year >= 0) {
-        int use_year_ad = locale_year_before_ad();
-        if (use_year_ad) {
-            width += negative_padding +
-                text_draw_number(year, ' ', " ", x_offset + width, y_offset, font, color);
-            lang_text_draw_colored(20, 1, x_offset + width, y_offset, font, color);
-        } else {
-            width += space_width;
-            width += negative_padding + lang_text_draw_colored(20, 1, x_offset + width, y_offset,
-                font, color);
-            text_draw_number(year, ' ', " ", x_offset + width, y_offset, font, color);
-        }
-    } else {
-        width += negative_padding + text_draw_number(-year, ' ', " ", x_offset + width, y_offset, font, color);
-        lang_text_draw_colored(20, 0, x_offset + width, y_offset, font, color);
-    }
-}
-
-int lang_text_draw_multiline(int group, int number, int x_offset, int y_offset, int box_width, font_t font)
-{
-    const uint8_t *str = lang_get_string(group, number);
-    return text_draw_multiline(str, x_offset, y_offset, box_width, 0, font, 0);
-}
-<<<<<<< Updated upstream
 
 int lang_text_get_sequence_width(const lang_fragment *seq, int count, font_t font)
 {
@@ -228,7 +106,6 @@ int lang_text_draw_sequence(const lang_fragment *seq, int count, int x, int y, f
     }
     return width;
 }
-
 
 int lang_text_draw_sequence_multiline(const lang_fragment *seq, int count, int x, int y, int box_width,
     int height_offset, font_t font, color_t color)
@@ -342,7 +219,8 @@ int lang_text_draw_sequence_multiline(const lang_fragment *seq, int count, int x
     return current_y - y + line_height; // Return total height used
 }
 
-int lang_text_draw_sequence_centered(const lang_fragment *seq, int count, int x, int y, int box_width, font_t font, color_t color)
+int lang_text_draw_sequence_centered(const lang_fragment *seq, int count, int x, int y, int box_width,
+    font_t font, color_t color)
 {
     int total_width = lang_text_get_sequence_width(seq, count, font);
     int start_x = x + (box_width - total_width) / 2;
@@ -601,5 +479,3 @@ void lang_text_draw_sequence_with_shadow(const lang_fragment *sequence, int seq_
         lang_text_draw_sequence_ellipsized(sequence, seq_size, x, y, width, plain_f, primary, NULL);
     }
 }
-=======
->>>>>>> Stashed changes
