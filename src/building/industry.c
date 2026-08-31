@@ -71,7 +71,8 @@ int building_get_efficiency(const building *b)
 
 int building_industry_get_max_progress(const building *b)
 {
-    int monthly_production = resource_production_per_month(b->output_resource_id);
+    int monthly_production = resource_production_per_month(
+        b->type == BUILDING_CITY_MINT ? RESOURCE_DENARII : b->output_resource_id); // even minting gold is influenced by the denarii production rate
     return calc_percentage(GAME_TIME_DAYS_PER_MONTH * 2 * model_get_building(b->type)->laborers, monthly_production);
 }
 

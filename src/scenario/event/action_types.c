@@ -850,7 +850,7 @@ int scenario_action_type_change_production_rate_execute(scenario_action_t *actio
     int set_to_value = action->parameter3;
 
     resource_data *current_data = resource_get_data(resource);
-    int new_rate = rate + set_to_value * current_data->production_per_month;
+    int new_rate = rate + (!set_to_value * current_data->production_per_month);
     if (new_rate < 0) {
         new_rate = 0;
     }
