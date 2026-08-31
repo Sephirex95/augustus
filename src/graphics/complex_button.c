@@ -19,6 +19,8 @@ static int debug_sunken = 0;
 static color_t debug_color_primary = COLOR_FONT_GRAY_50;
 static color_t debug_color_secondary = COLOR_FONT_GRAY_GREEN;
 
+// Temporary solution, as checkbox and cycling buttons need to be moved to their own files,
+// and i don't want to deal with it all at once 
 static void init_lang_sequence_const(lang_sequence *seq, const lang_fragment *fragments, int count)
 {
     lang_seq_init(seq, (lang_fragment *) fragments, count);
