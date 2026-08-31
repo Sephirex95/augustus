@@ -20,8 +20,7 @@ typedef enum {
 } sequence_positioning;
 
 typedef struct text_block {
-    const lang_fragment *sequence; // text fragments to display in the box
-    unsigned short sequence_size; // number of fragments in the sequence
+    lang_sequence sequence; // text fragments to display in the box
     sequence_positioning position; // where to position the text inside the block
     font_t font; // font to use for the text, defaults to FONT_NORMAL_BLACK if not set
     color_t font_primary; // primary color for the text, defaults to COLOR_MASK_NONE if not set
@@ -39,11 +38,11 @@ typedef struct text_block {
     unsigned short is_hidden; // disabled and invisible, does not handle mouse events at all
     // cache and state properties - do not set externally, managed by the text_block's own module
     unsigned short state_is_hovered; // mouse is in bounds of the text block
-
 } text_block;
 
+
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height,
-    const lang_fragment *sequence, unsigned short sequence_size, sequence_positioning position);
+     const lang_sequence *sequence, sequence_positioning position);
 void text_block_draw(const text_block *block);
 int text_block_handle_mouse(text_block *block, const mouse *m);
 int text_block_handle_tooltip(const text_block *block, tooltip_context *c);
