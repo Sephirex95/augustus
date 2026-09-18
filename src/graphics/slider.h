@@ -1,13 +1,10 @@
 #ifndef GRAPHICS_SLIDER_H
 #define GRAPHICS_SLIDER_H
 
-#include "core/calc.h"
-#include "graphics/complex_button.h"
-#include "graphics/lang_text.h"
+#include "graphics/lang_sequence.h"
 #include "graphics/tooltip.h"
 #include "input/mouse.h"
-
-#include <stdint.h>
+#include "widget/text_block.h"
 
 #define SLIDER_PADDING 4
 
@@ -18,20 +15,6 @@ typedef enum slider_display_text { // ____________________________________
     SLIDER_DISPLAY_TEXT_ABOVE = 3, //                  v
     SLIDER_DISPLAY_TEXT_BELOW = 4  //                  4
 } slider_display_text;             //_____________________________________
-
-typedef struct text_block {
-    const lang_fragment *sequence; // text fragments to display next to the slider (e.g. "Volume: 50%")
-    unsigned short sequence_size; // number of fragments in the sequence
-    sequence_positioning position; // where to position the text inside the block
-    int x; // defaults set if slider->display_text != SLIDER_DISPLAY_TEXT_NONE;
-    int y; // defaults set
-    int width; // defaults set
-    int height; // defaults set
-    uint8_t *raw_text; // optional raw text if you dont want to deal with lang_fragment - set it via callback fnc
-    tooltip_context tooltip_c; // optional tooltip context for the text block, default - fetched from slider
-    unsigned short is_disabled; // uninteractable, grayed out
-    unsigned short is_hidden; // disabled and invisible, does not handle mouse events at all
-} text_block;
 
 typedef struct slider {
     short x;

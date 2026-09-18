@@ -379,16 +379,10 @@ int slider_init(slider_t *slider, int x, int y, int length, int min_value, int m
 int slider_text_block_init(text_block *block, int x, int y, int width, int height,
     const lang_fragment *sequence, unsigned short sequence_size, sequence_positioning position)
 {
-    memset(block, 0, sizeof(*block));
+    lang_sequence lang_sequence;
 
-    block->sequence = sequence;
-    block->sequence_size = sequence_size;
-    block->position = position;
-    block->x = x;
-    block->y = y;
-    block->width = width;
-    block->height = height;
-    return 1;
+    lang_seq_init(&lang_sequence, (lang_fragment *) sequence, sequence_size);
+    return widget_text_block_init_simple(block, x, y, width, height, &lang_sequence, position);
 }
 
 void slider_draw(const slider_t *slider)

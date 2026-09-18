@@ -2411,7 +2411,7 @@ static void draw_trade_year_text(void)
 {
     int width = trade_year_text_width();
     int x = data.sidebar.x_min - WIDTH_BORDER - width - 1;
-    int y = data.y_min + WIDTH_BORDER;
+    int y = data.y_min + WIDTH_BORDER + 4;
     int funds_right = data.x_min + WIDTH_BORDER + funds_panel_width() + BLACK_PANEL_BLOCK_WIDTH;
 
     if (x <= funds_right) {
@@ -2545,20 +2545,20 @@ static int is_funds_panel(int x, int y)
         y >= panel_y && y < panel_y + FUNDS_PANEL_HEIGHT;
 }
 
-static int is_trade_year_text(int x, int y)
-{
-    int width = trade_year_text_width();
-    int text_x = data.sidebar.x_min - WIDTH_BORDER - width - 1;
-    int text_y = data.y_min + WIDTH_BORDER;
-    int funds_right = data.x_min + WIDTH_BORDER + funds_panel_width() + BLACK_PANEL_BLOCK_WIDTH;
+// static int is_trade_year_text(int x, int y)
+// {
+//     int width = trade_year_text_width();
+//     int text_x = data.sidebar.x_min - WIDTH_BORDER - width - 1;
+//     int text_y = data.y_min + WIDTH_BORDER;
+//     int funds_right = data.x_min + WIDTH_BORDER + funds_panel_width() + BLACK_PANEL_BLOCK_WIDTH;
 
-    if (text_x <= funds_right) {
-        return 0;
-    }
+//     if (text_x <= funds_right) {
+//         return 0;
+//     }
 
-    return x >= text_x && x < text_x + width &&
-        y >= text_y && y < text_y + font_definition_for(FONT_LARGE_PLAIN)->line_height;
-}
+//     return x >= text_x && x < text_x + width &&
+//         y >= text_y && y < text_y + font_definition_for(FONT_LARGE_PLAIN)->line_height;
+// }
 
 static int is_map(const mouse *m)
 {
@@ -3161,10 +3161,6 @@ static void get_tooltip(tooltip_context *c)
         c->type = TOOLTIP_BUTTON;
         c->text_group = 68;
         c->text_id = 60;
-    } else if (is_trade_year_text(c->mouse_x, c->mouse_y)) {
-        c->type = TOOLTIP_BUTTON;
-        c->text_group = 68;
-        c->text_id = 62;
     } else if (get_city_name_tooltip(c)) {
         return;
     } else if (get_city_name_tooltip_sidebar(c)) {
