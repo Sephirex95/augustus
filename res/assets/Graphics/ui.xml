@@ -1439,7 +1439,10 @@
     <image id="abstract_caret_symbol" src="abstract_caret_symbol"/>
     <image src="Plus_Button_Idle" id="Plus_Button_Idle"/>
     <image group="this" image="Plus_Button_Idle"/>
-    <image src="Plus_Button_Click"/>
+    <image id="Plus_Button_Click" src="Plus_Button_Click"/>
+    <image src="Minus_Button_Idle" id="Minus_Button_Idle"/>
+    <image group="this" image="Minus_Button_Idle"/>
+    <image id="Minus_Button_Click" src="Minus_Button_Click"/>
     <image src="Edit_Button_Idle" id="Edit_Button_Idle"/>
     <image group="this" image="Edit_Button_Idle"/>
     <image src="Edit_Button_Click"/>
@@ -1448,7 +1451,7 @@
     <image src="LandWaypoint" id="BorderWaypoint"/>
 	<image src="Plus_Button_Idle" id="Plus_Button_Idle"/>
 	<image group="this" image="Plus_Button_Idle"/>
-	<image src="Plus_Button_Click"/>
+	<image id="Plus_Button_Click" src="Plus_Button_Click"/>
 	<image src="Edit_Button_Idle" id="Edit_Button_Idle"/>
 	<image group="this" image="Edit_Button_Idle"/>
 	<image src="Edit_Button_Click"/>

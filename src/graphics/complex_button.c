@@ -185,6 +185,12 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
     }
 }
 
+static void draw_button_style_image(const complex_button *button)
+{
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+    draw_button_contents(button, FONT_NORMAL_BLACK, COLOR_MASK_NONE, COLOR_MASK_NONE);
+}
+
 static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary)
 {
     const int inner_margin = 2;
@@ -383,6 +389,9 @@ void complex_button_draw(const complex_button *button)
     font_and_colours(button->style, button->is_disabled, is_large, &base_font, &font_primary, &font_secondary);
 
     switch (button->style) {
+        case COMPLEX_BUTTON_STYLE_IMAGE:
+            draw_button_contents(button, base_font, font_primary, font_secondary);
+            break;
         case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
             draw_main_menu_style(button, base_font, font_primary, font_secondary);
@@ -408,7 +417,7 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
         }
     }
     int handled = 0;
-
+    int was_clicked = btn->is_clicked;
     // Expanded hitbox
     int left = btn->x - btn->expanded_hitbox_radius;
     int right = btn->x + btn->width + btn->expanded_hitbox_radius;
@@ -451,6 +460,9 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
                 btn->left_click_handler(btn);
             }
 
+        }
+        if (was_clicked && !btn->is_clicked && btn->unclick_handler) {
+            btn->unclick_handler(btn); // call the unclick handler after clicked state passes.
         }
         // --- Right click ---
         if (m->right.went_up) {

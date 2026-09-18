@@ -19,6 +19,7 @@ typedef enum {
     COMPLEX_BUTTON_STYLE_GRAY_NO_FILL,     // mainmenu border, but no fill background
     COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
     COMPLEX_BUTTON_STYLE_RAW,              // No border, no fill. Content-only.
+    COMPLEX_BUTTON_STYLE_IMAGE,            // No border, no fill. Image-only. RECOMMENDED for animated buttons.
     COMPLEX_BUTTON_STYLE_CUSTOM            // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
 
@@ -33,10 +34,33 @@ typedef enum {
 
 typedef struct btn_img {
     int id;
-    unsigned char auto_center;
-    int image_x_offset;
+    unsigned char auto_center; // 0 = draw at x,y; 1 = center in button
+    int image_x_offset; // offsets are applied after auto-center
     int image_y_offset;
 } btn_img;
+
+typedef enum {
+    BUTTON_ANIMATION_TRIGGER_NONE,
+    BUTTON_ANIMATION_TRIGGER_HOVER,
+    BUTTON_ANIMATION_TRIGGER_LEFT_CLICK,
+    BUTTON_ANIMATION_TRIGGER_RIGHT_CLICK,
+    BUTTON_ANIMATION_TRIGGER_ANY_CLICK,
+} complex_button_animation_trigger;
+
+typedef enum {
+    BUTTON_ANIMATION_ONCE,
+    BUTTON_ANIMATION_LOOP,
+    BUTTON_ANIMATION_PINGPONG
+} complex_button_animation_mode;
+
+typedef struct complex_button_animation {
+    btn_img *frames;
+    unsigned short frame_count; // number of frames in the supplied frames array
+    unsigned short frame_duration; // duration of each frame of animation in milliseconds
+    unsigned short current_frame; // index of the current frame being displayed
+    complex_button_animation_trigger trigger;
+    complex_button_animation_mode mode;
+} complex_button_animation;
 
 typedef struct complex_button {
     short x;
@@ -53,6 +77,7 @@ typedef struct complex_button {
     void (*left_click_handler)(struct complex_button *button);
     void (*right_click_handler)(struct complex_button *button);
     void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
+    void (*unclick_handler)(struct complex_button *button); // called after clicked state returns to 0 from 1. 
     tooltip_context tooltip_c;
     const lang_fragment *sequence;     // sequence of text to draw on button
     sequence_positioning sequence_position;
@@ -70,6 +95,8 @@ typedef struct complex_button {
     complex_button_style style;
     unsigned char expanded_hitbox_radius; //not yet fully implemented 
     void *user_data; // custom user data pointer, e.g. can point to a parent struct
+
+    complex_button_animation *animation; // if set, button will animate accordingly
 } complex_button;
 
 typedef struct checkbox_button {

@@ -124,6 +124,10 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_EXPORT] = assets_get_image_id("UI", "Trade_Ledger_Export");
     data.asset_lookup[ASSET_UI_TRADE_LEDGER_IMPORT] = assets_get_image_id("UI", "Trade_Ledger_Import");
     data.asset_lookup[ASSET_UI_RESOURCE_PICKER] = assets_get_image_id("UI", "resource_picker");
+    data.asset_lookup[ASSET_UI_PLUS_BUTTON_IDLE] = assets_get_image_id("UI", "Plus_Button_Idle");
+    data.asset_lookup[ASSET_UI_PLUS_BUTTON_CLICK] = assets_get_image_id("UI", "Plus_Button_Click");
+    data.asset_lookup[ASSET_UI_MINUS_BUTTON_IDLE] = assets_get_image_id("UI", "Minus_Button_Idle");
+    data.asset_lookup[ASSET_UI_MINUS_BUTTON_CLICK] = assets_get_image_id("UI", "Minus_Button_Click");
     data.asset_lookup[ASSET_UI_SCROLLBAR_UP] = assets_get_image_id("UI", "Scrollbar_Up_01");
     data.asset_lookup[ASSET_UI_SCROLLBAR_DOWN] = assets_get_image_id("UI", "Scrollbar_Down_01");
     data.asset_lookup[ASSET_UI_SCROLLBAR_MIDDLE] = assets_get_image_id("UI", "Scrollbar_Middle_01");
