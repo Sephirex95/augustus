@@ -2333,6 +2333,11 @@ static translation_string all_strings[] = {
     {TR_PARAMETER_PLAY_FANFARE, "Play fanfare"},
     {TR_CONFIG_UI_SCROLL_LEGACY_SCROLLBAR, "Enable classic scrollbars"},
     {TR_BUILDING_WILLOW_TREE, "Willow tree"},
+    {TR_SIDEBAR_EXTRA_HOUSING_AVAILABLE, "Room for: "},
+    {TR_SIDEBAR_EXTRA_POPULATION_GOAL_MET, "Population goal met"},
+    {TR_SIDEBAR_EXTRA_POPULATION_GOAL_NOT_MET, "Population goal not met"},
+    {TR_SIDEBAR_EXTRA_ROOM_FOR_NEEDED_EMPLOYEES, "Room for all needed employees"},
+    {TR_SIDEBAR_EXTRA_NOT_ENOUGH_ROOM_FOR_NEEDED_EMPLOYEES, "Not enough room for needed employees"},
 };
 
 void translation_english(const translation_string **strings, int *num_strings)
