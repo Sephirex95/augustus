@@ -108,7 +108,8 @@ typedef struct complex_button {
     unsigned char expanded_hitbox_radius; //not yet fully implemented 
     void *user_data; // custom user data pointer, e.g. can point to a parent struct
 
-    complex_button_animation *animation; // if set, button will animate accordingly
+    complex_button_animation animation; // if set, button will animate accordingly
+    unsigned char has_animation; // if set, the animation will not advance frames until unpaused
 } complex_button;
 
 typedef struct checkbox_button {
