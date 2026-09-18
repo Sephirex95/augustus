@@ -132,7 +132,7 @@ static checkbox_button hide_irrelevant_checkbox = {
     .height = 20,
     .left_click_handler = hide_irrelevant_checkbox_clicked,
     .font = FONT_NORMAL_BLACK,
-    .sequence = { .fragments = (lang_fragment *) hide_irrelevant_sequence, .count = 1 },
+    .sequence = {.fragments = (lang_fragment *) hide_irrelevant_sequence, .count = 1 },
 };
 
 static complex_button resource_header_button = {
@@ -142,7 +142,7 @@ static complex_button resource_header_button = {
     .style = COMPLEX_BUTTON_STYLE_RAW,
     .left_click_handler = resource_header_button_click,
     .font = FONT_NORMAL_BLACK,
-    .sequence = { .fragments = (lang_fragment *) resource_header_sequence, .count = 1 },
+    .sequence = {.fragments = (lang_fragment *) resource_header_sequence, .count = 1 },
 };
 
 static cycling_button header_buttons[LEDGER_HEADER_BUTTON_COUNT] = { 0 };
