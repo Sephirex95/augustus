@@ -1,5 +1,6 @@
 #include "complex_button.h"
 
+#include "core/time.h"
 #include "graphics/button.h"
 #include "graphics/graphics.h"
 #include "graphics/panel.h"
@@ -14,6 +15,8 @@
 #include <string.h>
 
 static void complex_button_ellipsized(complex_button *button, int was_ellipsized);
+static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary);
+static void end_animation(complex_button_animation *anim);
 static int debug_shade = 0;
 static int debug_sunken = 0;
 static color_t debug_color_primary = COLOR_FONT_GRAY_50;
@@ -178,16 +181,255 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
     }
 }
 
-static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary,
-    color_t font_secondary);
+void complex_button_animation_start(complex_button *button)
+{
+    if (!button || !button->animation || button->animation->trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
+        return;
+    }
+
+    complex_button_animation *anim = button->animation;
+
+    anim->is_active = 1;
+    anim->is_looping = anim->loop_mode != BUTTON_ANIMATION_ONCE;
+    anim->loops_left = anim->max_loop_count;
+    anim->is_reversed = 0;
+    anim->current_frame = 0;
+    anim->last_change = 0;
+}
+
+void complex_button_animation_stop(complex_button *button)
+{
+    if (!button || !button->animation || button->animation->trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
+        return;
+    }
+    end_animation(button->animation);
+}
+
+static void end_animation(complex_button_animation *anim)
+{
+    anim->is_active = 0;
+    anim->is_looping = 0;
+    anim->loops_left = 0;
+    anim->is_reversed = 0;
+    anim->is_holding = 0;
+    anim->current_frame = 0;
+    anim->last_change = 0;
+}
+
+static void handle_animation(complex_button *button)
+{
+    complex_button_animation *anim = button->animation;
+    int started_animation = 0;
+    int should_advance = 0;
+    int has_finished = 0;
+    int trigger_active = 1;
+
+    if (!anim || anim->frame_count <= 0) {
+        return;
+    }
+
+    // frame 1 is the lower boundary when frame 0 is excluded from repeating cycles
+    unsigned short first_loop_frame = (anim->skip_zero_frame && anim->frame_count > 1) ? 1 : 0;
+
+    if (!anim->is_active) {
+        switch (anim->trigger) {
+            case BUTTON_ANIMATION_TRIGGER_CLICK:
+                started_animation = button->is_clicked;
+                break;
+
+            case BUTTON_ANIMATION_TRIGGER_HOVER:
+                started_animation = button->is_focused;
+                break;
+
+            case BUTTON_ANIMATION_TRIGGER_NONE:
+                started_animation = 1;
+                break;
+
+            case BUTTON_ANIMATION_TRIGGER_CUSTOM:
+            default:
+                break;
+        }
+
+        if (!started_animation) {
+            return;
+        }
+        anim->is_active = 1;
+        anim->loops_left = anim->max_loop_count;
+        // establish whether this animation can repeat after its first run
+
+        anim->is_looping = anim->loop_mode != BUTTON_ANIMATION_ONCE && (!anim->max_loop_count || anim->loops_left > 0);
+    } else {
+        if (anim->trigger == BUTTON_ANIMATION_TRIGGER_CLICK && !button->is_clicked) {
+            trigger_active = 0;
+        } else if (anim->trigger == BUTTON_ANIMATION_TRIGGER_HOVER && !button->is_focused) {
+            trigger_active = 0;
+        }
+
+        if (!trigger_active) {
+            if (anim->allow_immediate_stop) {
+                end_animation(anim);
+                return;
+            }
+
+            // trigger disappeared; finish the current run but do not begin another
+            anim->loops_left = 0;
+            anim->is_looping = 0;
+            if (anim->skip_zero_frame) {
+                if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
+                    if (!anim->is_reversed && anim->current_frame == first_loop_frame) {
+                        end_animation(anim);
+                        return;
+                    }
+                } else if (anim->current_frame == anim->frame_count - 1) {
+                    end_animation(anim);
+                    return;
+                }
+            }
+        }
+    }
+
+    if (anim->skip_zero_frame && trigger_active && !anim->is_looping) {
+        if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
+            if (!anim->is_reversed && anim->current_frame == first_loop_frame && anim->last_change) {
+                return;
+            }
+        } else if (anim->current_frame == anim->frame_count - 1 && anim->last_change) {
+            return;
+        }
+    }
+
+    if (anim->last_change) {
+        time_millis now = time_get_millis();
+
+        if (now - anim->last_change >= anim->frame_duration) {
+            should_advance = 1;
+        } else {
+            return;
+        }
+    } else {
+        should_advance = 1;
+    }
+
+    if (should_advance) {
+        anim->last_change = time_get_millis();
+
+        if (anim->is_reversed) {
+            if (anim->current_frame > first_loop_frame) {
+                anim->current_frame--;
+            } else {
+                has_finished = 1;
+                anim->is_reversed = 0;
+            }
+        } else {
+            if (anim->current_frame < anim->frame_count - 1) {
+                anim->current_frame++;
+            } else {
+                if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
+                    anim->is_reversed = 1;
+                } else {
+                    has_finished = 1;
+                }
+            }
+        }
+    }
+
+    if (!has_finished) {
+        return;
+    }
+
+    if (anim->max_loop_count && anim->loops_left > 0) { // decrement finite loop count 
+        anim->loops_left--;
+    }
+
+    // decide whether another complete cycle should begin
+    if (!anim->loop_mode) {
+        anim->is_looping = 0;
+    } else if (!trigger_active) {
+        anim->is_looping = 0;
+    } else if (!anim->max_loop_count) {
+        anim->is_looping = 1;
+    } else {
+        anim->is_looping = anim->loops_left > 0;
+    }
+
+    if (anim->is_looping) {
+        if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
+            if (first_loop_frame < anim->frame_count - 1) {
+                anim->current_frame = first_loop_frame + 1;
+            }
+        } else {
+            // normal loops restart from 0 or 1 depending on skip_zero_frame
+            anim->current_frame = first_loop_frame;
+        }
+        return;
+    }
+
+    if (anim->skip_zero_frame && trigger_active) {
+        anim->is_looping = 0;
+        return;
+    }
+    end_animation(anim);
+}
+
+const static image *get_current_animation_frame(const complex_button *button)
+{
+    if (!button) {
+        return NULL;
+    }
+
+    if (!button->animation || button->animation->frame_count <= 0) {
+        return button->image.id > 0 ? image_get(button->image.id) : NULL;
+    }
+
+    complex_button_animation *anim = button->animation;
+    const btn_img *frame_img = &button->image;
+    if (anim->current_frame > 0) {
+        unsigned short frame_index = anim->current_frame - 1;
+        if (!anim->frames || frame_index >= anim->frame_count) {
+            return NULL;
+        }
+        frame_img = &anim->frames[frame_index];
+    }
+
+    if (frame_img->id <= 0) {
+        return NULL;
+    }
+    return image_get(frame_img->id);
+}
 
 static void draw_button_style_image(const complex_button *button)
 {
+
+    if (button->animation) {
+        // de-const cast to allow animation handling
+        complex_button *mutable_button = (complex_button *) button;
+        handle_animation(mutable_button);
+    }
+
+    const image *image_main = get_current_animation_frame(button);
+    const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-    draw_button_contents(button, FONT_NORMAL_BLACK, COLOR_MASK_NONE, COLOR_MASK_NONE);
+
+    if (image_main) {
+        int x, y;
+        if (button->image.auto_center) {
+            int image_width = image_main->width;
+            int image_height = image_main->height;
+            x = button->x + (button->width - image_width) / 2 + button->image.image_x_offset;
+            y = button->y + (button->height - image_height) / 2 + button->image.image_y_offset;
+        } else {
+            x = button->x + button->image.image_x_offset;
+            y = button->y + button->image.image_y_offset;
+        }
+        image_draw(button->image.id, x, y, image_mask, SCALE_NONE);
+        graphics_reset_clip_rectangle();
+    }
+
+
     if (button->shade_on_hover && button->is_focused) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
+    return;
 }
 
 static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary)
@@ -200,9 +442,7 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
 
     int text_y = sequence_y_offset(button, position, font);
     const lang_sequence *sequence = &button->sequence;
-    int sequence_width = (sequence->fragments && sequence->count > 0)
-        ? lang_seq_get_width(sequence, font)
-        : 0;
+    int sequence_width = (sequence->fragments && sequence->count > 0) ? lang_seq_get_width(sequence, font) : 0;
     sequence_width -= sequence_width % 2;
 
     const image *image_before = NULL;

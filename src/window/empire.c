@@ -223,7 +223,6 @@ static void draw_sidebar_city_item(const grid_box_item *item);
 static void draw_funds_and_date_panels(void);
 static int selected_trade_year(void);
 static int trade_year_text_width(void);
-static void update_trade_year_button_images(void);
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
     int start_x, int start_y, int end_x, int end_y, int interval, int remaining, color_t color_mask);
 void window_empire_collect_trade_edges(void);
@@ -598,16 +597,33 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_YEAR_DECREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].image.id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_IDLE);
     complex_buttons[BTN_TRADE_YEAR_DECREASE].image.auto_center = 1;
-    complex_buttons[BTN_TRADE_YEAR_DECREASE].style = COMPLEX_BUTTON_STYLE_RAW;
+    complex_buttons[BTN_TRADE_YEAR_DECREASE].style = COMPLEX_BUTTON_STYLE_IMAGE;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].left_click_handler = trade_year_decrease_click;
+    int decrease_img_id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_CLICK);
+    btn_img decrease_click = { decrease_img_id, 1, 0 ,0 };
+    complex_button_animation decrease_anim = {
+        .frames = &decrease_click,
+        .frame_count = 1,
+        .trigger = BUTTON_ANIMATION_TRIGGER_CLICK,
+        .skip_zero_frame = 1
+    };
+    complex_buttons[BTN_TRADE_YEAR_DECREASE].animation = &decrease_anim;
 
     complex_buttons[BTN_TRADE_YEAR_INCREASE].width = TRADE_YEAR_BUTTON_WIDTH;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].image.id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_IDLE);
     complex_buttons[BTN_TRADE_YEAR_INCREASE].image.auto_center = 1;
-    complex_buttons[BTN_TRADE_YEAR_INCREASE].style = COMPLEX_BUTTON_STYLE_RAW;
+    complex_buttons[BTN_TRADE_YEAR_INCREASE].style = COMPLEX_BUTTON_STYLE_IMAGE;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].left_click_handler = trade_year_increase_click;
-
+    int increase_img_id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_CLICK);
+    btn_img increase_click = { increase_img_id, 1, 0 ,0 };
+    complex_button_animation increase_anim = {
+        .frames = &increase_click,
+        .frame_count = 1,
+        .trigger = BUTTON_ANIMATION_TRIGGER_CLICK,
+        .skip_zero_frame = 1
+    };
+    complex_buttons[BTN_TRADE_YEAR_INCREASE].animation = &increase_anim;
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }
@@ -2386,7 +2402,6 @@ static void draw_sidebar_grid_box(void)
         width = data.sidebar.filter_section.x_max - data.sidebar.filter_section.x_min;
         large_label_draw_custom_size(x, y, width, SIDEBAR_HEADER_LEDGER_BTN_SQ);
         grid_picker_draw(&resource_picker);
-        update_trade_year_button_images();
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
         complex_button_draw_array(complex_buttons, CMPLX_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
@@ -2444,19 +2459,6 @@ static int trade_year_text_width(void)
     int absolute_year = year < 0 ? -year : year;
     return text_get_number_width(absolute_year, ' ', "", FONT_LARGE_BLACK) +
         lang_text_get_width(20, year >= 0 ? 1 : 0, FONT_LARGE_BLACK);
-}
-
-static void update_trade_year_button_image(complex_button *button, asset_id idle_id, asset_id click_id)
-{
-    button->image.id = assets_lookup_image_id(button->is_clicked ? click_id : idle_id);
-}
-
-static void update_trade_year_button_images(void)
-{
-    update_trade_year_button_image(&complex_buttons[BTN_TRADE_YEAR_DECREASE],
-        ASSET_UI_MINUS_BUTTON_IDLE, ASSET_UI_MINUS_BUTTON_CLICK);
-    update_trade_year_button_image(&complex_buttons[BTN_TRADE_YEAR_INCREASE],
-        ASSET_UI_PLUS_BUTTON_IDLE, ASSET_UI_PLUS_BUTTON_CLICK);
 }
 
 static void draw_funds_and_date_panels(void)

@@ -1,6 +1,7 @@
 #ifndef GRAPHICS_COMPLEX_BUTTON_H
 #define GRAPHICS_COMPLEX_BUTTON_H
 
+#include "core/time.h"
 #include "graphics/tooltip.h"
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
@@ -10,6 +11,7 @@
 
 #define MAX_COMPLEX_BUTTON_PARAMETERS 10 // arbitrary 
 #define MAX_CYCLE_BUTTON_STATES 10 // arbitrary
+#define DEFAULT_ANIMATION_FRAME_DURATION 100 // milliseconds
 
 typedef enum {
     COMPLEX_BUTTON_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
@@ -40,26 +42,37 @@ typedef struct btn_img {
 } btn_img;
 
 typedef enum {
-    BUTTON_ANIMATION_TRIGGER_NONE,
-    BUTTON_ANIMATION_TRIGGER_HOVER,
-    BUTTON_ANIMATION_TRIGGER_LEFT_CLICK,
-    BUTTON_ANIMATION_TRIGGER_RIGHT_CLICK,
-    BUTTON_ANIMATION_TRIGGER_ANY_CLICK,
-} complex_button_animation_trigger;
+    BUTTON_ANIMATION_TRIGGER_NONE,  // always animate, regardless of hover/click state
+    BUTTON_ANIMATION_TRIGGER_HOVER, // start animation on hover
+    BUTTON_ANIMATION_TRIGGER_CLICK, // start animation on click
+    BUTTON_ANIMATION_TRIGGER_CUSTOM // animation is started/stopped by user code 
+} animation_trigger;
 
 typedef enum {
-    BUTTON_ANIMATION_ONCE,
-    BUTTON_ANIMATION_LOOP,
-    BUTTON_ANIMATION_PINGPONG
-} complex_button_animation_mode;
+    BUTTON_ANIMATION_ONCE = 0,    // play the animation once and stop on the last frame
+    BUTTON_ANIMATION_LOOP = 1,    // play the animation from 0 to last frame, then back to 0, repeat
+    BUTTON_ANIMATION_PINGPONG = 2 // play the animation from 0 to last frame, then reverse from last frame to 0, repeat
+} animation_mode;
 
 typedef struct complex_button_animation {
-    btn_img *frames;
-    unsigned short frame_count; // number of frames in the supplied frames array
-    unsigned short frame_duration; // duration of each frame of animation in milliseconds
-    unsigned short current_frame; // index of the current frame being displayed
-    complex_button_animation_trigger trigger;
-    complex_button_animation_mode mode;
+    btn_img *frames;                    // additional animation images - 0th frame is the button->image;
+    unsigned short frame_count;         // number of frames in the supplied frames array
+    unsigned short frame_duration;      // duration of each frame of animation in milliseconds
+    unsigned char allow_immediate_stop; // 1 = when stopped, animation immediately returns to frame 0 and pauses.
+    unsigned char max_loop_count;       // number of times the animation should loop/pingpong. 0 = infinite loop
+    unsigned char skip_zero_frame;      // 1 = skip the 0th frame when looping/pingponging. 0 = include the 0th frame in the loop
+    animation_trigger trigger;          // event that triggers animation start
+    animation_mode loop_mode;           // how the animation loops
+
+    // internal state variables:
+    unsigned char is_reversed;          // flag for pingpong mode     
+    unsigned char is_active;            // 1 = animation is  running, 0 = animation is paused/uninitialized
+    unsigned char is_disabled;
+    unsigned char is_looping;           // animation is set to loop infinitely, until this parameter changes.
+    unsigned char is_holding;           // 1 = completed animation is holding its final frame until trigger releases
+    unsigned char loops_left;           // number of loops remaining
+    unsigned short current_frame;       // index of the current frame being displayed
+    time_millis last_change;            // timestamp of the last frame change
 } complex_button_animation;
 
 typedef struct complex_button {
@@ -160,6 +173,9 @@ int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c);
 int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
+void complex_button_animation_start(complex_button *button);
+void complex_button_animation_stop(complex_button *button);
+
 // Checkbox Buttons
 // drawing
 void checkbox_button_draw(const checkbox_button *button);
@@ -183,4 +199,7 @@ int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context 
 int cycling_button_handle_tooltip_array(const cycling_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
 
+
 #endif // GRAPHICS_COMPLEX_BUTTON_H
+
+
