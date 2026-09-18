@@ -223,6 +223,7 @@ static void draw_sidebar_city_item(const grid_box_item *item);
 static void draw_funds_and_date_panels(void);
 static int selected_trade_year(void);
 static int trade_year_text_width(void);
+static void update_trade_year_tooltips(void);
 static int draw_images_at_interval(int image_id, int x_draw_offset, int y_draw_offset,
     int start_x, int start_y, int end_x, int end_y, int interval, int remaining, color_t color_mask);
 void window_empire_collect_trade_edges(void);
@@ -592,6 +593,7 @@ static void setup_header_footer_buttons(void)
         TRADE_YEAR_FIELD_HEIGHT, NULL, SEQUENCE_POSITION_CENTER);
     trade_year_block.draw_background = 1;
     trade_year_block.draw_border = 1;
+    trade_year_block.tooltip_c.type = TOOLTIP_BUTTON;
 
     complex_buttons[BTN_TRADE_YEAR_DECREASE].width = TRADE_YEAR_BUTTON_WIDTH;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
@@ -784,15 +786,12 @@ static void refresh_header_and_footer_buttons(void)
     if (!trade_history_years_stored) {
         complex_buttons[BTN_TRADE_YEAR_DECREASE].is_disabled = 1;
         complex_buttons[BTN_TRADE_YEAR_INCREASE].is_disabled = 1;
-        complex_buttons[BTN_TRADE_YEAR_DECREASE].tooltip_c.translation_key = TR_UI_LEDGER_ONLY_CURRENT_YEAR;
-        complex_buttons[BTN_TRADE_YEAR_INCREASE].tooltip_c.translation_key = TR_UI_LEDGER_ONLY_CURRENT_YEAR;
     } else {
         complex_buttons[BTN_TRADE_YEAR_DECREASE].is_disabled =
             data.sidebar.trade_year >= trade_history_years_stored;
         complex_buttons[BTN_TRADE_YEAR_INCREASE].is_disabled = data.sidebar.trade_year == 0;
-        complex_buttons[BTN_TRADE_YEAR_DECREASE].tooltip_c.translation_key = 0;
-        complex_buttons[BTN_TRADE_YEAR_INCREASE].tooltip_c.translation_key = 0;
     }
+    update_trade_year_tooltips();
     filter_x += SIDEBAR_HEADER_BUTTON_HEIGHT + SIDEBAR_HEADER_BUTTON_SPACING;
 
     cycling_buttons[BTN_ROUTE_TYPE].x = filter_x;
@@ -2453,6 +2452,31 @@ static int trade_year_text_width(void)
         lang_text_get_width(20, year >= 0 ? 1 : 0, FONT_LARGE_BLACK);
 }
 
+static void update_trade_year_tooltips(void)
+{
+    complex_button *decrease = &complex_buttons[BTN_TRADE_YEAR_DECREASE];
+    complex_button *increase = &complex_buttons[BTN_TRADE_YEAR_INCREASE];
+
+    decrease->tooltip_c.translation_key = decrease->is_disabled ?
+        TR_UI_TRADE_YEAR_NO_EARLIER : TR_UI_TRADE_YEAR_PREVIOUS;
+    increase->tooltip_c.translation_key = increase->is_disabled ?
+        TR_UI_TRADE_YEAR_CURRENT_LIMIT : TR_UI_TRADE_YEAR_NEXT;
+
+    trade_year_block.tooltip_c.type = TOOLTIP_BUTTON;
+    trade_year_block.tooltip_c.has_numeric_prefix = 0;
+    trade_year_block.tooltip_c.numeric_prefix = 0;
+
+    if (data.sidebar.trade_year == 0) {
+        trade_year_block.tooltip_c.translation_key = TR_UI_TRADE_YEAR_CURRENT;
+    } else if (data.sidebar.trade_year == 1) {
+        trade_year_block.tooltip_c.translation_key = TR_UI_TRADE_YEAR_LAST;
+    } else {
+        trade_year_block.tooltip_c.translation_key = TR_UI_TRADE_YEAR_YEARS_AGO;
+        trade_year_block.tooltip_c.has_numeric_prefix = 1;
+        trade_year_block.tooltip_c.numeric_prefix = data.sidebar.trade_year;
+    }
+}
+
 static void draw_funds_and_date_panels(void)
 {
     int x = data.x_min + WIDTH_BORDER;
@@ -2891,6 +2915,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!data.sidebar.border_btn.is_collapsed) {
+        text_block_handle_mouse(&trade_year_block, m);
         // since we have multiple buttons of same type, they should be array'd to call array input handlers
         if (!resource_picker.is_expanded) { // only handle dropdowns if the resource picker is not expanded
             if (dropdown_button_handle_mouse_array(dropdown_buttons, m, DD_COUNT)) {
@@ -3205,6 +3230,8 @@ static void get_tooltip(tooltip_context *c)
     } else if (dropdown_button_handle_tooltip_array(dropdown_buttons, c, DD_COUNT)) {
         return;
     } else if (cycling_button_handle_tooltip_array(cycling_buttons, c, BTN_COUNT)) {
+        return;
+    } else if (text_block_handle_tooltip(&trade_year_block, c)) {
         return;
     } else if (complex_button_handle_tooltip_array(complex_buttons, c, CMPLX_BTN_COUNT)) {
         return;
