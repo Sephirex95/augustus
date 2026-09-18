@@ -596,34 +596,26 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_YEAR_DECREASE].width = TRADE_YEAR_BUTTON_WIDTH;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].image.id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_IDLE);
-    complex_buttons[BTN_TRADE_YEAR_DECREASE].image.auto_center = 1;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].style = COMPLEX_BUTTON_STYLE_IMAGE;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].left_click_handler = trade_year_decrease_click;
-    int decrease_img_id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_CLICK);
-    btn_img decrease_click = { decrease_img_id, 1, 0 ,0 };
-    complex_button_animation decrease_anim = {
-        .frames = &decrease_click,
-        .frame_count = 1,
-        .trigger = BUTTON_ANIMATION_TRIGGER_CLICK,
-        .skip_zero_frame = 1
-    };
-    complex_buttons[BTN_TRADE_YEAR_DECREASE].animation = &decrease_anim;
+    complex_buttons[BTN_TRADE_YEAR_DECREASE].light_on_hover = 2;
+    btn_img decrease_frames[] = { {.id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_CLICK)} };
+    if (complex_button_animation_init(&complex_buttons[BTN_TRADE_YEAR_DECREASE],
+        decrease_frames, 1, BUTTON_ANIMATION_TRIGGER_CLICK)) {
+        complex_buttons[BTN_TRADE_YEAR_DECREASE].animation.skip_zero_frame = 1;
+    }
 
     complex_buttons[BTN_TRADE_YEAR_INCREASE].width = TRADE_YEAR_BUTTON_WIDTH;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].image.id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_IDLE);
-    complex_buttons[BTN_TRADE_YEAR_INCREASE].image.auto_center = 1;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].style = COMPLEX_BUTTON_STYLE_IMAGE;
     complex_buttons[BTN_TRADE_YEAR_INCREASE].left_click_handler = trade_year_increase_click;
-    int increase_img_id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_CLICK);
-    btn_img increase_click = { increase_img_id, 1, 0 ,0 };
-    complex_button_animation increase_anim = {
-        .frames = &increase_click,
-        .frame_count = 1,
-        .trigger = BUTTON_ANIMATION_TRIGGER_CLICK,
-        .skip_zero_frame = 1
-    };
-    complex_buttons[BTN_TRADE_YEAR_INCREASE].animation = &increase_anim;
+    complex_buttons[BTN_TRADE_YEAR_INCREASE].light_on_hover = 2;
+    btn_img increase_frames[] = { {.id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_CLICK)} };
+    if (complex_button_animation_init(&complex_buttons[BTN_TRADE_YEAR_INCREASE],
+        increase_frames, 1, BUTTON_ANIMATION_TRIGGER_CLICK)) {
+        complex_buttons[BTN_TRADE_YEAR_INCREASE].animation.skip_zero_frame = 1;
+    }
     // footer setup finished
     data.sidebar.buttons_initialised = 1;
 }

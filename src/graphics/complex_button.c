@@ -181,23 +181,56 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
     }
 }
 
-static void init_button_animation(complex_button_animation *anim, btn_img *frames, unsigned short frame_count,
+int complex_button_animation_init(
+    complex_button *button,
+    const btn_img *frames,
+    unsigned short frame_count,
     animation_trigger trigger)
 {
-    *anim = (complex_button_animation) {
-        .frames = frames,
+    if (!button || !frames || frame_count == 0) {
+        return 0;
+    }
+
+    btn_img *new_frames = malloc(sizeof(btn_img) * frame_count);
+    if (!new_frames) {
+        return 0;
+    }
+
+    memcpy(new_frames, frames, sizeof(btn_img) * frame_count);
+
+    if (button->has_animation) {
+        free(button->animation.frames);
+    }
+
+    button->animation = (complex_button_animation) {
+        .frames = new_frames,
         .frame_count = frame_count,
+        .frame_duration = DEFAULT_ANIMATION_FRAME_DURATION,
         .trigger = trigger
     };
+
+    button->has_animation = 1;
+    return 1;
+}
+
+void complex_button_animation_destroy(complex_button *button)
+{
+    if (!button || !button->has_animation) {
+        return;
+    }
+
+    free(button->animation.frames);
+    button->animation = (complex_button_animation) { 0 };
+    button->has_animation = 0;
 }
 
 void complex_button_animation_start(complex_button *button)
 {
-    if (!button || !button->animation || button->animation->trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
+    if (!button || !button->has_animation || button->animation.trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
         return;
     }
 
-    complex_button_animation *anim = button->animation;
+    complex_button_animation *anim = &button->animation;
 
     anim->is_active = 1;
     anim->is_looping = anim->loop_mode != BUTTON_ANIMATION_ONCE;
@@ -209,10 +242,10 @@ void complex_button_animation_start(complex_button *button)
 
 void complex_button_animation_stop(complex_button *button)
 {
-    if (!button || !button->animation || button->animation->trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
+    if (!button || !button->has_animation || button->animation.trigger != BUTTON_ANIMATION_TRIGGER_CUSTOM) {
         return;
     }
-    end_animation(button->animation);
+    end_animation(&button->animation);
 }
 
 static void end_animation(complex_button_animation *anim)
@@ -228,18 +261,19 @@ static void end_animation(complex_button_animation *anim)
 
 static void handle_animation(complex_button *button)
 {
-    complex_button_animation *anim = button->animation;
+    complex_button_animation *anim = &button->animation;
     int started_animation = 0;
     int should_advance = 0;
     int has_finished = 0;
     int trigger_active = 1;
 
-    if (!anim || anim->frame_count <= 0) {
+    if (anim->frame_count <= 0) {
         return;
     }
 
     // frame 1 is the lower boundary when frame 0 is excluded from repeating cycles
-    unsigned short first_loop_frame = (anim->skip_zero_frame && anim->frame_count > 1) ? 1 : 0;
+    unsigned short first_loop_frame = anim->skip_zero_frame ? 1 : 0;
+    unsigned short last_frame = anim->frame_count;
 
     if (!anim->is_active) {
         switch (anim->trigger) {
@@ -290,7 +324,7 @@ static void handle_animation(complex_button *button)
                         end_animation(anim);
                         return;
                     }
-                } else if (anim->current_frame == anim->frame_count - 1) {
+                } else if (anim->current_frame == last_frame) {
                     end_animation(anim);
                     return;
                 }
@@ -303,7 +337,7 @@ static void handle_animation(complex_button *button)
             if (!anim->is_reversed && anim->current_frame == first_loop_frame && anim->last_change) {
                 return;
             }
-        } else if (anim->current_frame == anim->frame_count - 1 && anim->last_change) {
+        } else if (anim->current_frame == last_frame && anim->last_change) {
             return;
         }
     }
@@ -331,7 +365,7 @@ static void handle_animation(complex_button *button)
                 anim->is_reversed = 0;
             }
         } else {
-            if (anim->current_frame < anim->frame_count - 1) {
+            if (anim->current_frame < last_frame) {
                 anim->current_frame++;
             } else {
                 if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
@@ -364,7 +398,7 @@ static void handle_animation(complex_button *button)
 
     if (anim->is_looping) {
         if (anim->loop_mode == BUTTON_ANIMATION_PINGPONG) {
-            if (first_loop_frame < anim->frame_count - 1) {
+            if (first_loop_frame < last_frame) {
                 anim->current_frame = first_loop_frame + 1;
             }
         } else {
@@ -381,17 +415,17 @@ static void handle_animation(complex_button *button)
     end_animation(anim);
 }
 
-const static image *get_current_animation_frame(const complex_button *button)
+static const btn_img *get_current_animation_frame_info(const complex_button *button)
 {
     if (!button) {
         return NULL;
     }
 
-    if (!button->animation || button->animation->frame_count <= 0) {
-        return button->image.id > 0 ? image_get(button->image.id) : NULL;
+    if (!button->has_animation || button->animation.frame_count <= 0) {
+        return &button->image;
     }
 
-    complex_button_animation *anim = button->animation;
+    const complex_button_animation *anim = &button->animation;
     const btn_img *frame_img = &button->image;
     if (anim->current_frame > 0) {
         unsigned short frame_index = anim->current_frame - 1;
@@ -401,7 +435,13 @@ const static image *get_current_animation_frame(const complex_button *button)
         frame_img = &anim->frames[frame_index];
     }
 
-    if (frame_img->id <= 0) {
+    return frame_img;
+}
+
+const static image *get_current_animation_frame(const complex_button *button)
+{
+    const btn_img *frame_img = get_current_animation_frame_info(button);
+    if (!frame_img || frame_img->id <= 0) {
         return NULL;
     }
     return image_get(frame_img->id);
@@ -410,34 +450,38 @@ const static image *get_current_animation_frame(const complex_button *button)
 static void draw_button_style_image(const complex_button *button)
 {
 
-    if (button->animation) {
+    if (button->has_animation) {
         // de-const cast to allow animation handling
         complex_button *mutable_button = (complex_button *) button;
         handle_animation(mutable_button);
     }
 
+    const btn_img *frame_img = get_current_animation_frame_info(button);
     const image *image_main = get_current_animation_frame(button);
     const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
-    if (image_main) {
+    if (image_main && frame_img) {
         int x, y;
-        if (button->image.auto_center) {
+        if (frame_img->auto_center) {
             int image_width = image_main->width;
             int image_height = image_main->height;
-            x = button->x + (button->width - image_width) / 2 + button->image.image_x_offset;
-            y = button->y + (button->height - image_height) / 2 + button->image.image_y_offset;
+            x = button->x + (button->width - image_width) / 2 + frame_img->image_x_offset;
+            y = button->y + (button->height - image_height) / 2 + frame_img->image_y_offset;
         } else {
-            x = button->x + button->image.image_x_offset;
-            y = button->y + button->image.image_y_offset;
+            x = button->x + frame_img->image_x_offset;
+            y = button->y + frame_img->image_y_offset;
         }
-        image_draw(button->image.id, x, y, image_mask, SCALE_NONE);
+        image_draw(frame_img->id, x, y, image_mask, SCALE_NONE);
         graphics_reset_clip_rectangle();
     }
 
 
-    if (button->shade_on_hover && button->is_focused) {
+    if (button->shade_on_hover && button->is_focused && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+    }
+    if (button->light_on_hover && button->is_focused && !button->is_disabled) {
+        graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     return;
 }
@@ -610,8 +654,11 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     }
-    if (button->shade_on_hover && button->is_focused) {
+    if (button->shade_on_hover && button->is_focused && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+    }
+    if (button->light_on_hover && button->is_focused && !button->is_disabled) {
+        graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     graphics_reset_clip_rectangle();
 }
@@ -697,31 +744,47 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
 
     if (inside) {
 
-        // --- Left click ---
-
-        if (m->left.went_up) {
+        // on mouse down, set clicked to true to activate animations,
+        // but don't trigger callback or sound until button goes up
+        if (m->left.went_down) {
             btn->is_clicked = 1;
+            handled = 1;
+        } else if (m->right.went_down) {
+            btn->is_clicked = 1;
+            handled = 1;
+        };
+
+        // --- Left click ---
+        if (m->left.went_up) {
+            btn->is_clicked = 0;
+
             sound_effect_play(SOUND_EFFECT_ICON);
             btn->is_active = !btn->is_active; // persistent toggle
             handled = 1;
+
             if (btn->left_click_handler) {
                 btn->left_click_handler(btn);
             }
 
-        }
-        if (was_clicked && !btn->is_clicked && btn->unclick_handler) {
-            btn->unclick_handler(btn); // call the unclick handler after clicked state passes.
-        }
-        // --- Right click ---
-        if (m->right.went_up) {
-            btn->is_clicked = 1;
+            // --- Right click ---
+        } else if (m->right.went_up) {
             handled = 1;
+
             if (btn->right_click_handler) {
                 btn->right_click_handler(btn);
             }
         }
+
+        if (was_clicked && !btn->is_clicked && btn->unclick_handler) {
+            btn->unclick_handler(btn);
+        }
+
     } else {
         btn->is_clicked = 0;
+
+        if (was_clicked && btn->unclick_handler) {
+            btn->unclick_handler(btn);
+        }
     }
 
     return handled;

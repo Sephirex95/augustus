@@ -16,6 +16,28 @@ static int calculate_text_width(const complex_button *btn, font_t font)
     return lang_seq_get_width(&btn->sequence, font);
 }
 
+static void copy_button_animation(complex_button *dst, const complex_button *src)
+{
+    unsigned char has_animation = src->has_animation;
+    complex_button_animation src_animation = { 0 };
+    if (has_animation) {
+        src_animation = src->animation;
+    }
+
+    dst->has_animation = 0;
+    dst->animation = (complex_button_animation) { 0 };
+    if (!has_animation) {
+        return;
+    }
+
+    if (complex_button_animation_init(dst, src_animation.frames, src_animation.frame_count,
+        src_animation.trigger)) {
+        btn_img *copied_frames = dst->animation.frames;
+        dst->animation = src_animation;
+        dst->animation.frames = copied_frames;
+    }
+}
+
 static complex_button_style dropdown_button_style_to_complex_style(dropdown_button_style style)
 {
     // Dropdown button can't have no fill - otherwise the options buttons would break.
@@ -87,7 +109,9 @@ static void save_anchor(dropdown_button *dd)
     }
     complex_button *anchor_og = &dd->anchor_backup;
     complex_button *anchor = &dd->buttons[0];
+    complex_button_animation_destroy(anchor_og);
     memcpy(anchor_og, anchor, sizeof(complex_button));
+    copy_button_animation(anchor_og, anchor);
     // might have to do the assignment 1 by 1 
 }
 
@@ -153,7 +177,11 @@ static void dropdown_cancel(complex_button *btn)
 void dropdown_button_init(dropdown_button *dd, complex_button *buttons,
     unsigned int num_buttons, int width, int height, int spacing, int padding)
 {
+    memset(&dd->anchor_backup, 0, sizeof(dd->anchor_backup));
     memcpy(dd->buttons, buttons, sizeof(complex_button) * num_buttons);
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        copy_button_animation(&dd->buttons[i], &buttons[i]);
+    }
     //dd->buttons = buttons;
     dd->num_buttons = num_buttons;
     dd->expanded = 0;
@@ -236,6 +264,7 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     if (origin_tooltip) {
         tooltip_copy_context(&origin->tooltip_c, origin_tooltip);
     }
+    memset(&dd->anchor_backup, 0, sizeof(dd->anchor_backup));
     save_anchor(dd); // store original anchor for restoring
 
     // Setup options [1..count-1]

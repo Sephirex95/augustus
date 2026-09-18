@@ -100,6 +100,7 @@ typedef struct complex_button {
     btn_img image; // if specified, will be drawn INSTEAD of text
     unsigned char flush_with_background; // if set, bottom border is not drawn
     unsigned char shade_on_hover; // 0-7, if set, button is graphics_shade_rect with this value
+    unsigned char light_on_hover; // 0-7, if set, button is graphics_light_up_rect with this value
     unsigned char dont_enlarge_font; // if set, the fontsize override to large wont be applied
     color_t color_mask; // not font mask - background mask. If set, overrides the style
     font_t font; // if set, overrides the style properties
@@ -108,8 +109,8 @@ typedef struct complex_button {
     unsigned char expanded_hitbox_radius; //not yet fully implemented 
     void *user_data; // custom user data pointer, e.g. can point to a parent struct
 
-    complex_button_animation animation; // if set, button will animate accordingly
-    unsigned char has_animation; // if set, the animation will not advance frames until unpaused
+    unsigned char has_animation; // if set, button will animate using the embedded animation state
+    complex_button_animation animation;
 } complex_button;
 
 typedef struct checkbox_button {
@@ -174,6 +175,9 @@ int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c);
 int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
+int complex_button_animation_init(complex_button *button, const btn_img *frames,
+    unsigned short frame_count, animation_trigger trigger);
+void complex_button_animation_destroy(complex_button *button);
 void complex_button_animation_start(complex_button *button);
 void complex_button_animation_stop(complex_button *button);
 
