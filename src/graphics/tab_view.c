@@ -167,7 +167,6 @@ void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, i
         view->tabs[i].button.font = button_font_for_tab_style(style);
         view->tabs[i].button.sequence_position = SEQUENCE_POSITION_CENTER;
         view->tabs[i].button.color_mask = 0; // default color mask, can be overridden later
-        view->tabs[i].button.sequence_size = 1;
         view->tabs[i].visible = 1;
         view->tabs[i].enabled = 1;
     }
@@ -212,9 +211,9 @@ int tab_view_layout(tab_view *view)
         if (!view->tabs[i].initialised) {
             return TAB_ERR_UNINITIALISED_TAB; // indicate layout was not successful due to uninitialised tabs
         }
-        lang_sequence sequence;
-        lang_seq_init(&sequence, (lang_fragment *) view->tabs[i].button.sequence, 1);
-        sum_text_w += lang_seq_get_width(&sequence, view->view_properties.tab_font);
+        if (view->tabs[i].button.sequence.fragments && view->tabs[i].button.sequence.count > 0) {
+            sum_text_w += lang_seq_get_width(&view->tabs[i].button.sequence, view->view_properties.tab_font);
+        }
     }
 
     // === Step 1 - determine tab widths===
@@ -264,9 +263,10 @@ int tab_view_layout(tab_view *view)
 
     // First determine final button widths
     for (int i = 0; i < tab_count; i++) {
-        lang_sequence sequence;
-        lang_seq_init(&sequence, (lang_fragment *) view->tabs[i].button.sequence, 1);
-        int text_w = lang_seq_get_width(&sequence, view->view_properties.tab_font);
+        int text_w = 0;
+        if (view->tabs[i].button.sequence.fragments && view->tabs[i].button.sequence.count > 0) {
+            text_w = lang_seq_get_width(&view->tabs[i].button.sequence, view->view_properties.tab_font);
+        }
 
         switch (view->view_properties.width_mode) {
             case TAB_WIDTH_MAX:
@@ -360,8 +360,8 @@ void tab_view_init_tab(tab_view *view, int tab_index, content_draw_callback call
     }
 
     view->tabs[tab_index].draw_callback = callback;
-    view->tabs[tab_index].button.sequence = frag;
-    view->tabs[tab_index].button.sequence_size = frag ? 1 : 0; // only one fragment per tab allowed in simple init
+    view->tabs[tab_index].button.sequence.fragments = (lang_fragment *) frag;
+    view->tabs[tab_index].button.sequence.count = frag ? 1 : 0; // only one fragment per tab allowed in simple init
     // if you'd like to make a more complex tab title, you will need to set properties yourself
     view->tabs[tab_index].visible = 1;
     view->tabs[tab_index].enabled = 1;
@@ -374,7 +374,8 @@ void tab_view_set_tab_text(tab_view *view, int tab_index, const lang_fragment *f
         return;
     }
 
-    view->tabs[tab_index].button.sequence = frag;
+    view->tabs[tab_index].button.sequence.fragments = (lang_fragment *) frag;
+    view->tabs[tab_index].button.sequence.count = frag ? 1 : 0;
     if (view->tabs[tab_index].draw_callback) {
         // if draw_callback is already set, the tab is initialised
         view->tabs[tab_index].initialised = 1;
@@ -388,7 +389,7 @@ void tab_view_set_tab_draw_callback(tab_view *view, int tab_index, content_draw_
     }
 
     view->tabs[tab_index].draw_callback = callback;
-    if (view->tabs[tab_index].button.sequence) {
+    if (view->tabs[tab_index].button.sequence.fragments && view->tabs[tab_index].button.sequence.count > 0) {
         // if button.sequence is already set, the tab is initialised
         view->tabs[tab_index].initialised = 1;
     }

@@ -94,8 +94,7 @@ static complex_button complex_button_dispatch_request = {
     .width = 200,
     .height = 28,
     .left_click_handler = button_dispatch_request,
-    .sequence = &seq,
-    .sequence_size = 1,
+    .sequence = { .fragments = &seq, .count = 1 },
     .sequence_position = SEQUENCE_POSITION_CENTER,
 };
 

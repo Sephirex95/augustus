@@ -96,8 +96,7 @@ static checkbox_button draw_bounds_checkbox = {
     .height = 20,
     .left_click_handler = draw_bounds_checkbox_clicked,
     .font = FONT_NORMAL_BLACK,
-    .sequence = draw_bounds_sequence,
-    .sequence_size = 1,
+    .sequence = { .fragments = (lang_fragment *) draw_bounds_sequence, .count = 1 },
 };
 
 static const int ZOOM_VALUES[] = { 50, 100, 200, 400 };

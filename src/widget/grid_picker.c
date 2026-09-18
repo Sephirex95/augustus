@@ -43,8 +43,8 @@ void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, in
     anchor->width = width;
     anchor->height = height;
     anchor->style = style;
-    anchor->sequence = sequence;
-    anchor->sequence_size = sequence_size;
+    anchor->sequence.fragments = (lang_fragment *) sequence;
+    anchor->sequence.count = sequence_size;
     anchor->sequence_position = SEQUENCE_POSITION_CENTER;
     if (tooltip_c) {
         tooltip_copy_context(&anchor->tooltip_c, tooltip_c);
@@ -310,12 +310,12 @@ void update_anchor(grid_picker *picker)
     }
     if (cell->image.id > 0) {
         picker->anchor.image = cell->image;
-        picker->anchor.sequence = NULL;
-        picker->anchor.sequence_size = 0;
+        picker->anchor.sequence.fragments = NULL;
+        picker->anchor.sequence.count = 0;
     } else {
         picker->anchor.image_before = cell->image_before;
-        picker->anchor.sequence = cell->sequence;
-        picker->anchor.sequence_size = cell->sequence_size;
+        picker->anchor.sequence.fragments = cell->sequence;
+        picker->anchor.sequence.count = cell->sequence_size;
         picker->anchor.image_after = cell->image_after;
     }
 }

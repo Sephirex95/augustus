@@ -584,8 +584,8 @@ static void setup_header_footer_buttons(void)
     complex_buttons[BTN_TRADE_HISTORY].width = trade_history_width;
     complex_buttons[BTN_TRADE_HISTORY].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
-    complex_buttons[BTN_TRADE_HISTORY].sequence = &trade_history;
-    complex_buttons[BTN_TRADE_HISTORY].sequence_size = 1;
+    complex_buttons[BTN_TRADE_HISTORY].sequence.fragments = &trade_history;
+    complex_buttons[BTN_TRADE_HISTORY].sequence.count = 1;
     complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_1;
 
     trade_history_years_stored = trade_route_get_history_years_stored(); // refresh
@@ -2815,8 +2815,8 @@ static void sync_resource_picker_from_filter(void)
     memset(&resource_picker.anchor.image, 0, sizeof(resource_picker.anchor.image));
     resource_picker.anchor.image_before = 0;
     resource_picker.anchor.image_after = 0;
-    resource_picker.anchor.sequence = NULL;
-    resource_picker.anchor.sequence_size = 0;
+    resource_picker.anchor.sequence.fragments = NULL;
+    resource_picker.anchor.sequence.count = 0;
 
     if (!potential_resources || selected_resource == RESOURCE_NONE) {
         return;

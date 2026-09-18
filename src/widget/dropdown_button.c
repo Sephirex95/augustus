@@ -10,12 +10,10 @@
 
 static int calculate_text_width(const complex_button *btn, font_t font)
 {
-    if (!btn->sequence || btn->sequence_size == 0) {
+    if (!btn->sequence.fragments || btn->sequence.count == 0) {
         return 0;
     }
-    lang_sequence sequence;
-    lang_seq_init(&sequence, (lang_fragment *) btn->sequence, btn->sequence_size);
-    return lang_seq_get_width(&sequence, font);
+    return lang_seq_get_width(&btn->sequence, font);
 }
 
 static complex_button_style dropdown_button_style_to_complex_style(dropdown_button_style style)
@@ -70,7 +68,6 @@ static void update_anchor(dropdown_button *dd)
 
     // Copy visual parameters from selected option to anchor
     anchor->sequence = selected->sequence;
-    anchor->sequence_size = selected->sequence_size;
     anchor->sequence_position = selected->sequence_position;
     anchor->image_before = selected->image_before;
     anchor->image_after = selected->image_after;
@@ -104,7 +101,6 @@ static void restore_anchor(dropdown_button *dd)
     complex_button *anchor_og = &dd->anchor_backup;
     complex_button *anchor = &dd->buttons[0];
     anchor->sequence = anchor_og->sequence;
-    anchor->sequence_size = anchor_og->sequence_size;
     anchor->sequence_position = anchor_og->sequence_position;
     anchor->image_before = anchor_og->image_before;
     anchor->image_after = anchor_og->image_after;
@@ -232,9 +228,9 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     origin->is_hidden = 0;
     origin->is_disabled = 0;
     int has_selection = dd->selected_index > 0;
-    origin->sequence = &frags[has_selection ? dd->selected_index : 0];
+    origin->sequence.fragments = (lang_fragment *) &frags[has_selection ? dd->selected_index : 0];
     origin->sequence_position = SEQUENCE_POSITION_CENTER;
-    origin->sequence_size = 1;
+    origin->sequence.count = 1;
     origin->left_click_handler = dropdown_button_default_origin_click;
     origin->user_data = dd; // pointer to parent
     if (origin_tooltip) {
@@ -248,8 +244,8 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
         opt->style = style;
         opt->is_hidden = 0;
         opt->is_disabled = 0;
-        opt->sequence = &frags[i];
-        opt->sequence_size = 1;
+        opt->sequence.fragments = (lang_fragment *) &frags[i];
+        opt->sequence.count = 1;
         opt->sequence_position = SEQUENCE_POSITION_CENTER;
 
         // store backref to dropdown + index + value

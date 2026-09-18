@@ -137,8 +137,8 @@ static void init_color_dropdown(void)
         color_dropdown_options[dd_anchors][0].height = CHECKBOX_ROW_WIDTH;
         color_dropdown_options[dd_anchors][0].width = COLOR_DROPDOWN_WIDTH + 20;
         for (int j = 0; j < COLOR_BUTTONS_COUNT; j++) { // dropdown option buttons - COLOR_BUTTONS_COUNT per dropdown
-            color_dropdown_options[dd_anchors][j].sequence = &color_fragments[j];
-            color_dropdown_options[dd_anchors][j].sequence_size = 1;
+            color_dropdown_options[dd_anchors][j].sequence.fragments = &color_fragments[j];
+            color_dropdown_options[dd_anchors][j].sequence.count = 1;
             color_dropdown_options[dd_anchors][j].left_click_handler = dropdown_button_default_option_click;
             color_dropdown_options[dd_anchors][j].user_data = &color_dropdowns[dd_anchors]; //backref to parent dropdown
             color_dropdown_options[dd_anchors][j].parameters[0] = dd_anchors;
@@ -319,7 +319,8 @@ static void update_dd_anchor(int variable_id, int grid_box_position)
     color_dropdowns[pos].buttons[0].parameters[0] = id; //set the variable id as parameter for the color dropdown
     color_dropdowns[pos].buttons[0].color_mask = scenario_custom_variable_get_color(id); //set the selected colour option
     color_dropdowns[pos].buttons[0].is_hidden = 0; //unhide the associated color dropdown
-    color_dropdowns[pos].buttons[0].sequence = &color_fragments[color_group]; //select text
+    color_dropdowns[pos].buttons[0].sequence.fragments = &color_fragments[color_group]; //select text
+    color_dropdowns[pos].buttons[0].sequence.count = 1;
     color_dropdowns[pos].buttons[0].font = (color_group > 8) ? FONT_SMALL_PLAIN : FONT_NORMAL_BLACK; //match font
 }
 

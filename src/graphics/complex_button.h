@@ -79,9 +79,8 @@ typedef struct complex_button {
     void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
     void (*unclick_handler)(struct complex_button *button); // called after clicked state returns to 0 from 1. 
     tooltip_context tooltip_c;
-    const lang_fragment *sequence;     // sequence of text to draw on button
+    lang_sequence sequence;     // sequence of text to draw on button
     sequence_positioning sequence_position;
-    unsigned short sequence_size;
     int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
     int image_before; //img id
     int image_after; //img id
@@ -112,17 +111,15 @@ typedef struct checkbox_button {
     tooltip_context tooltip_c;
     font_t font; // font of the text next to the checkbox, the checkbox font is fixed
     short box_on_right; // box on right side of text/image instead of left
-    const lang_fragment *sequence;     // sequence of text to draw on button
+    lang_sequence sequence;     // sequence of text to draw on button
     int image_before; // optional image to draw before the text
     int image_after;  // optional image to draw after the text
-    int sequence_size;
     color_t color_mask;
     short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
 } checkbox_button;
 
 typedef struct cycling_button_state {
-    const lang_fragment *sequence;
-    int sequence_size;
+    lang_sequence sequence;
     int image_before;
     int image_after;
     color_t color_mask;

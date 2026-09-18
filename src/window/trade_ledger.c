@@ -132,8 +132,7 @@ static checkbox_button hide_irrelevant_checkbox = {
     .height = 20,
     .left_click_handler = hide_irrelevant_checkbox_clicked,
     .font = FONT_NORMAL_BLACK,
-    .sequence = hide_irrelevant_sequence,
-    .sequence_size = 1,
+    .sequence = { .fragments = (lang_fragment *) hide_irrelevant_sequence, .count = 1 },
 };
 
 static complex_button resource_header_button = {
@@ -143,8 +142,7 @@ static complex_button resource_header_button = {
     .style = COMPLEX_BUTTON_STYLE_RAW,
     .left_click_handler = resource_header_button_click,
     .font = FONT_NORMAL_BLACK,
-    .sequence = resource_header_sequence,
-    .sequence_size = 1,
+    .sequence = { .fragments = (lang_fragment *) resource_header_sequence, .count = 1 },
 };
 
 static cycling_button header_buttons[LEDGER_HEADER_BUTTON_COUNT] = { 0 };
@@ -337,8 +335,8 @@ static void setup_header_buttons(void)
         button->right_click_handler = ledger_header_button_click;
 
         for (int state = 0; state < button->state_count; state++) {
-            button->states[state].sequence = header_button_sequences[i];
-            button->states[state].sequence_size = 1;
+            button->states[state].sequence.fragments = (lang_fragment *) header_button_sequences[i];
+            button->states[state].sequence.count = 1;
             button->states[state].image_before = 0;
             button->states[state].image_after = 0;
             button->states[state].font = FONT_NORMAL_BLACK;
@@ -625,9 +623,7 @@ static void placeholder_content_draw(tab_view *view, tab *active_tab)
     (void) view;
     (void) active_tab;
     int active = view->state.active_tab;
-    lang_sequence tab_sequence;
-    lang_seq_init(&tab_sequence, (lang_fragment *) view->tabs[active].button.sequence, 1);
-    lang_seq_draw(&tab_sequence, 20, 20, FONT_LARGE_BROWN, brown_correction);
+    lang_seq_draw(&view->tabs[active].button.sequence, 20, 20, FONT_LARGE_BROWN, brown_correction);
 }
 
 static void draw_resource_row(const grid_box_item *item)
