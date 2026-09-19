@@ -31,6 +31,8 @@ typedef struct text_block {
     int inner_padding_x; // defaults to 2px
     int inner_padding_y; // defaults to 2px
     uint8_t *raw_text; // optional raw text if you dont want to deal with lang_fragment
+    int text_offset_x; // optional text-only horizontal offset
+    int text_offset_y; // optional text-only vertical offset
     int image_before; // optional image to draw before the text
     int image_after; // optional image to draw after the text
     tooltip_context tooltip_c; // optional tooltip context for the text block

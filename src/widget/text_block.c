@@ -96,15 +96,15 @@ static void text_block_draw_sequence(const text_block *block)
     color_t color = text_block_color(block);
 
     if (sequence_width <= content_width) {
-        int x = text_block_get_x(block, sequence_width);
-        int y = text_block_get_y(block, line_height);
+        int x = text_block_get_x(block, sequence_width) + block->text_offset_x;
+        int y = text_block_get_y(block, line_height) + block->text_offset_y;
         lang_seq_draw(&block->sequence, x, y, block->font, color);
         return;
     }
 
     int text_height = lang_seq_get_multiline_height(&block->sequence, content_width, 0, block->font);
-    int x = block->x + block->inner_padding_x;
-    int y = text_block_get_y(block, text_height);
+    int x = block->x + block->inner_padding_x + block->text_offset_x;
+    int y = text_block_get_y(block, text_height) + block->text_offset_y;
 
     if (text_block_position_column(block) == 1) {
         lang_seq_draw_multiline_aligned_center(&block->sequence, x, y, content_width, 0, block->font, color);
@@ -124,15 +124,15 @@ static void text_block_draw_raw(const text_block *block)
 
     // Single-line raw text gets normal positioning because it requires no extra layout logic.
     if (text_width <= content_width) {
-        int x = text_block_get_x(block, text_width);
-        int y = text_block_get_y(block, line_height);
+        int x = text_block_get_x(block, text_width) + block->text_offset_x;
+        int y = text_block_get_y(block, line_height) + block->text_offset_y;
         text_draw(block->raw_text, x, y, block->font, color);
         return;
     }
 
     // Multiline raw text is intentionally only a simple fallback.
-    int x = block->x + block->inner_padding_x;
-    int y = block->y + block->inner_padding_y;
+    int x = block->x + block->inner_padding_x + block->text_offset_x;
+    int y = block->y + block->inner_padding_y + block->text_offset_y;
     text_draw_multiline(block->raw_text, x, y, content_width, 0, block->font, color);
 }
 
@@ -179,7 +179,7 @@ static void text_block_draw_with_images(const text_block *block)
 
     int total_width = image_before_width + text_width + image_after_width;
     int cursor_x = text_block_get_x(block, total_width);
-    int text_y = text_block_get_y(block, line_height);
+    int text_y = text_block_get_y(block, line_height) + block->text_offset_y;
     color_t color = text_block_color(block);
 
     if (image_before) {
@@ -192,10 +192,11 @@ static void text_block_draw_with_images(const text_block *block)
     }
 
     if (has_sequence) {
-        cursor_x += lang_seq_draw_ellipsized(&block->sequence, cursor_x, text_y, max_text_width, block->font, color,
-            NULL);
+        cursor_x += lang_seq_draw_ellipsized(&block->sequence, cursor_x + block->text_offset_x, text_y,
+            max_text_width, block->font, color, NULL);
     } else if (has_raw_text) {
-        cursor_x += text_draw_ellipsized(block->raw_text, cursor_x, text_y, max_text_width, block->font, color);
+        cursor_x += text_draw_ellipsized(block->raw_text, cursor_x + block->text_offset_x, text_y, max_text_width,
+            block->font, color);
     }
 
     if (image_after) {
