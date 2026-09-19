@@ -2,6 +2,7 @@
 
 #include "graphics/button.h"
 #include "graphics/graphics.h"
+#include "graphics/image.h"
 #include "graphics/lang_sequence.h"
 #include "graphics/panel.h"
 #include "graphics/text.h"
@@ -135,6 +136,76 @@ static void text_block_draw_raw(const text_block *block)
     text_draw_multiline(block->raw_text, x, y, content_width, 0, block->font, color);
 }
 
+static void text_block_draw_with_images(const text_block *block)
+{
+    const int inner_margin = 2;
+    const color_t image_mask = block->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
+    const image *image_before = NULL;
+    const image *image_after = NULL;
+    int image_before_width = 0;
+    int image_after_width = 0;
+    int image_before_margin_x = inner_margin;
+    int content_width = text_block_content_width(block);
+    int line_height = font_definition_for(block->font)->line_height;
+    int text_width = 0;
+    int has_sequence = block->sequence.fragments && block->sequence.count > 0;
+    int has_raw_text = block->raw_text && *block->raw_text;
+
+    if (block->image_before > 0) {
+        image_before = image_get(block->image_before);
+        if (image_before->original.width >= block->width) {
+            image_before_margin_x = 0;
+        }
+        image_before_width = image_before->original.width + image_before_margin_x;
+    }
+    if (block->image_after > 0) {
+        image_after = image_get(block->image_after);
+        image_after_width = image_after->original.width + inner_margin;
+    }
+
+    int max_text_width = content_width - image_before_width - image_after_width;
+    if (max_text_width < 0) {
+        max_text_width = 0;
+    }
+
+    if (has_sequence) {
+        text_width = lang_seq_get_width(&block->sequence, block->font);
+    } else if (has_raw_text) {
+        text_width = text_get_width(block->raw_text, block->font);
+    }
+    if (text_width > max_text_width) {
+        text_width = max_text_width;
+    }
+
+    int total_width = image_before_width + text_width + image_after_width;
+    int cursor_x = text_block_get_x(block, total_width);
+    int text_y = text_block_get_y(block, line_height);
+    color_t color = text_block_color(block);
+
+    if (image_before) {
+        int image_x = image_before->original.width >= block->width ? block->x : cursor_x;
+        int image_y = image_before->original.height >= block->height
+            ? block->y
+            : block->y + (block->height - image_before->original.height) / 2;
+        image_draw(block->image_before, image_x, image_y, image_mask, SCALE_NONE);
+        cursor_x += image_before->original.width + image_before_margin_x;
+    }
+
+    if (has_sequence) {
+        cursor_x += lang_seq_draw_ellipsized(&block->sequence, cursor_x, text_y, max_text_width, block->font, color,
+            NULL);
+    } else if (has_raw_text) {
+        cursor_x += text_draw_ellipsized(block->raw_text, cursor_x, text_y, max_text_width, block->font, color);
+    }
+
+    if (image_after) {
+        int image_y = image_after->original.height >= block->height
+            ? block->y
+            : block->y + (block->height - image_after->original.height) / 2;
+        image_draw(block->image_after, cursor_x + inner_margin, image_y, image_mask, SCALE_NONE);
+    }
+}
+
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height, const lang_sequence *sequence,
     sequence_positioning position)
 {
@@ -161,7 +232,7 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
     return 1;
 }
 
-void text_block_draw(const text_block *block)
+void widget_text_block_draw(const text_block *block)
 {
     if (!block || block->is_hidden) {
         return;
@@ -170,7 +241,9 @@ void text_block_draw(const text_block *block)
     graphics_set_clip_rectangle(block->x, block->y, block->width, block->height);
     text_block_draw_background_and_border(block);
 
-    if (block->sequence.count > 0) {
+    if (block->image_before > 0 || block->image_after > 0) {
+        text_block_draw_with_images(block);
+    } else if (block->sequence.count > 0) {
         text_block_draw_sequence(block);
     } else if (block->raw_text) {
         text_block_draw_raw(block);
@@ -179,7 +252,7 @@ void text_block_draw(const text_block *block)
     graphics_reset_clip_rectangle();
 }
 
-int text_block_handle_mouse(text_block *block, const mouse *m)
+int widget_text_block_handle_mouse(text_block *block, const mouse *m)
 {
     // currently no mouse functionality, only hover state tracking for tooltip support
     if (!block || !m) {
@@ -205,7 +278,7 @@ int text_block_handle_mouse(text_block *block, const mouse *m)
     return 0;
 }
 
-int text_block_handle_tooltip(const text_block *block, tooltip_context *c)
+int widget_text_block_handle_tooltip(const text_block *block, tooltip_context *c)
 {
     if (!block || !c || block->is_hidden || !block->state_is_hovered || tooltip_context_is_empty(&block->tooltip_c)) {
         return 0;

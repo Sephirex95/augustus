@@ -40,6 +40,7 @@
 #include "scenario/empire.h"
 #include "scenario/invasion.h"
 #include "widget/dropdown_button.h"
+#include "widget/empire_map_widget.h"
 #include "widget/grid_picker.h"
 #include "widget/text_block.h"
 #include "window/advisors.h"
@@ -242,6 +243,7 @@ static int sidebar_is_visible(void);
 static int sidebar_content_width_from_percent(unsigned char width_percent);
 static int sidebar_outer_width_from_percent(unsigned char width_percent);
 static unsigned char sidebar_width_percent_for_content_width(int content_width);
+static int initialise_map_widget(void);
 //buttons
 static void button_help(int param1, int param2);
 static void button_return_to_city(int param1, int param2);
@@ -2341,6 +2343,32 @@ static void draw_map(void)
     graphics_reset_clip_rectangle();
 }
 
+static void draw_map_widget(void)
+{
+    if (!initialise_map_widget()) {
+        return;
+    }
+    widget_empire_map_widget_draw(0, 0);
+}
+
+static int initialise_map_widget(void)
+{
+    int map_x_min = data.x_min + WIDTH_BORDER;
+    int map_y_min = data.y_min + WIDTH_BORDER;
+    int map_x_max = data.sidebar.x_min;
+    int map_y_max = data.y_max - BOTTOM_PANEL_HEIGHT;
+    int map_width = map_x_max - map_x_min;
+    int map_height = map_y_max - map_y_min;
+    if (map_width < widget_empire_map_widget_width() || map_height < widget_empire_map_widget_height() + 10) {
+        return 0;
+    }
+
+    int x = map_x_min + (map_x_max - map_x_min - widget_empire_map_widget_width()) / 2;
+    int y = map_y_min + 10;
+    widget_empire_map_initialise(x, y);
+    return 1;
+}
+
 static void draw_city_name(const empire_city *city)
 {
     int image_base = image_group(GROUP_EMPIRE_PANELS);
@@ -2396,7 +2424,7 @@ static void draw_sidebar_grid_box(void)
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
         complex_button_draw_array(complex_buttons, CMPLX_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
-        text_block_draw(&trade_year_block);
+        widget_text_block_draw(&trade_year_block);
 
         int year_width = trade_year_text_width();
         int year_x = trade_year_block.x + (trade_year_block.width - year_width) / 2;
@@ -2504,6 +2532,7 @@ static void draw_funds_and_date_panels(void)
 static void draw_foreground(void)
 {
     draw_map();
+    draw_map_widget();
     refresh_screen_geometry();
     refresh_sidebar_gridbox();
     resource_button_count = 0;
@@ -2915,7 +2944,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     }
     // Only let the grid‐box process clicks if the sidebar is actually expanded:
     if (!data.sidebar.border_btn.is_collapsed) {
-        text_block_handle_mouse(&trade_year_block, m);
+        widget_text_block_handle_mouse(&trade_year_block, m);
         // since we have multiple buttons of same type, they should be array'd to call array input handlers
         if (!resource_picker.is_expanded) { // only handle dropdowns if the resource picker is not expanded
             if (dropdown_button_handle_mouse_array(dropdown_buttons, m, DD_COUNT)) {
@@ -3231,7 +3260,7 @@ static void get_tooltip(tooltip_context *c)
         return;
     } else if (cycling_button_handle_tooltip_array(cycling_buttons, c, BTN_COUNT)) {
         return;
-    } else if (text_block_handle_tooltip(&trade_year_block, c)) {
+    } else if (widget_text_block_handle_tooltip(&trade_year_block, c)) {
         return;
     } else if (complex_button_handle_tooltip_array(complex_buttons, c, CMPLX_BTN_COUNT)) {
         return;

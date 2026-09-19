@@ -31,6 +31,8 @@ typedef struct text_block {
     int inner_padding_x; // defaults to 2px
     int inner_padding_y; // defaults to 2px
     uint8_t *raw_text; // optional raw text if you dont want to deal with lang_fragment
+    int image_before; // optional image to draw before the text
+    int image_after; // optional image to draw after the text
     tooltip_context tooltip_c; // optional tooltip context for the text block
     unsigned short draw_border;
     unsigned short draw_background;
@@ -43,8 +45,8 @@ typedef struct text_block {
 
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height,
      const lang_sequence *sequence, sequence_positioning position);
-void text_block_draw(const text_block *block);
-int text_block_handle_mouse(text_block *block, const mouse *m);
-int text_block_handle_tooltip(const text_block *block, tooltip_context *c);
+void widget_text_block_draw(const text_block *block);
+int widget_text_block_handle_mouse(text_block *block, const mouse *m);
+int widget_text_block_handle_tooltip(const text_block *block, tooltip_context *c);
 
 #endif // WIDGET_TEXT_BLOCK_H

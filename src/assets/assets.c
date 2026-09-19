@@ -109,13 +109,11 @@ void assets_init(int force_reload, color_t **main_images, int *main_image_widths
     data.asset_lookup[ASSET_UI_BTN_MENU_FRAME_09] = assets_get_image_id("UI", "Button_Menu_Frame_09");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_01] = assets_get_image_id("UI", "segmented_border_01");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_02] = assets_get_image_id("UI", "segmented_border_02");
-    data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_02_SMALL] = assets_get_image_id("UI", "segmented_border_02_small");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_03] = assets_get_image_id("UI", "segmented_border_03");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_04] = assets_get_image_id("UI", "segmented_border_04");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_06] = assets_get_image_id("UI", "segmented_border_06");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_07] = assets_get_image_id("UI", "segmented_border_07");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_08] = assets_get_image_id("UI", "segmented_border_08");
-    data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_08_SMALL] = assets_get_image_id("UI", "segmented_border_08_small");
     data.asset_lookup[ASSET_UI_SEGMENTED_BORDER_09] = assets_get_image_id("UI", "segmented_border_09");
     data.asset_lookup[ASSET_UI_SORTING_ICON] = assets_get_image_id("UI", "Sorting_Icon");
     data.asset_lookup[ASSET_UI_FILTER_ICON] = assets_get_image_id("UI", "Filter_Icon");

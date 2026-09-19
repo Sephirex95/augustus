@@ -590,12 +590,12 @@ void segmented_border_draw(int x, int y, int width, int height)
     }
 
     int top_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_01);
-    int top_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_02_SMALL);
+    int top_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_02);
     int top_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_03);
     int left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_04);
     int right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_06);
     int bottom_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_07);
-    int bottom_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_08_SMALL);
+    int bottom_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_08);
     int bottom_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_09);
 
     const image *top_left = image_get(top_left_id);
@@ -610,6 +610,7 @@ void segmented_border_draw(int x, int y, int width, int height)
     int top_x = x + top_left->width;
     int top_width = width - top_left->width - top_right->width;
     int bottom_x = x + bottom_left->width;
+    int bottom_y = y + height - bottom->height;
     int bottom_width = width - bottom_left->width - bottom_right->width;
     int side_y = y + top_left->height;
     int left_height = height - top_left->height - bottom_left->height;
@@ -618,7 +619,7 @@ void segmented_border_draw(int x, int y, int width, int height)
     graphics_set_clip_rectangle(x, y, width, height);
 
     draw_tiled_image(top_id, top_x, y, top_width, top->height);
-    draw_tiled_image(bottom_id, bottom_x, y + height - bottom_left->height, bottom_width, bottom->height);
+    draw_tiled_image(bottom_id, bottom_x, bottom_y, bottom_width, bottom->height);
     draw_tiled_image(left_id, x, side_y, left->width, left_height);
     draw_tiled_image(right_id, x + width - right->width, y + top_right->height, right->width, right_height);
 
