@@ -1780,6 +1780,17 @@
 	<image id="Scrollbar_Dark_Start_B" width="16" height="24">
 		<layer group="this" image="Scrollbar_Dark_Start" rotate="90" x="0" y="0"/>
 	</image>
+	<!-- Note: Assets for drawing segmented borders -->
+	<image id="segmented_border_01" src="segmented_border_01"/>
+	<image id="segmented_border_02" src="segmented_border_02"/>
+	<image id="segmented_border_02_small" src="segmented_border_02small"/>
+	<image id="segmented_border_03" src="segmented_border_03"/>
+	<image id="segmented_border_04" src="segmented_border_04"/>
+	<image id="segmented_border_06" src="segmented_border_06"/>
+	<image id="segmented_border_07" src="segmented_border_07"/>
+	<image id="segmented_border_08" src="segmented_border_08"/>
+	<image id="segmented_border_08_small" src="segmented_border_08small"/>
+	<image id="segmented_border_09" src="segmented_border_09"/>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>

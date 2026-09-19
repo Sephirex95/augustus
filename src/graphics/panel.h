@@ -47,6 +47,8 @@ void label_draw_greyout_pattern(int x, int y, int width, int height, int opacity
 
 void large_label_draw_border(int x, int y, int width, int height);
 
+void segmented_border_draw(int x, int y, int width, int height);
+
 int top_menu_black_panel_draw(int x, int y, int width);
 
 #endif // GRAPHICS_PANEL_H

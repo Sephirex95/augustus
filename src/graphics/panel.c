@@ -569,6 +569,68 @@ void large_label_draw_border(int x, int y, int width, int height)
     graphics_reset_clip_rectangle();
 }
 
+static void draw_tiled_image(int image_id, int x, int y, int width, int height)
+{
+    const image *img = image_get(image_id);
+    if (img->width <= 0 || img->height <= 0 || width <= 0 || height <= 0) {
+        return;
+    }
+
+    for (int yy = y; yy < y + height; yy += img->height) {
+        for (int xx = x; xx < x + width; xx += img->width) {
+            image_draw(image_id, xx, yy, COLOR_MASK_NONE, SCALE_NONE);
+        }
+    }
+}
+
+void segmented_border_draw(int x, int y, int width, int height)
+{
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    int top_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_01);
+    int top_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_02_SMALL);
+    int top_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_03);
+    int left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_04);
+    int right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_06);
+    int bottom_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_07);
+    int bottom_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_08_SMALL);
+    int bottom_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_09);
+
+    const image *top_left = image_get(top_left_id);
+    const image *top = image_get(top_id);
+    const image *top_right = image_get(top_right_id);
+    const image *left = image_get(left_id);
+    const image *right = image_get(right_id);
+    const image *bottom_left = image_get(bottom_left_id);
+    const image *bottom = image_get(bottom_id);
+    const image *bottom_right = image_get(bottom_right_id);
+
+    int top_x = x + top_left->width;
+    int top_width = width - top_left->width - top_right->width;
+    int bottom_x = x + bottom_left->width;
+    int bottom_width = width - bottom_left->width - bottom_right->width;
+    int side_y = y + top_left->height;
+    int left_height = height - top_left->height - bottom_left->height;
+    int right_height = height - top_right->height - bottom_right->height;
+
+    graphics_set_clip_rectangle(x, y, width, height);
+
+    draw_tiled_image(top_id, top_x, y, top_width, top->height);
+    draw_tiled_image(bottom_id, bottom_x, y + height - bottom_left->height, bottom_width, bottom->height);
+    draw_tiled_image(left_id, x, side_y, left->width, left_height);
+    draw_tiled_image(right_id, x + width - right->width, y + top_right->height, right->width, right_height);
+
+    image_draw(top_left_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(top_right_id, x + width - top_right->width, y, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(bottom_left_id, x, y + height - bottom_left->height, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(bottom_right_id, x + width - bottom_right->width, y + height - bottom_right->height,
+        COLOR_MASK_NONE, SCALE_NONE);
+
+    graphics_reset_clip_rectangle();
+}
+
 int top_menu_black_panel_draw(int x, int y, int width)
 {
     int blocks = ((width + BLACK_PANEL_BLOCK_WIDTH - 1) / BLACK_PANEL_BLOCK_WIDTH) - 2;
