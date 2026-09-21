@@ -382,7 +382,7 @@ int slider_text_block_init(text_block *block, int x, int y, int width, int heigh
     lang_sequence lang_sequence;
 
     lang_seq_init(&lang_sequence, (lang_fragment *) sequence, sequence_size);
-    return widget_text_block_init_simple(block, x, y, width, height, &lang_sequence, position);
+    return widget_text_block_init_simple(block, x, y, width, height, &lang_sequence, position, TEXT_BLOCK_STYLE_RAW);
 }
 
 void slider_draw(const slider_t *slider)

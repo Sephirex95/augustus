@@ -327,6 +327,8 @@ static int sidebar_city_count = 0;
 static grid_box_type sidebar_grid_box;
 static int trade_history_years_stored;
 static int low_res_mode = 0;
+static text_block_style debug_trade_year_style;
+static lang_date_sequence trade_date_frags[8];
 
 //original button properties
 static image_button image_button_help[] = {
@@ -588,10 +590,11 @@ static void setup_header_footer_buttons(void)
 
     trade_history_years_stored = trade_route_get_history_years_stored(); // refresh
     widget_text_block_init_simple(&trade_year_block, 0, 0, TRADE_YEAR_TEXT_WIDTH,
-        TRADE_YEAR_FIELD_HEIGHT, NULL, SEQUENCE_POSITION_CENTER);
-    trade_year_block.draw_background = 1;
-    trade_year_block.draw_border = 1;
+        TRADE_YEAR_FIELD_HEIGHT, NULL, SEQUENCE_POSITION_CENTER, debug_trade_year_style);
+
     trade_year_block.tooltip_c.type = TOOLTIP_BUTTON;
+    trade_year_block.height = TRADE_YEAR_FIELD_HEIGHT;
+    trade_year_block.font = FONT_LARGE_BROWN;
 
     complex_buttons[BTN_TRADE_YEAR_DECREASE].width = TRADE_YEAR_BUTTON_WIDTH;
     complex_buttons[BTN_TRADE_YEAR_DECREASE].height = TRADE_YEAR_BUTTON_HEIGHT;
@@ -681,6 +684,12 @@ static void setup_sidebar(void)
     data.sidebar.width = sidebar_outer_width_from_percent(active_width_percent);
 
     data.sidebar.initialised = 1; // dimensions set up
+    int years_stored = trade_route_get_history_years_stored();
+    int current_year = game_time_year();
+    for (int i = 0; i <= years_stored; i++) {
+        int trade_year = current_year - i;
+        lang_sequence_date_init(&trade_date_frags[i], trade_year, 0, 0, 0, 0); // Initialize each date sequence on init
+    }
 }
 
 static void refresh_header_and_footer_buttons(void)
@@ -773,7 +782,6 @@ static void refresh_header_and_footer_buttons(void)
     trade_year_block.x = date_control_x + date_button_width + TRADE_YEAR_CONTROL_SPACING;
     trade_year_block.y = date_control_y;
     trade_year_block.width = date_text_width;
-    trade_year_block.height = TRADE_YEAR_FIELD_HEIGHT;
 
     complex_buttons[BTN_TRADE_YEAR_INCREASE].x =
         trade_year_block.x + trade_year_block.width + TRADE_YEAR_CONTROL_SPACING;
@@ -2422,13 +2430,9 @@ static void draw_sidebar_grid_box(void)
         cycling_button_draw_array(cycling_buttons, BTN_COUNT);
         complex_button_draw_array(complex_buttons, CMPLX_BTN_COUNT);
         dropdown_button_draw_array(dropdown_buttons, DD_COUNT);
+        trade_year_block.sequence = trade_date_frags[data.sidebar.trade_year].sequence; // update sequence to print
         widget_text_block_draw(&trade_year_block);
 
-        int year_width = trade_year_text_width();
-        int year_x = trade_year_block.x + (trade_year_block.width - year_width) / 2;
-        int year_y = trade_year_block.y +
-            (trade_year_block.height - font_definition_for(FONT_LARGE_BLACK)->line_height) / 2;
-        lang_text_draw_year_colored(selected_trade_year(), year_x, year_y, FONT_LARGE_BLACK, COLOR_MASK_NONE);
     }
 
     graphics_reset_clip_rectangle();

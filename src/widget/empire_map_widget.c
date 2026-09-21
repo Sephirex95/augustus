@@ -144,7 +144,7 @@ void widget_empire_map_initialise(int x, int y, int width)
     widget_data.money_sequence.fragments = widget_data.money_fragments;
 
     widget_text_block_init_simple(&widget_data.money_block, x + TEXT_BLOCK_MARGIN_X, y + TEXT_BLOCK_Y,
-        text_block_width, TEXT_BLOCK_HEIGHT, &widget_data.money_sequence, SEQUENCE_POSITION_CENTER);
+        text_block_width, TEXT_BLOCK_HEIGHT, &widget_data.money_sequence, SEQUENCE_POSITION_CENTER, TEXT_BLOCK_STYLE_RAW);
 
     resource_data *money = resource_get_data(RESOURCE_DENARII);
     widget_data.money_block.image_before = money->image.icon;
@@ -158,7 +158,7 @@ void widget_empire_map_initialise(int x, int y, int width)
 
     widget_text_block_init_simple(&widget_data.date_block,
         x + width - TEXT_BLOCK_MARGIN_X - text_block_width, y + TEXT_BLOCK_Y,
-        text_block_width, TEXT_BLOCK_HEIGHT, NULL, SEQUENCE_POSITION_CENTER);
+        text_block_width, TEXT_BLOCK_HEIGHT, NULL, SEQUENCE_POSITION_CENTER, TEXT_BLOCK_STYLE_RAW);
     widget_data.date_block.raw_text = widget_data.date_text;
     widget_data.date_block.image_before = assets_lookup_image_id(ASSET_UI_HOURGLASS_ICON);
     widget_data.date_block.image_after = assets_lookup_image_id(ASSET_UI_HOURGLASS_ICON);

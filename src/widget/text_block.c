@@ -39,6 +39,7 @@ color_t text_block_bg_primary_for_style(text_block_style style)
         case TEXT_BLOCK_STYLE_DEFAULT:
         case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
         case TEXT_BLOCK_STYLE_SUNKEN:
+        case TEXT_BLOCK_STYLE_RAISED:
         case TEXT_BLOCK_STYLE_GRAY:
         case TEXT_BLOCK_STYLE_RAW:
         default:
@@ -53,6 +54,7 @@ color_t text_block_font_primary_for_style(text_block_style style)
         case TEXT_BLOCK_STYLE_DEFAULT:
         case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
         case TEXT_BLOCK_STYLE_SUNKEN:
+        case TEXT_BLOCK_STYLE_RAISED:
         case TEXT_BLOCK_STYLE_GRAY:
         case TEXT_BLOCK_STYLE_RAW:
         default:
@@ -137,6 +139,7 @@ static void text_block_draw_background_and_border(const text_block *block)
                 break;
             case TEXT_BLOCK_STYLE_SUNKEN:
             case TEXT_BLOCK_STYLE_BROWN: // brown has pastel color pre-set
+            case TEXT_BLOCK_STYLE_RAISED:
                 inner_panel_draw_colored(block->x, block->y, block->width, block->height, block->bg_primary);
                 break;
             case TEXT_BLOCK_STYLE_GRAY:
@@ -152,6 +155,7 @@ static void text_block_draw_background_and_border(const text_block *block)
             case TEXT_BLOCK_STYLE_DEFAULT:
             case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
             case TEXT_BLOCK_STYLE_BROWN:
+            case TEXT_BLOCK_STYLE_RAISED:
                 int red = block->draw_hover_state ? block->state_is_hovered : 0;
                 button_border_draw(block->x, block->y, block->width, block->height, red);
                 break;
@@ -287,7 +291,7 @@ static void text_block_draw_with_images(const text_block *block)
 }
 
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height, const lang_sequence *sequence,
-    sequence_positioning position)
+    sequence_positioning position, text_block_style style)
 {
     if (!block) {
         return 0;
@@ -300,6 +304,7 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
     }
 
     block->position = position ? position : SEQUENCE_POSITION_CENTER;
+    block->style = style;
     block->font = text_block_font_for_style(block->style);
     block->font_primary = COLOR_MASK_NONE;
     block->bg_primary = text_block_bg_primary_for_style(block->style);
@@ -314,7 +319,8 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
     block->draw_background = 1;
     block->is_disabled = 0;
     block->is_hidden = 0;
-
+    block->tooltip_c.type = TOOLTIP_BUTTON;
+    // if tooltip type is not set and forgotten by user, tooltip won't show, so set it preemptively in the simple init 
     return 1;
 }
 

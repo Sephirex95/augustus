@@ -22,9 +22,10 @@ typedef enum {
 typedef enum {
     TEXT_BLOCK_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
     TEXT_BLOCK_STYLE_DEFAULT_SMALL,    // like default but small font and less padding
-    TEXT_BLOCK_STYLE_SUNKEN,           // Sidebar-like style with sunken gray texture
+    TEXT_BLOCK_STYLE_SUNKEN,           // Sunken Sidebar-like style with a gray texture
+    TEXT_BLOCK_STYLE_RAISED,           // Raised Sidebar-like style with a gray texture
     TEXT_BLOCK_STYLE_GRAY,             // main-menu-like style
-    TEXT_BLOCK_STYLE_BROWN,            // Not compatile with bg_color. Inner panel brown fill, white border, brown text. 
+    TEXT_BLOCK_STYLE_BROWN,            // Inner panel brown fill, white border, brown text. 
     TEXT_BLOCK_STYLE_RAW               // No border, no fill. Content-only.
     //custom style ommitted on purpose - all settings can be adjusted after init, making it obsolete.
 } text_block_style;
@@ -58,8 +59,9 @@ typedef struct text_block {
 } text_block;
 
 
+
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height,
-     const lang_sequence *sequence, sequence_positioning position);
+     const lang_sequence *sequence, sequence_positioning position, text_block_style style);
 void widget_text_block_draw(const text_block *block);
 int widget_text_block_handle_mouse(text_block *block, const mouse *m);
 int widget_text_block_handle_tooltip(const text_block *block, tooltip_context *c);

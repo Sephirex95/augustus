@@ -37,7 +37,29 @@ typedef struct lang_sequence {
     int count;
 } lang_sequence;
 
+typedef struct {
+    lang_sequence sequence;
+    lang_fragment fragments[4];
+} lang_date_sequence;
+
 void lang_seq_init(lang_sequence *seq, lang_fragment *fragments, int count);
+/**
+ * @brief Helper - initializes a lang sequence with a current date representation.
+ * @param date The lang date sequence to initialize.
+ * @param full_date_format 1 = '1 Jan AD 40', 0 = 'AD 40'
+ */
+void lang_seq_current_date_init(lang_date_sequence *date, int full_date_format);
+
+/**
+ * @brief Helper - initializes a lang sequence with a current date representation.
+ * @param date  The lang date sequence to initialize.
+ * @param year  negative for BC, positive for AD
+ * @param month  month (0-11)
+ * @param cosmetic_day  can be left 0, cosmetic day of the month (1-31)
+ * @param game_day can be left 0, if given, used to override the cosmetic day
+ * @param full_date_format 1 = '1 Jan AD 40', 0 = 'AD 40'
+ */
+void lang_sequence_date_init(lang_date_sequence *date, int year, int month, int cosmetic_day, int game_day, int full_date_format);
 
 /**
  * @name Lang Frag Constructors

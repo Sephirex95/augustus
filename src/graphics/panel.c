@@ -609,11 +609,6 @@ static void draw_tiled_image(int image_id, int x, int y, int width, int height)
     }
 }
 
-void segmented_border_draw(int x, int y, int width, int height)
-{
-    segmented_border_draw_colored(x, y, width, height, COLOR_MASK_NONE);
-}
-
 void segmented_border_draw_colored(int x, int y, int width, int height, color_t color)
 {
     if (width <= 0 || height <= 0) {
@@ -661,6 +656,11 @@ void segmented_border_draw_colored(int x, int y, int width, int height, color_t 
         COLOR_MASK_NONE, SCALE_NONE);
 
     graphics_reset_clip_rectangle();
+}
+
+void segmented_border_draw(int x, int y, int width, int height)
+{
+    segmented_border_draw_colored(x, y, width, height, COLOR_MASK_NONE);
 }
 
 int top_menu_black_panel_draw(int x, int y, int width)
