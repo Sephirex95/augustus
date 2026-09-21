@@ -181,10 +181,7 @@ static int sequence_y_offset(const complex_button *button, sequence_positioning 
     }
 }
 
-int complex_button_animation_init(
-    complex_button *button,
-    const btn_img *frames,
-    unsigned short frame_count,
+int complex_button_animation_init(complex_button *button, const btn_img *frames, unsigned short frame_count,
     animation_trigger trigger)
 {
     if (!button || !frames || frame_count == 0) {

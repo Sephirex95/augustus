@@ -23,9 +23,11 @@ void inner_panel_draw_colored(int x, int y, int width, int height, color_t color
 
 void unbordered_panel_draw(int x, int y, int width_blocks, int height_blocks);
 
+void unbordered_panel_draw_colored(int x, int y, int width_blocks, int height_blocks, color_t color);
+
 void unbordered_panel_draw_px(int x, int y, int width_px, int height_px);
 
-void unbordered_panel_draw_colored(int x, int y, int width_blocks, int height_blocks, color_t color);
+void unbordered_panel_draw_px_colored(int x, int y, int width_px, int height_px, color_t color);
 
 void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color, color_t color_border);
 
@@ -34,6 +36,8 @@ void label_draw(int x, int y, int width_blocks, int type);
 void large_label_draw(int x, int y, int width_blocks, int type);
 
 void large_label_draw_custom_size(int x, int y, int width, int height);
+
+void large_label_draw_bg_colored(int x, int y, int width, int height, color_t color);
 
 void large_label_draw_bg(int x, int y, int width, int height);
 
@@ -46,6 +50,8 @@ void large_label_draw_bg(int x, int y, int width, int height);
 void label_draw_greyout_pattern(int x, int y, int width, int height, int opacity);
 
 void large_label_draw_border(int x, int y, int width, int height);
+
+void large_label_draw_border_colored(int x, int y, int width, int height, color_t color);
 
 void segmented_border_draw(int x, int y, int width, int height);
 

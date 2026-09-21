@@ -12,6 +12,54 @@
 #include <stddef.h>
 #include <string.h>
 
+#define DEFAULT_PADDING 2
+
+font_t text_block_font_for_style(text_block_style style)
+{
+    switch (style) {
+        case TEXT_BLOCK_STYLE_DEFAULT:
+        case TEXT_BLOCK_STYLE_RAW:
+            return FONT_NORMAL_BLACK;
+        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
+            return FONT_SMALL_PLAIN;
+        case TEXT_BLOCK_STYLE_GRAY:
+            return FONT_NORMAL_GREEN;
+        case TEXT_BLOCK_STYLE_BROWN:
+            return FONT_NORMAL_BROWN;
+        default:
+            return FONT_NORMAL_BLACK;
+    }
+}
+
+color_t text_block_bg_primary_for_style(text_block_style style)
+{
+    switch (style) {
+        case TEXT_BLOCK_STYLE_BROWN:
+            return COLOR_MASK_PASTEL_BROWN;
+        case TEXT_BLOCK_STYLE_DEFAULT:
+        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
+        case TEXT_BLOCK_STYLE_SUNKEN:
+        case TEXT_BLOCK_STYLE_GRAY:
+        case TEXT_BLOCK_STYLE_RAW:
+        default:
+            return COLOR_MASK_NONE;
+    }
+}
+
+color_t text_block_font_primary_for_style(text_block_style style)
+{
+    switch (style) {
+        case TEXT_BLOCK_STYLE_BROWN:
+        case TEXT_BLOCK_STYLE_DEFAULT:
+        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
+        case TEXT_BLOCK_STYLE_SUNKEN:
+        case TEXT_BLOCK_STYLE_GRAY:
+        case TEXT_BLOCK_STYLE_RAW:
+        default:
+            return COLOR_MASK_NONE; // atm no styles using custom font coloring
+    }
+}
+
 static int text_block_content_width(const text_block *block)
 {
     return block->width - 2 * block->inner_padding_x;
@@ -80,11 +128,43 @@ static color_t text_block_color(const text_block *block)
 
 static void text_block_draw_background_and_border(const text_block *block)
 {
+
     if (block->draw_background) {
-        unbordered_panel_draw_px(block->x, block->y, block->width, block->height);
+        switch (block->style) {
+            case TEXT_BLOCK_STYLE_DEFAULT:
+            case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
+                unbordered_panel_draw_px_colored(block->x, block->y, block->width, block->height, block->bg_primary);
+                break;
+            case TEXT_BLOCK_STYLE_SUNKEN:
+            case TEXT_BLOCK_STYLE_BROWN: // brown has pastel color pre-set
+                inner_panel_draw_colored(block->x, block->y, block->width, block->height, block->bg_primary);
+                break;
+            case TEXT_BLOCK_STYLE_GRAY:
+                large_label_draw_bg_colored(block->x, block->y, block->width, block->height, block->bg_primary);
+                break;
+            case TEXT_BLOCK_STYLE_RAW:
+                break;
+        }
+
     }
     if (block->draw_border) {
-        button_border_draw(block->x, block->y, block->width, block->height, 0);
+        switch (block->style) {
+            case TEXT_BLOCK_STYLE_DEFAULT:
+            case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
+            case TEXT_BLOCK_STYLE_BROWN:
+                int red = block->draw_hover_state ? block->state_is_hovered : 0;
+                button_border_draw(block->x, block->y, block->width, block->height, red);
+                break;
+            case TEXT_BLOCK_STYLE_GRAY:
+                large_label_draw_border(block->x, block->y, block->width, block->height); //intentional fall through
+            case TEXT_BLOCK_STYLE_SUNKEN:
+                if (block->draw_hover_state) {
+                    graphics_shade_rect(block->x, block->y, block->width, block->height, 2 * block->state_is_hovered);
+                }
+                break;
+            case TEXT_BLOCK_STYLE_RAW:
+                break;
+        }
     }
 }
 
@@ -201,8 +281,7 @@ static void text_block_draw_with_images(const text_block *block)
 
     if (image_after) {
         int image_y = image_after->original.height >= block->height
-            ? block->y
-            : block->y + (block->height - image_after->original.height) / 2;
+            ? block->y : block->y + (block->height - image_after->original.height) / 2;
         image_draw(block->image_after, cursor_x + inner_margin, image_y, image_mask, SCALE_NONE);
     }
 }
@@ -220,15 +299,21 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
         block->sequence = *sequence;
     }
 
-    block->position = position;
-    block->font = FONT_NORMAL_BLACK;
+    block->position = position ? position : SEQUENCE_POSITION_CENTER;
+    block->font = text_block_font_for_style(block->style);
     block->font_primary = COLOR_MASK_NONE;
+    block->bg_primary = text_block_bg_primary_for_style(block->style);
     block->x = x;
     block->y = y;
     block->width = width;
     block->height = height;
-    block->inner_padding_x = 2;
-    block->inner_padding_y = 2;
+    block->inner_padding_x = DEFAULT_PADDING;
+    block->inner_padding_y = DEFAULT_PADDING;
+    block->draw_border = 1;
+    block->draw_hover_state = 1;
+    block->draw_background = 1;
+    block->is_disabled = 0;
+    block->is_hidden = 0;
 
     return 1;
 }

@@ -142,6 +142,15 @@ void unbordered_panel_draw_px(int x, int y, int width_px, int height_px)
     graphics_reset_clip_rectangle();
 }
 
+void unbordered_panel_draw_px_colored(int x, int y, int width_px, int height_px, color_t color)
+{
+    graphics_set_clip_rectangle(x, y, width_px, height_px);
+    int width_blocks = (width_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int height_blocks = (height_px + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    unbordered_panel_draw_colored(x, y, width_blocks, height_blocks, color);
+    graphics_reset_clip_rectangle();
+}
+
 void bordered_panel_draw_colored(int x, int y, int width_px, int height_px, int has_focus, color_t color_bg, color_t color_border)
 {
     if (width_px <= 0 || height_px <= 0) {
@@ -474,9 +483,21 @@ void large_label_draw_custom_size(int x, int y, int width, int height)
     large_label_draw_border(x, y, width, height);
 }
 
+static color_t color_mask_50_opacity(color_t color_mask)
+{
+    return (color_mask & 0x00FFFFFF) | 0x80000000;
+}
+
 void large_label_draw_bg(int x, int y, int width, int height)
 {
+    large_label_draw_bg_colored(x, y, width, height, COLOR_MASK_NONE);
+}
+
+
+void large_label_draw_bg_colored(int x, int y, int width, int height, color_t color)
+{
     graphics_set_clip_rectangle(x, y, width, height);
+    color_t mask_50 = color_mask_50_opacity(color);
     const int panel_width_left = 13;
     const int panel_width_middle = 16;
     const int panel_height = 19;
@@ -491,22 +512,22 @@ void large_label_draw_bg(int x, int y, int width, int height)
     for (int i = 0; i < panel_rows; i++) {
         int row_y = y + i * panel_height;
 
-        image_draw(panel_base, x, row_y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(panel_base, x, row_y, color, SCALE_NONE);
         for (int j = 0; j < panel_middle_blocks; j++) {
-            image_draw(panel_base + 1, x + panel_width_left + j * panel_width_middle, row_y, COLOR_MASK_NONE, SCALE_NONE);
+            image_draw(panel_base + 1, x + panel_width_left + j * panel_width_middle, row_y, color, SCALE_NONE);
         }
-        image_draw(panel_base + 2, x + width - panel_width_left, row_y, COLOR_MASK_NONE, SCALE_NONE);
+        image_draw(panel_base + 2, x + width - panel_width_left, row_y, color, SCALE_NONE);
     }
 
     // Draw a mirrored half-opacity row across each seam.
     for (int i = 1; i < panel_rows; i++) {
         int row_y = y + i * panel_height - panel_height / 2;
 
-        image_draw(panel_mirror_base, x, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+        image_draw(panel_mirror_base, x, row_y, mask_50, SCALE_NONE);
         for (int j = 0; j < panel_middle_blocks; j++) {
-            image_draw(panel_mirror_base + 1, x + panel_width_left + j * panel_width_middle, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+            image_draw(panel_mirror_base + 1, x + panel_width_left + j * panel_width_middle, row_y, mask_50, SCALE_NONE);
         }
-        image_draw(panel_mirror_base + 2, x + width - panel_width_left, row_y, COLOR_MASK_50_OPACITY, SCALE_NONE);
+        image_draw(panel_mirror_base + 2, x + width - panel_width_left, row_y, mask_50, SCALE_NONE);
     }
     graphics_reset_clip_rectangle();
 }
@@ -538,6 +559,11 @@ void label_draw_greyout_pattern(int x, int y, int width, int height, int opacity
 
 void large_label_draw_border(int x, int y, int width, int height)
 {
+    large_label_draw_border_colored(x, y, width, height, COLOR_MASK_NONE);
+}
+
+void large_label_draw_border_colored(int x, int y, int width, int height, color_t color)
+{
     graphics_set_clip_rectangle(x, y, width, height);
     const int frame_size = 16;
     int frame_base = assets_lookup_image_id(ASSET_UI_BTN_MENU_FRAME_01);
@@ -546,25 +572,25 @@ void large_label_draw_border(int x, int y, int width, int height)
     int vertical_blocks = (height - 2 * frame_size + frame_size - 1) / frame_size;
 
     // Top
-    image_draw(frame_base, x, y, COLOR_MASK_NONE, SCALE_NONE); // left
+    image_draw(frame_base, x, y, color, SCALE_NONE); // left
     for (int i = 0; i < horizontal_blocks; i++) {
-        image_draw(frame_base + 1, x + frame_size + i * frame_size, y, COLOR_MASK_NONE, SCALE_NONE); // mid
+        image_draw(frame_base + 1, x + frame_size + i * frame_size, y, color, SCALE_NONE); // mid
     }
-    image_draw(frame_base + 2, x + width - frame_size, y, COLOR_MASK_NONE, SCALE_NONE); // right
+    image_draw(frame_base + 2, x + width - frame_size, y, color, SCALE_NONE); // right
 
     // Sides
     for (int i = 0; i < vertical_blocks; i++) {
         int frame_y = y + frame_size + i * frame_size;
-        image_draw(frame_base + 3, x, frame_y, COLOR_MASK_NONE, SCALE_NONE); // left
-        image_draw(frame_base + 4, x + width - frame_size, frame_y, COLOR_MASK_NONE, SCALE_NONE); // right
+        image_draw(frame_base + 3, x, frame_y, color, SCALE_NONE); // left
+        image_draw(frame_base + 4, x + width - frame_size, frame_y, color, SCALE_NONE); // right
     }
 
     // Bottom
-    image_draw(frame_base + 5, x, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // left
+    image_draw(frame_base + 5, x, y + height - frame_size, color, SCALE_NONE); // left
     for (int i = 0; i < horizontal_blocks; i++) {
-        image_draw(frame_base + 6, x + frame_size + i * frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // mid
+        image_draw(frame_base + 6, x + frame_size + i * frame_size, y + height - frame_size, color, SCALE_NONE); // mid
     }
-    image_draw(frame_base + 7, x + width - frame_size, y + height - frame_size, COLOR_MASK_NONE, SCALE_NONE); // right
+    image_draw(frame_base + 7, x + width - frame_size, y + height - frame_size, color, SCALE_NONE); // right
 
     graphics_reset_clip_rectangle();
 }
@@ -584,6 +610,11 @@ static void draw_tiled_image(int image_id, int x, int y, int width, int height)
 }
 
 void segmented_border_draw(int x, int y, int width, int height)
+{
+    segmented_border_draw_colored(x, y, width, height, COLOR_MASK_NONE);
+}
+
+void segmented_border_draw_colored(int x, int y, int width, int height, color_t color)
 {
     if (width <= 0 || height <= 0) {
         return;
