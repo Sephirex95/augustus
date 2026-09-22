@@ -64,6 +64,7 @@ typedef struct text_block {
 int widget_text_block_init_simple(text_block *block, int x, int y, int width, int height,
      const lang_sequence *sequence, sequence_positioning position, text_block_style style);
 void widget_text_block_draw(const text_block *block);
+void widget_text_block_draw_clipped(const text_block *block, int clip_x, int clip_y, int clip_width, int clip_height);
 int widget_text_block_handle_mouse(text_block *block, const mouse *m);
 int widget_text_block_handle_tooltip(const text_block *block, tooltip_context *c);
 

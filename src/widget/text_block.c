@@ -324,13 +324,8 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
     return 1;
 }
 
-void widget_text_block_draw(const text_block *block)
+static void text_block_draw_content(const text_block *block)
 {
-    if (!block || block->is_hidden) {
-        return;
-    }
-
-    graphics_set_clip_rectangle(block->x, block->y, block->width, block->height);
     text_block_draw_background_and_border(block);
 
     if (block->image_before > 0 || block->image_after > 0) {
@@ -340,7 +335,37 @@ void widget_text_block_draw(const text_block *block)
     } else if (block->raw_text) {
         text_block_draw_raw(block);
     }
+}
 
+void widget_text_block_draw(const text_block *block)
+{
+    if (!block || block->is_hidden) {
+        return;
+    }
+
+    graphics_set_clip_rectangle(block->x, block->y, block->width, block->height);
+    text_block_draw_content(block);
+    graphics_reset_clip_rectangle();
+}
+
+void widget_text_block_draw_clipped(const text_block *block, int clip_x, int clip_y, int clip_width, int clip_height)
+{
+    if (!block || block->is_hidden) {
+        return;
+    }
+
+    int x1 = block->x > clip_x ? block->x : clip_x;
+    int y1 = block->y > clip_y ? block->y : clip_y;
+    int x2 = block->x + block->width < clip_x + clip_width ? block->x + block->width : clip_x + clip_width;
+    int y2 = block->y + block->height < clip_y + clip_height ? block->y + block->height : clip_y + clip_height;
+
+    if (x2 <= x1 || y2 <= y1) {
+        return;
+    }
+
+    // Preserve the block's normal layout while restricting final pixels to the caller's visible area.
+    graphics_set_clip_rectangle(x1, y1, x2 - x1, y2 - y1);
+    text_block_draw_content(block);
     graphics_reset_clip_rectangle();
 }
 

@@ -28,6 +28,7 @@
 #define WIDGET_SLIDE_DURATION_MILLIS 1000
 #define WIDGET_HIDE_NUDGE_OFFSET 10
 #define WIDGET_BANNER_VISIBLE_TIP 8
+#define WIDGET_BANNER_HIDDEN_HITBOX_EXTRA 10
 #define WIDGET_TOP_BORDER_CLEARANCE 10
 #define CENTER_RESERVED_WIDTH 80
 #define TEXT_BLOCK_HEIGHT (WIDGET_HEIGHT - 8)
@@ -105,8 +106,6 @@ static int current_y_offset(void)
     if (elapsed >= WIDGET_SLIDE_DURATION_MILLIS) {
         widget_data.is_animating = 0;
         widget_data.is_hidden = widget_data.is_hiding;
-        widget_data.money_block.is_hidden = widget_data.is_hidden;
-        widget_data.date_block.is_hidden = widget_data.is_hidden;
         return widget_data.is_hidden ? hidden_offset() : 0;
     }
 
@@ -207,7 +206,7 @@ static void update_money_text(void)
     lang_seq_frag_number(&widget_data.money_fragments[2], funds);
 }
 
-static void update_banner_button(int offset_x, int y_offset)
+static void update_banner_button(int offset_x, int y_offset, int extend_hidden_hitbox)
 {
     const image *banner = image_get(widget_data.banner_button.image.id);
     int full_x = widget_data.x + offset_x + (widget_data.width - banner->width) / 2;
@@ -226,9 +225,13 @@ static void update_banner_button(int offset_x, int y_offset)
     widget_data.banner_button.y = visible_y;
     widget_data.banner_button.width = banner->width;
     widget_data.banner_button.height = visible_height;
+    if (extend_hidden_hitbox && widget_data.is_hidden && !widget_data.is_animating && visible_height > 0) {
+        widget_data.banner_button.height += WIDGET_BANNER_HIDDEN_HITBOX_EXTRA;
+    }
     widget_data.banner_button.image.image_x_offset = 0;
     widget_data.banner_button.image.image_y_offset = full_y - visible_y;
     widget_data.banner_button.is_hidden = visible_height <= 0;
+    widget_data.banner_button.light_on_hover = 1;
 }
 
 int widget_empire_funds_width_for_available(int available_width)
@@ -271,7 +274,7 @@ void widget_empire_funds_initialise(int x, int y, int width)
     widget_data.money_block.tooltip_c.type = TOOLTIP_BUTTON;
     widget_data.money_block.tooltip_c.text_group = 68;
     widget_data.money_block.tooltip_c.text_id = 60;
-    widget_data.money_block.is_hidden = widget_data.is_hidden;
+    widget_data.money_block.is_hidden = 0;
 
     widget_text_block_init_simple(&widget_data.date_block,
         x + width - TEXT_BLOCK_MARGIN_X - text_block_width, y + TEXT_BLOCK_Y,
@@ -284,23 +287,28 @@ void widget_empire_funds_initialise(int x, int y, int width)
     widget_data.date_block.tooltip_c.type = TOOLTIP_BUTTON;
     widget_data.date_block.tooltip_c.text_group = 68;
     widget_data.date_block.tooltip_c.text_id = 62;
-    widget_data.date_block.is_hidden = widget_data.is_hidden;
+    widget_data.date_block.is_hidden = 0;
     update_date_text();
 
     widget_data.banner_button.image.id = assets_get_image_id("UI", "Victory_Banner");
     widget_data.banner_button.image.auto_center = 0;
     widget_data.banner_button.style = COMPLEX_BUTTON_STYLE_IMAGE;
     widget_data.banner_button.left_click_handler = button_toggle_visibility;
-    update_banner_button(0, current_y_offset());
+    update_banner_button(0, current_y_offset(), 0);
 }
 
 static void draw_text_block_with_offset(text_block *block, int offset_x, int offset_y)
 {
+    int original_x = block->x;
+    int original_y = block->y;
+
     block->x += offset_x;
     block->y += offset_y;
-    widget_text_block_draw(block);
-    block->x -= offset_x;
-    block->y -= offset_y;
+    widget_text_block_draw_clipped(block, widget_data.x + offset_x, clip_top(), widget_data.width,
+        WIDGET_HEIGHT + WIDGET_TOP_BORDER_CLEARANCE + WIDGET_HIDE_NUDGE_OFFSET);
+
+    block->x = original_x;
+    block->y = original_y;
 }
 
 void widget_empire_funds_draw(int offset_x, int offset_y)
@@ -312,22 +320,17 @@ void widget_empire_funds_draw(int offset_x, int offset_y)
     int y_offset = current_y_offset();
     int draw_y = widget_data.y + offset_y + y_offset;
 
-    update_banner_button(offset_x, y_offset + offset_y);
-    if (!widget_data.is_hidden || widget_data.is_animating) {
-        // Avoid drawing the panel and text above the top border; the banner uses its own clipped button rect.
-        if (draw_y >= clip_top()) {
-            graphics_set_clip_rectangle(widget_data.x + offset_x, clip_top(), widget_data.width,
-                WIDGET_HEIGHT + WIDGET_TOP_BORDER_CLEARANCE + WIDGET_HIDE_NUDGE_OFFSET);
-            draw_background(widget_data.x + offset_x, draw_y);
-            segmented_border_draw(widget_data.x + offset_x, draw_y, widget_data.width, WIDGET_HEIGHT);
-            graphics_reset_clip_rectangle();
+    update_banner_button(offset_x, y_offset + offset_y, 0);
+    graphics_set_clip_rectangle(widget_data.x + offset_x, clip_top(), widget_data.width,
+        WIDGET_HEIGHT + WIDGET_TOP_BORDER_CLEARANCE + WIDGET_HIDE_NUDGE_OFFSET);
+    draw_background(widget_data.x + offset_x, draw_y);
+    segmented_border_draw(widget_data.x + offset_x, draw_y, widget_data.width, WIDGET_HEIGHT);
+    graphics_reset_clip_rectangle();
 
-            update_money_text();
-            update_date_text();
-            draw_text_block_with_offset(&widget_data.money_block, offset_x, y_offset + offset_y);
-            draw_text_block_with_offset(&widget_data.date_block, offset_x, y_offset + offset_y);
-        }
-    }
+    update_money_text();
+    update_date_text();
+    draw_text_block_with_offset(&widget_data.money_block, offset_x, y_offset + offset_y);
+    draw_text_block_with_offset(&widget_data.date_block, offset_x, y_offset + offset_y);
     complex_button_draw(&widget_data.banner_button);
 }
 
@@ -351,7 +354,7 @@ int widget_empire_funds_handle_mouse(const mouse *m, int offset_x, int offset_y)
     }
 
     int y_offset = current_y_offset();
-    update_banner_button(offset_x, y_offset + offset_y);
+    update_banner_button(offset_x, y_offset + offset_y, 1);
     if (complex_button_handle_mouse(&widget_data.banner_button, m)) {
         return 1;
     }
