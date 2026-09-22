@@ -54,6 +54,7 @@ typedef struct text_block {
     unsigned short draw_background; // 1/0 - whether background is to be filled or left transparent
     unsigned short is_disabled; // 1/0 - uninteractable, grayed out
     unsigned short is_hidden; // 1/0 - disabled and invisible, does not handle mouse events at all
+    void (*update_content)(struct text_block *block); // Runs before every draw. Updates block's content
     // cache and state properties - do not set externally, managed by the text_block's own module
     unsigned short state_is_hovered; // mouse is in bounds of the text block
 } text_block;

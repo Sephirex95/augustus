@@ -627,6 +627,7 @@ set(WIDGET_FILES
     ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/other.c
     ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/overlay.c
     ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/risks.c
+    ${PROJECT_SOURCE_DIR}/src/widget/date_picker.c
     ${PROJECT_SOURCE_DIR}/src/widget/dropdown_button.c
     ${PROJECT_SOURCE_DIR}/src/widget/empire_map_widget.c
     ${PROJECT_SOURCE_DIR}/src/widget/grid_picker.c

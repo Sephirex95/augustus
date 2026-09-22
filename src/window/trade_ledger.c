@@ -6,7 +6,6 @@
 #include "core/image_group.h"
 #include "core/lang.h"
 #include "core/string.h"
-#include "game/time.h"
 #include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/grid_box.h"
@@ -18,7 +17,7 @@
 #include "graphics/text.h"
 #include "graphics/window.h"
 #include "input/input.h"
-#include "widget/text_block.h"
+#include "widget/date_picker.h"
 #include "window/resource_settings.h"
 
 #include <stdlib.h>
@@ -48,16 +47,13 @@
 #define LEDGER_TRADE_STATUS_BUTTON_MAX (RESOURCE_MAX * 2)
 #define LEDGER_TRADE_STATUS_TOOLTIP_MAX 96
 #define LEDGER_TRADE_YEAR_MAX 7
-#define LEDGER_TRADE_YEAR_BUTTON_WIDTH 39
-#define LEDGER_TRADE_YEAR_BUTTON_HEIGHT 24
-#define LEDGER_TRADE_YEAR_FIELD_HEIGHT LEDGER_TRADE_YEAR_BUTTON_HEIGHT
+#define LEDGER_TRADE_YEAR_FIELD_HEIGHT DATE_PICKER_BUTTON_HEIGHT
 #define LEDGER_TRADE_YEAR_TEXT_WIDTH 116
 #define LEDGER_TRADE_YEAR_CONTROL_SPACING 4
 #define LEDGER_TRADE_YEAR_CONTROL_WIDTH \
-    (2 * LEDGER_TRADE_YEAR_BUTTON_WIDTH + LEDGER_TRADE_YEAR_TEXT_WIDTH + 2 * LEDGER_TRADE_YEAR_CONTROL_SPACING)
+    (2 * DATE_PICKER_BUTTON_WIDTH + LEDGER_TRADE_YEAR_TEXT_WIDTH + 2 * LEDGER_TRADE_YEAR_CONTROL_SPACING)
 #define LEDGER_TRADE_YEAR_CONTROL_X (LEDGER_TABLE_X + LEDGER_TABLE_WIDTH - LEDGER_TRADE_YEAR_CONTROL_WIDTH)
 #define LEDGER_TRADE_YEAR_CONTROL_Y 436
-#define LEDGER_TRADE_YEAR_TOOLTIP_TEXT_MAX 256
 
 typedef enum {
     LEDGER_HEADER_IMPORTED = 0,
@@ -73,12 +69,6 @@ typedef enum {
     LEDGER_SORT_DESCENDING,
     LEDGER_SORT_ASCENDING
 } ledger_sort_direction;
-
-typedef enum {
-    LEDGER_TRADE_YEAR_DECREASE = 0,
-    LEDGER_TRADE_YEAR_INCREASE,
-    LEDGER_TRADE_YEAR_BUTTON_COUNT
-} ledger_trade_year_button_type;
 
 typedef struct {
     resource_type resource;
@@ -104,13 +94,10 @@ static void refresh_irrelevant_resources(void);
 static void setup_resource_header_button(void);
 static void setup_header_buttons(void);
 static void setup_trade_year_control(void);
-static void refresh_trade_year_control(void);
 static void refresh_selected_year(void);
 static void update_header_button_fonts(void);
 static void resource_header_button_click(complex_button *button);
 static void ledger_header_button_click(cycling_button *button);
-static void trade_year_decrease_click(complex_button *button);
-static void trade_year_increase_click(complex_button *button);
 static void draw_trade_status_column(resource_type resource, int row_y, int row_height);
 static void update_trade_status_button_focus(const mouse *m);
 static void on_resource_row_click(const grid_box_item *item);
@@ -121,10 +108,7 @@ static int tabs_initialized = 0;
 static const resource_list *resources;
 static resource_list displayed_resources;
 static grid_box_type resource_table;
-static text_block trade_year_block;
-static complex_button trade_year_buttons[LEDGER_TRADE_YEAR_BUTTON_COUNT] = { 0 };
-static lang_date_sequence trade_date_frags[LEDGER_TRADE_YEAR_MAX + 1];
-static uint8_t trade_year_tooltip_text[LEDGER_TRADE_YEAR_TOOLTIP_TEXT_MAX];
+static date_picker trade_year_picker;
 static int selected_year_index = 0;
 static int hide_irrelevant = 1; //default to hide
 static complex_button trade_status_buttons[LEDGER_TRADE_STATUS_BUTTON_MAX] = { 0 };
@@ -226,70 +210,6 @@ static void refresh_selected_year(void)
 
     grid_box_request_refresh(&resource_table);
     window_invalidate();
-}
-
-static void compose_trade_year_jump_tooltip(translation_key current_tooltip)
-{
-    uint8_t *cursor = trade_year_tooltip_text;
-    int remaining = LEDGER_TRADE_YEAR_TOOLTIP_TEXT_MAX;
-
-    if (selected_year_index > 1) {
-        int offset = string_from_int(cursor, selected_year_index, 0);
-        cursor += offset;
-        remaining -= offset;
-    }
-
-    cursor = string_copy(translation_for(current_tooltip), cursor, remaining);
-    remaining = LEDGER_TRADE_YEAR_TOOLTIP_TEXT_MAX - (int) (cursor - trade_year_tooltip_text);
-    if (remaining > 1) {
-        cursor = string_copy(string_from_ascii("\n"), cursor, remaining);
-        remaining = LEDGER_TRADE_YEAR_TOOLTIP_TEXT_MAX - (int) (cursor - trade_year_tooltip_text);
-    }
-    if (remaining > 0) {
-        string_copy(translation_for(TR_SIDEBAR_DATE_JUMP_TO_CURRENT), cursor, remaining);
-    }
-}
-
-static void update_trade_year_tooltips(void)
-{
-    complex_button *decrease = &trade_year_buttons[LEDGER_TRADE_YEAR_DECREASE];
-    complex_button *increase = &trade_year_buttons[LEDGER_TRADE_YEAR_INCREASE];
-
-    decrease->tooltip_c.translation_key = decrease->is_disabled ?
-        TR_UI_TRADE_YEAR_NO_EARLIER : TR_UI_TRADE_YEAR_PREVIOUS;
-    increase->tooltip_c.translation_key = increase->is_disabled ?
-        TR_UI_TRADE_YEAR_CURRENT_LIMIT : TR_UI_TRADE_YEAR_NEXT;
-
-    trade_year_block.tooltip_c.type = TOOLTIP_BUTTON;
-    trade_year_block.tooltip_c.has_numeric_prefix = 0;
-    trade_year_block.tooltip_c.numeric_prefix = 0;
-    trade_year_block.tooltip_c.precomposed_text = 0;
-
-    if (selected_year_index == 0) {
-        trade_year_block.tooltip_c.translation_key = TR_UI_TRADE_YEAR_CURRENT;
-    } else {
-        translation_key current_tooltip = selected_year_index == 1 ?
-            TR_UI_TRADE_YEAR_LAST : TR_UI_TRADE_YEAR_YEARS_AGO;
-        compose_trade_year_jump_tooltip(current_tooltip);
-        trade_year_block.tooltip_c.translation_key = 0;
-        trade_year_block.tooltip_c.precomposed_text = trade_year_tooltip_text;
-    }
-}
-
-static int handle_trade_year_block_click(const mouse *m)
-{
-    if (!selected_year_index || !m->left.went_up) {
-        return 0;
-    }
-    if (m->x < trade_year_block.x || m->x >= trade_year_block.x + trade_year_block.width ||
-        m->y < trade_year_block.y || m->y >= trade_year_block.y + trade_year_block.height) {
-        return 0;
-    }
-
-    selected_year_index = 0;
-    refresh_trade_year_control();
-    refresh_selected_year();
-    return 1;
 }
 
 static int compare_displayed_rows(const void *a, const void *b)
@@ -429,56 +349,11 @@ static void setup_header_buttons(void)
     }
 }
 
-static void refresh_trade_year_control(void)
-{
-    trade_year_buttons[LEDGER_TRADE_YEAR_DECREASE].is_disabled = selected_year_index >= LEDGER_TRADE_YEAR_MAX;
-    trade_year_buttons[LEDGER_TRADE_YEAR_INCREASE].is_disabled = selected_year_index == 0;
-    update_trade_year_tooltips();
-}
-
 static void setup_trade_year_control(void)
 {
-    widget_text_block_init_simple(&trade_year_block,
-        LEDGER_TRADE_YEAR_CONTROL_X + LEDGER_TRADE_YEAR_BUTTON_WIDTH + LEDGER_TRADE_YEAR_CONTROL_SPACING,
-        LEDGER_TRADE_YEAR_CONTROL_Y,
-        LEDGER_TRADE_YEAR_TEXT_WIDTH,
-        LEDGER_TRADE_YEAR_FIELD_HEIGHT,
-        NULL,
-        SEQUENCE_POSITION_CENTER,
-        TEXT_BLOCK_STYLE_DEFAULT);
-
-    trade_year_block.tooltip_c.type = TOOLTIP_BUTTON;
-    trade_year_block.height = LEDGER_TRADE_YEAR_FIELD_HEIGHT;
-
-    complex_button *decrease = &trade_year_buttons[LEDGER_TRADE_YEAR_DECREASE];
-    decrease->x = LEDGER_TRADE_YEAR_CONTROL_X;
-    decrease->y = LEDGER_TRADE_YEAR_CONTROL_Y;
-    decrease->width = LEDGER_TRADE_YEAR_BUTTON_WIDTH;
-    decrease->height = LEDGER_TRADE_YEAR_BUTTON_HEIGHT;
-    decrease->image.id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_IDLE);
-    decrease->style = COMPLEX_BUTTON_STYLE_IMAGE;
-    decrease->left_click_handler = trade_year_decrease_click;
-    decrease->light_on_hover = 2;
-    btn_img decrease_frames[] = { {.id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_CLICK)} };
-    if (complex_button_animation_init(decrease, decrease_frames, 1, BUTTON_ANIMATION_TRIGGER_CLICK)) {
-        decrease->animation.skip_zero_frame = 1;
-    }
-
-    complex_button *increase = &trade_year_buttons[LEDGER_TRADE_YEAR_INCREASE];
-    increase->x = trade_year_block.x + trade_year_block.width + LEDGER_TRADE_YEAR_CONTROL_SPACING;
-    increase->y = LEDGER_TRADE_YEAR_CONTROL_Y;
-    increase->width = LEDGER_TRADE_YEAR_BUTTON_WIDTH;
-    increase->height = LEDGER_TRADE_YEAR_BUTTON_HEIGHT;
-    increase->image.id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_IDLE);
-    increase->style = COMPLEX_BUTTON_STYLE_IMAGE;
-    increase->left_click_handler = trade_year_increase_click;
-    increase->light_on_hover = 2;
-    btn_img increase_frames[] = { {.id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_CLICK)} };
-    if (complex_button_animation_init(increase, increase_frames, 1, BUTTON_ANIMATION_TRIGGER_CLICK)) {
-        increase->animation.skip_zero_frame = 1;
-    }
-
-    refresh_trade_year_control();
+    widget_date_picker_init(&trade_year_picker, LEDGER_TRADE_YEAR_CONTROL_X, LEDGER_TRADE_YEAR_CONTROL_Y,
+        LEDGER_TRADE_YEAR_FIELD_HEIGHT, LEDGER_TRADE_YEAR_TEXT_WIDTH, COMPLEX_BUTTON_STYLE_DEFAULT,
+        LEDGER_TRADE_YEAR_CONTROL_SPACING, LEDGER_TRADE_YEAR_MAX, 0);
 }
 
 static void update_header_button_fonts(void)
@@ -598,10 +473,6 @@ static void update_trade_status_button_focus(const mouse *m)
 static void trade_ledger_init(void)
 {
     selected_year_index = 0;
-    int current_year = game_time_year();
-    for (int i = 0; i <= LEDGER_TRADE_YEAR_MAX; i++) {
-        lang_sequence_date_init(&trade_date_frags[i], current_year - i, 0, 0, 0, 0);
-    }
 
     setup_resource_header_button();
     setup_header_buttons();
@@ -703,11 +574,12 @@ static int handle_trade_tab_mouse(const mouse *m, void *user_data)
     if (tab_view_get_active_tab(&ledger_tabs) != 0) {
         return 0;
     }
-    widget_text_block_handle_mouse(&trade_year_block, m);
-    if (handle_trade_year_block_click(m)) {
-        return 1;
-    }
-    if (complex_button_handle_mouse_array(trade_year_buttons, m, LEDGER_TRADE_YEAR_BUTTON_COUNT)) {
+    trade_year_picker.selected_year_offset = selected_year_index;
+    if (widget_date_picker_handle_input(&trade_year_picker, m)) {
+        if (trade_year_picker.changed) {
+            selected_year_index = trade_year_picker.selected_year_offset;
+            refresh_selected_year();
+        }
         return 1;
     }
     if (complex_button_handle_mouse(&resource_header_button, m)) {
@@ -820,9 +692,8 @@ static void trade_draw_content(tab_view *view, tab *active_tab)
     grid_box_request_refresh(&resource_table);
     grid_box_draw(&resource_table);
     checkbox_button_draw(&hide_irrelevant_checkbox);
-    complex_button_draw_array(trade_year_buttons, LEDGER_TRADE_YEAR_BUTTON_COUNT);
-    trade_year_block.sequence = trade_date_frags[selected_year_index].sequence;
-    widget_text_block_draw(&trade_year_block);
+    trade_year_picker.selected_year_offset = selected_year_index;
+    widget_date_picker_draw(&trade_year_picker);
 
 }
 
@@ -837,10 +708,7 @@ static void handle_tooltip(tooltip_context *c)
     if (complex_button_handle_tooltip(&resource_header_button, c)) {
         return;
     }
-    if (widget_text_block_handle_tooltip(&trade_year_block, c)) {
-        return;
-    }
-    if (complex_button_handle_tooltip_array(trade_year_buttons, c, LEDGER_TRADE_YEAR_BUTTON_COUNT)) {
+    if (widget_date_picker_handle_tooltip(&trade_year_picker, c)) {
         return;
     }
     cycling_button_handle_tooltip_array(header_buttons, c, LEDGER_HEADER_BUTTON_COUNT);
@@ -896,28 +764,6 @@ static void ledger_header_button_click(cycling_button *button)
 
     grid_box_request_refresh(&resource_table);
     window_invalidate();
-}
-
-static void trade_year_decrease_click(complex_button *button)
-{
-    (void) button;
-
-    if (selected_year_index < LEDGER_TRADE_YEAR_MAX) {
-        selected_year_index++;
-        refresh_trade_year_control();
-        refresh_selected_year();
-    }
-}
-
-static void trade_year_increase_click(complex_button *button)
-{
-    (void) button;
-
-    if (selected_year_index > 0) {
-        selected_year_index--;
-        refresh_trade_year_control();
-        refresh_selected_year();
-    }
 }
 
 void window_trade_ledger_show(void)

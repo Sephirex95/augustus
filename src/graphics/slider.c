@@ -376,13 +376,12 @@ int slider_init(slider_t *slider, int x, int y, int length, int min_value, int m
     return 1;
 }
 
-int slider_text_block_init(text_block *block, int x, int y, int width, int height,
-    const lang_fragment *sequence, unsigned short sequence_size, sequence_positioning position)
+int slider_text_block_init(text_block *block, int x, int y, int width, int height, lang_sequence *sequence,
+    sequence_positioning position)
 {
-    lang_sequence lang_sequence;
-
-    lang_seq_init(&lang_sequence, (lang_fragment *) sequence, sequence_size);
-    return widget_text_block_init_simple(block, x, y, width, height, &lang_sequence, position, TEXT_BLOCK_STYLE_RAW);
+    lang_sequence seq;
+    lang_seq_init(&seq, (lang_fragment *) sequence->fragments, sequence->count);
+    return widget_text_block_init_simple(block, x, y, width, height, &seq, position, TEXT_BLOCK_STYLE_RAW);
 }
 
 void slider_draw(const slider_t *slider)
