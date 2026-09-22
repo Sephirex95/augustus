@@ -41,7 +41,7 @@
 #include "scenario/invasion.h"
 #include "widget/date_picker.h"
 #include "widget/dropdown_button.h"
-#include "widget/empire_map_widget.h"
+#include "widget/empire_funds.h"
 #include "widget/grid_picker.h"
 #include "window/advisors.h"
 #include "window/city.h"
@@ -2296,7 +2296,7 @@ static void draw_map_widget(void)
     if (!initialise_map_widget()) {
         return;
     }
-    widget_empire_map_widget_draw(0, 0);
+    widget_empire_funds_draw(0, 0);
 }
 
 static int initialise_map_widget(void)
@@ -2307,15 +2307,15 @@ static int initialise_map_widget(void)
     int map_y_max = data.y_max - BOTTOM_PANEL_HEIGHT;
     int map_width = map_x_max - map_x_min;
     int map_height = map_y_max - map_y_min;
-    int widget_width = widget_empire_map_widget_width_for_available(map_width);
+    int widget_width = widget_empire_funds_width_for_available(map_width);
 
-    if (widget_width <= 0 || map_width < widget_width || map_height < widget_empire_map_widget_height() + 10) {
+    if (widget_width <= 0 || map_width < widget_width || map_height < widget_empire_funds_height() + 10) {
         return 0;
     }
 
     int x = map_x_min + (map_x_max - map_x_min - widget_width) / 2;
     int y = map_y_min + 10;
-    widget_empire_map_initialise(x, y, widget_width);
+    widget_empire_funds_initialise(x, y, widget_width);
     return 1;
 }
 
@@ -2781,7 +2781,7 @@ static void handle_input(const mouse *m, const hotkeys *h)
     if (scroll_get_delta(m, &position, SCROLL_TYPE_EMPIRE)) {
         empire_scroll_map(position.x, position.y);
     }
-    widget_empire_map_widget_handle_mouse(m, 0, 0);
+    widget_empire_funds_handle_mouse(m, 0, 0);
     if (data.is_scrolling) {
         if (m->right.went_up) {
             data.finished_scroll = scroll_drag_end();
@@ -3101,7 +3101,7 @@ static void get_tooltip(tooltip_context *c)
         c->type = TOOLTIP_BUTTON;
         c->text_group = CUSTOM_TRANSLATION;
         c->text_id = TR_TOOLTIP_CHANGE_SIDEBAR_WIDTH;
-    } else if (widget_empire_map_widget_handle_tooltip(c)) {
+    } else if (widget_empire_funds_handle_tooltip(c)) {
         return;
     } else if (get_city_name_tooltip(c)) {
         return;

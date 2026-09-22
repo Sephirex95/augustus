@@ -1,27 +1,34 @@
-#include "empire_map_widget.h"
+#include "empire_funds.h"
 
 #include "assets/assets.h"
 #include "city/finance.h"
+#include "core/calc.h"
 #include "core/lang.h"
 #include "core/locale.h"
-#include "game/time.h"
+#include "core/time.h"
 #include "game/resource.h"
+#include "game/time.h"
+#include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "graphics/panel.h"
 #include "graphics/text.h"
+#include "graphics/window.h"
 #include "widget/text_block.h"
 #include "widget/top_menu.h"
 
-
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define WIDGET_WIDTH 460
 #define WIDGET_MIN_VISIBLE_WIDTH 240
 #define WIDGET_MAX_AVAILABLE_PERCENT 80
 #define WIDGET_HEIGHT 36
+#define WIDGET_SLIDE_DURATION_MILLIS 1000
+#define WIDGET_HIDE_NUDGE_OFFSET 10
+#define WIDGET_BANNER_VISIBLE_TIP 8
+#define WIDGET_TOP_BORDER_CLEARANCE 10
 #define CENTER_RESERVED_WIDTH 80
 #define TEXT_BLOCK_HEIGHT (WIDGET_HEIGHT - 8)
 #define TEXT_BLOCK_MARGIN_X 20
@@ -32,18 +39,96 @@ static struct {
     int y;
     int width;
     int initialised;
+    int is_hidden;
+    int is_animating;
+    int is_hiding;
+    time_millis animation_start;
     uint8_t date_text[64];
     lang_fragment money_fragments[3];
     lang_sequence money_sequence;
     text_block date_block;
     text_block money_block;
+    complex_button banner_button;
 } widget_data;
+
+static int clip_top(void)
+{
+    return widget_data.y - WIDGET_TOP_BORDER_CLEARANCE;
+}
+
+static int hidden_offset(void)
+{
+    const image *banner = image_get(widget_data.banner_button.image.id);
+    int banner_y = widget_data.y + (WIDGET_HEIGHT - banner->height) / 2 + 4;
+
+    return clip_top() + WIDGET_BANNER_VISIBLE_TIP - (banner_y + banner->height);
+}
+
+static int interpolate_offset(int start, int end, int elapsed, int duration)
+{
+    if (duration <= 0) {
+        return end;
+    }
+    elapsed = calc_bound(elapsed, 0, duration);
+    return start + (end - start) * elapsed / duration;
+}
+
+static int animation_offset_at(int elapsed, int hiding)
+{
+    int nudge_millis = WIDGET_SLIDE_DURATION_MILLIS / 5;
+    int final_offset = hidden_offset();
+
+    if (hiding) {
+        if (elapsed < nudge_millis) {
+            return interpolate_offset(0, WIDGET_HIDE_NUDGE_OFFSET, elapsed, nudge_millis);
+        }
+        return interpolate_offset(WIDGET_HIDE_NUDGE_OFFSET, final_offset, elapsed - nudge_millis,
+            WIDGET_SLIDE_DURATION_MILLIS - nudge_millis);
+    }
+    if (elapsed < WIDGET_SLIDE_DURATION_MILLIS - nudge_millis) {
+        return interpolate_offset(final_offset, WIDGET_HIDE_NUDGE_OFFSET, elapsed,
+            WIDGET_SLIDE_DURATION_MILLIS - nudge_millis);
+    }
+    return interpolate_offset(WIDGET_HIDE_NUDGE_OFFSET, 0, elapsed - (WIDGET_SLIDE_DURATION_MILLIS - nudge_millis),
+        nudge_millis);
+}
+
+static int current_y_offset(void)
+{
+    if (!widget_data.is_animating) {
+        return widget_data.is_hidden ? hidden_offset() : 0;
+    }
+
+    time_millis elapsed_millis = time_get_millis() - widget_data.animation_start;
+    int elapsed = elapsed_millis > WIDGET_SLIDE_DURATION_MILLIS ?
+        WIDGET_SLIDE_DURATION_MILLIS : (int) elapsed_millis;
+    if (elapsed >= WIDGET_SLIDE_DURATION_MILLIS) {
+        widget_data.is_animating = 0;
+        widget_data.is_hidden = widget_data.is_hiding;
+        widget_data.money_block.is_hidden = widget_data.is_hidden;
+        widget_data.date_block.is_hidden = widget_data.is_hidden;
+        return widget_data.is_hidden ? hidden_offset() : 0;
+    }
+
+    window_request_refresh();
+    return animation_offset_at(elapsed, widget_data.is_hiding);
+}
+
+static void button_toggle_visibility(complex_button *button)
+{
+    (void) button;
+
+    widget_data.is_animating = 1;
+    widget_data.is_hiding = !widget_data.is_hidden;
+    widget_data.animation_start = time_get_millis();
+    widget_data.money_block.is_hidden = 0;
+    widget_data.date_block.is_hidden = 0;
+    window_request_refresh();
+}
 
 static void draw_background(int x, int y)
 {
-    graphics_set_clip_rectangle(x, y, widget_data.width, WIDGET_HEIGHT);
     inner_panel_draw_colored(x, y, widget_data.width, WIDGET_HEIGHT, COLOR_MASK_NONE);
-    graphics_reset_clip_rectangle();
 }
 
 static int text_block_text_width_available(const text_block *block)
@@ -122,7 +207,31 @@ static void update_money_text(void)
     lang_seq_frag_number(&widget_data.money_fragments[2], funds);
 }
 
-int widget_empire_map_widget_width_for_available(int available_width)
+static void update_banner_button(int offset_x, int y_offset)
+{
+    const image *banner = image_get(widget_data.banner_button.image.id);
+    int full_x = widget_data.x + offset_x + (widget_data.width - banner->width) / 2;
+    int full_y = widget_data.y + y_offset + (WIDGET_HEIGHT - banner->height) / 2 + 4;
+    int visible_y = full_y < clip_top() ? clip_top() : full_y;
+    int visible_height = full_y + banner->height - visible_y;
+
+    if (visible_height < 0) {
+        visible_height = 0;
+    }
+    if (visible_height > banner->height) {
+        visible_height = banner->height;
+    }
+
+    widget_data.banner_button.x = full_x;
+    widget_data.banner_button.y = visible_y;
+    widget_data.banner_button.width = banner->width;
+    widget_data.banner_button.height = visible_height;
+    widget_data.banner_button.image.image_x_offset = 0;
+    widget_data.banner_button.image.image_y_offset = full_y - visible_y;
+    widget_data.banner_button.is_hidden = visible_height <= 0;
+}
+
+int widget_empire_funds_width_for_available(int available_width)
 {
     int width = available_width * WIDGET_MAX_AVAILABLE_PERCENT / 100;
 
@@ -136,7 +245,7 @@ int widget_empire_map_widget_width_for_available(int available_width)
     return width;
 }
 
-void widget_empire_map_initialise(int x, int y, int width)
+void widget_empire_funds_initialise(int x, int y, int width)
 {
     int text_block_width = (width - CENTER_RESERVED_WIDTH - 2 * TEXT_BLOCK_MARGIN_X) / 2;
 
@@ -162,6 +271,7 @@ void widget_empire_map_initialise(int x, int y, int width)
     widget_data.money_block.tooltip_c.type = TOOLTIP_BUTTON;
     widget_data.money_block.tooltip_c.text_group = 68;
     widget_data.money_block.tooltip_c.text_id = 60;
+    widget_data.money_block.is_hidden = widget_data.is_hidden;
 
     widget_text_block_init_simple(&widget_data.date_block,
         x + width - TEXT_BLOCK_MARGIN_X - text_block_width, y + TEXT_BLOCK_Y,
@@ -174,7 +284,14 @@ void widget_empire_map_initialise(int x, int y, int width)
     widget_data.date_block.tooltip_c.type = TOOLTIP_BUTTON;
     widget_data.date_block.tooltip_c.text_group = 68;
     widget_data.date_block.tooltip_c.text_id = 62;
+    widget_data.date_block.is_hidden = widget_data.is_hidden;
     update_date_text();
+
+    widget_data.banner_button.image.id = assets_get_image_id("UI", "Victory_Banner");
+    widget_data.banner_button.image.auto_center = 0;
+    widget_data.banner_button.style = COMPLEX_BUTTON_STYLE_IMAGE;
+    widget_data.banner_button.left_click_handler = button_toggle_visibility;
+    update_banner_button(0, current_y_offset());
 }
 
 static void draw_text_block_with_offset(text_block *block, int offset_x, int offset_y)
@@ -186,24 +303,32 @@ static void draw_text_block_with_offset(text_block *block, int offset_x, int off
     block->y -= offset_y;
 }
 
-void widget_empire_map_widget_draw(int offset_x, int offset_y)
+void widget_empire_funds_draw(int offset_x, int offset_y)
 {
     if (!widget_data.initialised) {
         return;
     }
 
-    draw_background(widget_data.x + offset_x, widget_data.y + offset_y);
-    segmented_border_draw(widget_data.x + offset_x, widget_data.y + offset_y, widget_data.width, WIDGET_HEIGHT);
+    int y_offset = current_y_offset();
+    int draw_y = widget_data.y + offset_y + y_offset;
 
-    update_money_text();
-    update_date_text();
-    draw_text_block_with_offset(&widget_data.money_block, offset_x, offset_y);
-    draw_text_block_with_offset(&widget_data.date_block, offset_x, offset_y);
+    update_banner_button(offset_x, y_offset + offset_y);
+    if (!widget_data.is_hidden || widget_data.is_animating) {
+        // Avoid drawing the panel and text above the top border; the banner uses its own clipped button rect.
+        if (draw_y >= clip_top()) {
+            graphics_set_clip_rectangle(widget_data.x + offset_x, clip_top(), widget_data.width,
+                WIDGET_HEIGHT + WIDGET_TOP_BORDER_CLEARANCE + WIDGET_HIDE_NUDGE_OFFSET);
+            draw_background(widget_data.x + offset_x, draw_y);
+            segmented_border_draw(widget_data.x + offset_x, draw_y, widget_data.width, WIDGET_HEIGHT);
+            graphics_reset_clip_rectangle();
 
-    int banner_id = assets_get_image_id("UI", "Victory_Banner");
-    const image *banner = image_get(banner_id);
-    image_draw(banner_id, widget_data.x + offset_x + (widget_data.width - banner->width) / 2,
-        widget_data.y + offset_y + (WIDGET_HEIGHT - banner->height) / 2 + 4, COLOR_MASK_NONE, SCALE_NONE);
+            update_money_text();
+            update_date_text();
+            draw_text_block_with_offset(&widget_data.money_block, offset_x, y_offset + offset_y);
+            draw_text_block_with_offset(&widget_data.date_block, offset_x, y_offset + offset_y);
+        }
+    }
+    complex_button_draw(&widget_data.banner_button);
 }
 
 static int handle_text_block_mouse_with_offset(text_block *block, const mouse *m, int offset_x, int offset_y)
@@ -219,21 +344,31 @@ static int handle_text_block_mouse_with_offset(text_block *block, const mouse *m
     return handled;
 }
 
-int widget_empire_map_widget_handle_mouse(const mouse *m, int offset_x, int offset_y)
+int widget_empire_funds_handle_mouse(const mouse *m, int offset_x, int offset_y)
 {
     if (!widget_data.initialised) {
         return 0;
     }
 
-    handle_text_block_mouse_with_offset(&widget_data.money_block, m, offset_x, offset_y);
-    handle_text_block_mouse_with_offset(&widget_data.date_block, m, offset_x, offset_y);
+    int y_offset = current_y_offset();
+    update_banner_button(offset_x, y_offset + offset_y);
+    if (complex_button_handle_mouse(&widget_data.banner_button, m)) {
+        return 1;
+    }
+
+    if (widget_data.is_hidden || widget_data.is_animating) {
+        return 0;
+    }
+
+    handle_text_block_mouse_with_offset(&widget_data.money_block, m, offset_x, y_offset + offset_y);
+    handle_text_block_mouse_with_offset(&widget_data.date_block, m, offset_x, y_offset + offset_y);
 
     return 0;
 }
 
-int widget_empire_map_widget_handle_tooltip(tooltip_context *c)
+int widget_empire_funds_handle_tooltip(tooltip_context *c)
 {
-    if (!widget_data.initialised) {
+    if (!widget_data.initialised || widget_data.is_hidden || widget_data.is_animating) {
         return 0;
     }
 
@@ -241,12 +376,12 @@ int widget_empire_map_widget_handle_tooltip(tooltip_context *c)
         widget_text_block_handle_tooltip(&widget_data.date_block, c);
 }
 
-int widget_empire_map_widget_width(void)
+int widget_empire_funds_width(void)
 {
     return widget_data.initialised ? widget_data.width : WIDGET_WIDTH;
 }
 
-int widget_empire_map_widget_height(void)
+int widget_empire_funds_height(void)
 {
     return WIDGET_HEIGHT;
 }

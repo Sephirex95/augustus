@@ -629,7 +629,7 @@ set(WIDGET_FILES
     ${PROJECT_SOURCE_DIR}/src/widget/city/overlay/risks.c
     ${PROJECT_SOURCE_DIR}/src/widget/date_picker.c
     ${PROJECT_SOURCE_DIR}/src/widget/dropdown_button.c
-    ${PROJECT_SOURCE_DIR}/src/widget/empire_map_widget.c
+    ${PROJECT_SOURCE_DIR}/src/widget/empire_funds.c
     ${PROJECT_SOURCE_DIR}/src/widget/grid_picker.c
     ${PROJECT_SOURCE_DIR}/src/widget/input_box.c
     ${PROJECT_SOURCE_DIR}/src/widget/map_editor.c
