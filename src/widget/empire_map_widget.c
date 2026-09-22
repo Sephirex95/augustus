@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define WIDGET_DESIRED_WIDTH 560
+#define WIDGET_WIDTH 460
 #define WIDGET_MIN_VISIBLE_WIDTH 240
 #define WIDGET_MAX_AVAILABLE_PERCENT 80
 #define WIDGET_HEIGHT 36
@@ -112,15 +112,22 @@ static void update_date_text(void)
 
 static void update_money_text(void)
 {
-    lang_seq_frag_number(&widget_data.money_fragments[2], city_finance_treasury());
+    int funds = city_finance_treasury();
+
+    if (funds < 0) {
+        widget_data.money_block.font = FONT_NORMAL_RED;
+    } else {
+        widget_data.money_block.font = FONT_NORMAL_GREEN;
+    }
+    lang_seq_frag_number(&widget_data.money_fragments[2], funds);
 }
 
 int widget_empire_map_widget_width_for_available(int available_width)
 {
     int width = available_width * WIDGET_MAX_AVAILABLE_PERCENT / 100;
 
-    if (width > WIDGET_DESIRED_WIDTH) {
-        width = WIDGET_DESIRED_WIDTH;
+    if (width > WIDGET_WIDTH) {
+        width = WIDGET_WIDTH;
     }
     if (width < WIDGET_MIN_VISIBLE_WIDTH) {
         width = 0;
@@ -236,7 +243,7 @@ int widget_empire_map_widget_handle_tooltip(tooltip_context *c)
 
 int widget_empire_map_widget_width(void)
 {
-    return widget_data.initialised ? widget_data.width : WIDGET_DESIRED_WIDTH;
+    return widget_data.initialised ? widget_data.width : WIDGET_WIDTH;
 }
 
 int widget_empire_map_widget_height(void)
