@@ -157,7 +157,7 @@ void widget_date_picker_init(date_picker *picker, int x, int y, int date_field_h
         return;
     }
 
-    *picker = (date_picker) { 0 };
+    memset(picker, 0, sizeof(*picker));
     picker->x = x;
     picker->y = y;
     picker->date_field_height = date_field_height;
