@@ -21,7 +21,6 @@ typedef enum {
 
 typedef enum {
     TEXT_BLOCK_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
-    TEXT_BLOCK_STYLE_DEFAULT_SMALL,    // like default but small font and less padding
     TEXT_BLOCK_STYLE_SUNKEN,           // Sunken Sidebar-like style with a gray texture
     TEXT_BLOCK_STYLE_RAISED,           // Raised Sidebar-like style with a gray texture
     TEXT_BLOCK_STYLE_GRAY,             // main-menu-like style
