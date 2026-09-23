@@ -115,7 +115,7 @@ typedef struct complex_button {
     complex_button_animation animation;
 
     // cache and state properties
-    unsigned char is_focused;             // bad wording - is_hovered would be more accurate
+    unsigned char is_hovered;             // mouse is in bounds of the button
     unsigned char is_clicked;
     unsigned char is_active;              // persists toggle/selected/checked/expanded state
     unsigned char is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown

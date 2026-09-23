@@ -3196,7 +3196,7 @@ void register_open_trade_button(int x, int y, int width, int height, int route_i
 
 static void reset_filter_hover(complex_button *button)
 {
-    if (button->is_focused) {
+    if (button->is_hovered) {
         button->image_before = assets_lookup_image_id(ASSET_UI_FILTER_ICON_HOVER);
     } else {
         button->image_before = assets_lookup_image_id(ASSET_UI_FILTER_ICON);
@@ -3206,7 +3206,7 @@ static void reset_filter_hover(complex_button *button)
 
 static void reset_sort_hover(complex_button *button)
 {
-    if (button->is_focused) {
+    if (button->is_hovered) {
         button->image_before = assets_lookup_image_id(ASSET_UI_SORTING_ICON_HOVER);
     } else {
         button->image_before = assets_lookup_image_id(ASSET_UI_SORTING_ICON);
@@ -3215,7 +3215,7 @@ static void reset_sort_hover(complex_button *button)
 
 static void trade_ledger_hover(complex_button *button)
 {
-    if (button->is_focused) {
+    if (button->is_hovered) {
         button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_HOVER);
     } else {
         button->image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);

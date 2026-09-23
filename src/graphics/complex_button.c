@@ -275,7 +275,7 @@ static void handle_animation(complex_button *button)
                 break;
 
             case BUTTON_ANIMATION_TRIGGER_HOVER:
-                started_animation = button->is_focused;
+                started_animation = button->is_hovered;
                 break;
 
             case BUTTON_ANIMATION_TRIGGER_NONE:
@@ -298,7 +298,7 @@ static void handle_animation(complex_button *button)
     } else {
         if (anim->trigger == BUTTON_ANIMATION_TRIGGER_CLICK && !button->is_clicked) {
             trigger_active = 0;
-        } else if (anim->trigger == BUTTON_ANIMATION_TRIGGER_HOVER && !button->is_focused) {
+        } else if (anim->trigger == BUTTON_ANIMATION_TRIGGER_HOVER && !button->is_hovered) {
             trigger_active = 0;
         }
 
@@ -470,10 +470,10 @@ static void draw_button_style_image(const complex_button *button)
     }
 
 
-    if (button->draw_hover_state && button->shade_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
-    if (button->draw_hover_state && button->light_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->light_on_hover && button->is_hovered && !button->is_disabled) {
         graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     return;
@@ -612,7 +612,7 @@ static void draw_default_style(const complex_button *button, font_t base_font,
     }
 
     int draw_red_border = button->draw_hover_state && button->border_on_hover &&
-        !button->is_disabled && button->is_focused;
+        !button->is_disabled && button->is_hovered;
     if (button->draw_border) {
         if (button->flush_with_background) {
             button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
@@ -623,7 +623,7 @@ static void draw_default_style(const complex_button *button, font_t base_font,
         }
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);
-    if (button->draw_hover_state && button->shade_on_hover && button->is_focused) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
     graphics_reset_clip_rectangle();
@@ -636,7 +636,7 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
         large_label_draw_bg_colored(button->x, button->y, button->width, button->height, button->bg_primary);
     }
 
-    if (button->draw_hover_state && !button->is_disabled && button->is_focused) {
+    if (button->draw_hover_state && !button->is_disabled && button->is_hovered) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
     }
     if (button->is_disabled) {
@@ -646,10 +646,10 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     if (button->draw_border) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     }
-    if (button->draw_hover_state && button->shade_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
-    if (button->draw_hover_state && button->light_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->light_on_hover && button->is_hovered && !button->is_disabled) {
         graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     graphics_reset_clip_rectangle();
@@ -711,20 +711,20 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
     int bottom = btn->y + btn->height + btn->expanded_hitbox_radius;
 
     int inside = (m->x >= left && m->x < right && m->y >= top && m->y < bottom);
-    if (btn->is_focused != inside) {
-        btn->is_focused = inside;
+    if (btn->is_hovered != inside) {
+        btn->is_hovered = inside;
 
         if (btn->hover_handler && !btn->is_disabled) {
             btn->hover_handler(btn); // run the hover handler on hover state change
         }
         window_request_refresh(); // redraw to show focus change
     } else {
-        btn->is_focused = inside;
+        btn->is_hovered = inside;
     }
     if (btn->is_disabled) {
         return 0; // disabled buttons do not handle mouse past establishing focus state for tooltip
     }
-    if (btn->is_ellipsized && btn->is_focused) { //if the button is ellipsized, show tooltip
+    if (btn->is_ellipsized && btn->is_hovered) { //if the button is ellipsized, show tooltip
         static uint8_t tooltip_text[512];
         lang_seq_concatenate(&btn->sequence, tooltip_text, 512);
         btn->tooltip_c.type = TOOLTIP_BUTTON;
@@ -795,7 +795,7 @@ int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, u
 //TO SOLVE: manually set tooltips will be overwritten if the button is ellipsized.
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c)
 {
-    if (button->is_focused) {
+    if (button->is_hovered) {
         if (!tooltip_context_is_empty(&button->tooltip_c)) {
             tooltip_copy_context(c, &button->tooltip_c);
             c->type = TOOLTIP_BUTTON; // constant - for all buttons.

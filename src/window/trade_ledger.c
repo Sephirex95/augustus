@@ -313,7 +313,7 @@ static void setup_resource_header_button(void)
     //    resource_header_button.color_mask = brown_correction;
     resource_header_button.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
     resource_header_button.is_active = 0;
-    resource_header_button.is_focused = 0;
+    resource_header_button.is_hovered = 0;
 }
 
 static void setup_header_buttons(void)
@@ -358,7 +358,7 @@ static void setup_trade_year_control(void)
 
 static void update_header_button_fonts(void)
 {
-    resource_header_button.font = resource_header_button.is_focused ? FONT_NORMAL_RED : FONT_NORMAL_BLACK;
+    resource_header_button.font = resource_header_button.is_hovered ? FONT_NORMAL_RED : FONT_NORMAL_BLACK;
 
     for (int i = 0; i < LEDGER_HEADER_BUTTON_COUNT; i++) {
         font_t font = header_buttons[i].is_hovered ? FONT_NORMAL_RED : FONT_NORMAL_BLACK;
@@ -461,10 +461,10 @@ static void update_trade_status_button_focus(const mouse *m)
 {
     for (int i = 0; i < trade_status_button_count; i++) {
         complex_button *button = &trade_status_buttons[i];
-        int is_focused = m->x >= button->x && m->x < button->x + button->width &&
+        int is_hovered = m->x >= button->x && m->x < button->x + button->width &&
             m->y >= button->y && m->y < button->y + button->height;
-        if (button->is_focused != is_focused) {
-            button->is_focused = is_focused;
+        if (button->is_hovered != is_hovered) {
+            button->is_hovered = is_hovered;
             window_request_refresh();
         }
     }

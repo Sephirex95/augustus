@@ -374,7 +374,7 @@ void dropdown_button_draw_array(const dropdown_button *dds, unsigned int num_dro
 static void unfocus_all(dropdown_button *dd)
 {
     for (unsigned int i = 0; i < dd->num_buttons; i++) {
-        dd->buttons[i].is_focused = 0;
+        dd->buttons[i].is_hovered = 0;
     }
 }
 

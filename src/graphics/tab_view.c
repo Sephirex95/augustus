@@ -408,7 +408,7 @@ void tab_view_draw(tab_view *view)
         }
     }
     // Draw inner panel for content area (no outer border for tab_view itself)
-    int red_content = view->tabs[view->state.active_tab].button.is_focused;
+    int red_content = view->tabs[view->state.active_tab].button.is_hovered;
     color_t content_color = color_for_tab_background(view->view_properties.style);
     bordered_panel_draw_colored(view->content.x, view->content.y, view->content.width, view->content.height, red_content, content_color, content_color);
     // y+1 to ever so slightly lower the border 
