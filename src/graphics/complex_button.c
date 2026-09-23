@@ -204,7 +204,8 @@ int complex_button_animation_init(complex_button *button, const btn_img *frames,
         .frame_count = frame_count,
         .frame_duration = DEFAULT_ANIMATION_FRAME_DURATION,
         .trigger = trigger,
-        .loop_mode = mode
+        .loop_mode = mode,
+        .skip_zero_frame = trigger == BUTTON_ANIMATION_TRIGGER_CLICK
     };
 
     button->has_animation = 1;
