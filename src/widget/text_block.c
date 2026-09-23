@@ -308,7 +308,7 @@ int widget_text_block_init_simple(text_block *block, int x, int y, int width, in
     block->position = position ? position : SEQUENCE_POSITION_CENTER;
     block->style = style;
     block->font = text_block_font_for_style(block->style);
-    block->font_primary = COLOR_MASK_NONE;
+    block->font_primary = text_block_font_primary_for_style(block->style);
     block->bg_primary = text_block_bg_primary_for_style(block->style);
     block->x = x;
     block->y = y;

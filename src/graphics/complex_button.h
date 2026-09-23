@@ -15,23 +15,17 @@
 
 typedef enum {
     COMPLEX_BUTTON_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
-    COMPLEX_BUTTON_STYLE_DEFAULT_SMALL,    // like default but small font and less padding
-    COMPLEX_BUTTON_STYLE_NO_FILL,          // No fill background, only border
     COMPLEX_BUTTON_STYLE_GRAY,             // main-menu-like style
-    COMPLEX_BUTTON_STYLE_GRAY_NO_FILL,     // mainmenu border, but no fill background
     COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
-    COMPLEX_BUTTON_STYLE_RAW,              // No border, no fill. Content-only.
-    COMPLEX_BUTTON_STYLE_IMAGE,            // No border, no fill. Image-only. RECOMMENDED for animated buttons.
+    COMPLEX_BUTTON_STYLE_RAW,              // Content-only defaults.
+    COMPLEX_BUTTON_STYLE_IMAGE,            // Image-only defaults. RECOMMENDED for animated buttons.
     COMPLEX_BUTTON_STYLE_CUSTOM            // custom style - bypasses the default selection of colors/fonts
 } complex_button_style;
 
 typedef enum {
     CYCLING_BUTTON_STYLE_DEFAULT,            // Basic: white/red border, default plain background fill
-    CYCLING_BUTTON_STYLE_DEFAULT_SMALL,      // like default but small font and less padding
-    CYCLING_BUTTON_STYLE_NO_FILL,            // No fill background, only border
     CYCLING_BUTTON_STYLE_GRAY,               // main-menu-like style
     CYCLING_BUTTON_STYLE_RAW,                // No border, no fill. Content-only.
-    CYCLING_BUTTON_STYLE_GRAY_NO_FILL,       // mainmenu border, but no fill background
 } cycling_button_style;
 
 typedef struct btn_img {
@@ -76,41 +70,55 @@ typedef struct complex_button_animation {
 } complex_button_animation;
 
 typedef struct complex_button {
+    // dimensions
     short x;
     short y;
     short width;
     short height;
-    unsigned char is_focused;             // bad wording - is_hovered would be more accurate
-    unsigned char is_clicked;
-    unsigned char is_active;              // persists toggle/selected/checked/expanded state
-    unsigned char is_hidden;              // 1 = hidden, 0 = visible
-    unsigned char is_disabled;            // 1 = disabled, 0 = enabled
-    unsigned char state;                  // special parameter for custom behaviours
-    unsigned char is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
+
+    // UI standard properties
+    lang_sequence sequence;     // sequence of text to draw on button
+    sequence_positioning sequence_position; // where to position the text inside the block, defaults to center/center
+    complex_button_style style;
+    font_t font; // if set, overrides the style-set properties
+    color_t font_primary; // if set, overrides the style-set properties
+    color_t bg_primary; // primary color mask for background drawing
+    tooltip_context tooltip_c;
+
+    // user flags
+    unsigned char draw_border;              // 1 = draw style border, 0 = no border
+    unsigned char draw_hover_state;         // 1 = draw hover effects, 0 = no hover visuals
+    unsigned char draw_background;          // 1 = draw style background, 0 = no fill
+    unsigned char is_disabled;              // 1 = disabled, 0 = enabled
+    unsigned char is_hidden;                // 1 = hidden, 0 = visible
+    unsigned char flush_with_background;    // if set, bottom border is not drawn
+    unsigned char shade_on_hover;           // 0-7, if set, button is graphics_shade_rect with this value
+    unsigned char light_on_hover;           // 0-7, if set, button is graphics_light_up_rect with this value
+    unsigned char border_on_hover;          // if set, border switches to hover state when focused
+    unsigned char dont_enlarge_font;        // if set, the fontsize override to large wont be applied
+    unsigned char expanded_hitbox_radius;   // not yet fully implemented 
+    unsigned char has_animation;            // if set, button will animate using the embedded animation state
+
+    // function pointers
     void (*left_click_handler)(struct complex_button *button);
     void (*right_click_handler)(struct complex_button *button);
     void (*hover_handler)(struct complex_button *button); // not const - hover fnc needs to modify properties
     void (*unclick_handler)(struct complex_button *button); // called after clicked state returns to 0 from 1. 
-    tooltip_context tooltip_c;
-    lang_sequence sequence;     // sequence of text to draw on button
-    sequence_positioning sequence_position;
-    int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
-    int image_before; //img id
-    int image_after; //img id
-    btn_img image; // if specified, will be drawn INSTEAD of text
-    unsigned char flush_with_background; // if set, bottom border is not drawn
-    unsigned char shade_on_hover; // 0-7, if set, button is graphics_shade_rect with this value
-    unsigned char light_on_hover; // 0-7, if set, button is graphics_light_up_rect with this value
-    unsigned char dont_enlarge_font; // if set, the fontsize override to large wont be applied
-    color_t color_mask; // not font mask - background mask. If set, overrides the style
-    font_t font; // if set, overrides the style properties
-    color_t font_color; // if set, overrides the style properties
-    complex_button_style style;
-    unsigned char expanded_hitbox_radius; //not yet fully implemented 
-    void *user_data; // custom user data pointer, e.g. can point to a parent struct
 
-    unsigned char has_animation; // if set, button will animate using the embedded animation state
+    // other properties
+    int image_before; // img id
+    int image_after; // img id
+    btn_img image; // if specified, will be drawn INSTEAD of text
+    int parameters[MAX_COMPLEX_BUTTON_PARAMETERS];
+    void *user_data; // custom user data pointer, e.g. can point to a parent struct
+    unsigned char state; // special parameter for user's custom behaviours
     complex_button_animation animation;
+
+    // cache and state properties
+    unsigned char is_focused;             // bad wording - is_hovered would be more accurate
+    unsigned char is_clicked;
+    unsigned char is_active;              // persists toggle/selected/checked/expanded state
+    unsigned char is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
 } complex_button;
 
 typedef struct checkbox_button {
@@ -162,6 +170,7 @@ typedef struct cycling_button {
 
 color_t complex_button_basic_colors(int id);
 font_t complex_button_font_for_style(complex_button_style style);
+void complex_button_init_style(complex_button *button, complex_button_style style);
 
 
 // Complex Buttons

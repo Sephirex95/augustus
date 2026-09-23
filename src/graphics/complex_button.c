@@ -19,8 +19,6 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
 static void end_animation(complex_button_animation *anim);
 static int debug_shade = 0;
 static int debug_sunken = 0;
-static color_t debug_color_primary = COLOR_FONT_GRAY_50;
-static color_t debug_color_secondary = COLOR_FONT_GRAY_GREEN;
 
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button)
 {
@@ -60,89 +58,85 @@ font_t complex_button_font_for_style(complex_button_style style)
 {
     switch (style) {
         case COMPLEX_BUTTON_STYLE_DEFAULT:
-        case COMPLEX_BUTTON_STYLE_NO_FILL:
             return FONT_NORMAL_BLACK;
-        case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
-            return FONT_SMALL_PLAIN;
         case COMPLEX_BUTTON_STYLE_GRAY:
-        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
-        case COMPLEX_BUTTON_STYLE_BROWN:
             return FONT_NORMAL_GREEN;
+        case COMPLEX_BUTTON_STYLE_BROWN:
+            return FONT_NORMAL_BROWN;
         case COMPLEX_BUTTON_STYLE_RAW:
+        case COMPLEX_BUTTON_STYLE_IMAGE:
         case COMPLEX_BUTTON_STYLE_CUSTOM:
         default:
             return FONT_NORMAL_BLACK;
     }
 }
 
-static void font_and_colours(complex_button_style style, int is_disabled, int is_large, font_t *font, color_t *font_primary, color_t *font_secondary)
+static color_t complex_button_bg_primary_for_style(complex_button_style style)
 {
-    int dont_override = 0;
-    if (!is_disabled) {
-        switch (style) {
-            case COMPLEX_BUTTON_STYLE_DEFAULT:
-            case COMPLEX_BUTTON_STYLE_NO_FILL:
-                *font = is_large ? FONT_LARGE_BLACK : FONT_NORMAL_BLACK;
-                break;
-            case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
-                *font = FONT_SMALL_PLAIN;
-                break;
-            case COMPLEX_BUTTON_STYLE_GRAY:
-            case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
-            case COMPLEX_BUTTON_STYLE_BROWN:
-                *font = FONT_NORMAL_BROWN;
-                if (is_large) {
-                    *font = FONT_LARGE_BROWN;
-                }
-                break;
-            case COMPLEX_BUTTON_STYLE_RAW:
-            case COMPLEX_BUTTON_STYLE_CUSTOM:
-            default:
-                *font = FONT_NORMAL_BLACK;
-                break;
-        }
-        if (!dont_override) {
-            *font_primary = COLOR_MASK_NONE;
-            *font_secondary = COLOR_MASK_NONE;
-        }
-        return;
-    }
-    // if disabled:
     switch (style) {
-        case COMPLEX_BUTTON_STYLE_DEFAULT:
-        case COMPLEX_BUTTON_STYLE_NO_FILL:
-            *font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
-            *font_primary = COLOR_FONT_GRAY;
-            *font_secondary = COLOR_MASK_NONE;
-            break;
-        case COMPLEX_BUTTON_STYLE_DEFAULT_SMALL:
-            *font = FONT_SMALL_PLAIN;
-            *font_primary = COLOR_FONT_GRAY;
-            *font_secondary = COLOR_MASK_NONE;
-            break;
-        case COMPLEX_BUTTON_STYLE_GRAY:
-        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
         case COMPLEX_BUTTON_STYLE_BROWN:
-            *font = FONT_NORMAL_GREEN;
-            if (is_large) {
-                *font = FONT_LARGE_PLAIN;
-            }
-            *font_primary = debug_color_primary; //COLOR_FONT_GRAY_50;
-            *font_secondary = debug_color_secondary; //COLOR_FONT_GRAY_GREEN;
-            break;
+            return COLOR_MASK_PASTEL_BROWN;
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_RAW:
-            *font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
-            *font_primary = COLOR_FONT_GRAY;
-            *font_secondary = COLOR_MASK_NONE;
-            break;
+        case COMPLEX_BUTTON_STYLE_IMAGE:
         case COMPLEX_BUTTON_STYLE_CUSTOM:
         default:
-            *font = FONT_NORMAL_BLACK;
-            *font_primary = COLOR_MASK_NONE;
-            *font_secondary = COLOR_MASK_NONE;
-            break;
+            return COLOR_MASK_NONE;
+    }
+}
+
+static color_t complex_button_font_primary_for_style(complex_button_style style)
+{
+    switch (style) {
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_GRAY:
+        case COMPLEX_BUTTON_STYLE_BROWN:
+        case COMPLEX_BUTTON_STYLE_RAW:
+        case COMPLEX_BUTTON_STYLE_IMAGE:
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
+        default:
+            return COLOR_MASK_NONE;
+    }
+}
+
+void complex_button_init_style(complex_button *button, complex_button_style style)
+{
+    if (!button) {
+        return;
     }
 
+    button->style = style;
+    button->font = complex_button_font_for_style(style);
+    button->font_primary = complex_button_font_primary_for_style(style);
+    button->color_mask = COLOR_MASK_NONE;
+    button->bg_primary = complex_button_bg_primary_for_style(style);
+    button->draw_hover_state = 1;
+    button->draw_border = 1;
+    button->draw_background = 1;
+    button->border_on_hover = 1;
+
+    switch (style) {
+        case COMPLEX_BUTTON_STYLE_GRAY:
+            break;
+        case COMPLEX_BUTTON_STYLE_BROWN:
+            break;
+        case COMPLEX_BUTTON_STYLE_IMAGE:
+            button->draw_border = 0;
+            button->draw_background = 0;
+            button->border_on_hover = 0;
+            break;
+        case COMPLEX_BUTTON_STYLE_RAW:
+            button->draw_border = 0;
+            button->draw_background = 0;
+            button->border_on_hover = 0;
+            break;
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
+            break;
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        default:
+            break;
+    }
 }
 
 static int sequence_position_is_centered(sequence_positioning position)
@@ -476,10 +470,10 @@ static void draw_button_style_image(const complex_button *button)
     }
 
 
-    if (button->shade_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_focused && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
-    if (button->light_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->light_on_hover && button->is_focused && !button->is_disabled) {
         graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     return;
@@ -596,35 +590,40 @@ static void draw_default_style(const complex_button *button, font_t base_font,
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
     int height_blocks = button->height / BLOCK_SIZE;
-    switch (button->style) {
-        case COMPLEX_BUTTON_STYLE_CUSTOM:
-            unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                height_blocks + 1, color_mask);
-            break;
-        case COMPLEX_BUTTON_STYLE_NO_FILL:
-        case COMPLEX_BUTTON_STYLE_RAW:
-            break; // no bg fill
-        case COMPLEX_BUTTON_STYLE_BROWN:
-            inner_panel_draw_colored(button->x, button->y, button->width, button->height, COLOR_MASK_PASTEL_BROWN);
-            break;
-        default:
-            unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                height_blocks + 1, COLOR_MASK_NONE);
-            break;
+    if (button->draw_background) {
+        switch (button->style) {
+            case COMPLEX_BUTTON_STYLE_CUSTOM:
+                unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
+                    height_blocks + 1, button->bg_primary ? button->bg_primary : color_mask);
+                break;
+            case COMPLEX_BUTTON_STYLE_RAW:
+            case COMPLEX_BUTTON_STYLE_IMAGE:
+                break; // no bg fill
+            case COMPLEX_BUTTON_STYLE_BROWN:
+                inner_panel_draw_colored(button->x, button->y, button->width, button->height, button->bg_primary);
+                break;
+            case COMPLEX_BUTTON_STYLE_DEFAULT:
+            case COMPLEX_BUTTON_STYLE_GRAY:
+            default:
+                unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
+                    height_blocks + 1, button->bg_primary);
+                break;
+        }
     }
 
-    int draw_red_border = !button->is_disabled && button->is_focused;
-    if (button->flush_with_background) {
-        button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
-            draw_red_border, COLOR_MASK_NONE);
-    } else {
-        if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
+    int draw_red_border = button->draw_hover_state && button->border_on_hover &&
+        !button->is_disabled && button->is_focused;
+    if (button->draw_border) {
+        if (button->flush_with_background) {
+            button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
+                draw_red_border, COLOR_MASK_NONE);
+        } else {
             button_border_draw_colored(button->x, button->y, button->width, button->height,
                 draw_red_border, COLOR_MASK_NONE);
         }
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);
-    if (button->shade_on_hover && button->is_focused) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_focused) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
     graphics_reset_clip_rectangle();
@@ -633,30 +632,24 @@ static void draw_default_style(const complex_button *button, font_t base_font,
 static void draw_main_menu_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
 {
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-    switch (button->style) {
-        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
-        case COMPLEX_BUTTON_STYLE_RAW:
-            break; // no bg fill
-        default:
-        case COMPLEX_BUTTON_STYLE_GRAY:
-            large_label_draw_bg(button->x, button->y, button->width, button->height);
-            break;
+    if (button->draw_background) {
+        large_label_draw_bg_colored(button->x, button->y, button->width, button->height, button->bg_primary);
     }
 
-    if (!button->is_disabled && button->is_focused) {
+    if (button->draw_hover_state && !button->is_disabled && button->is_focused) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
     }
     if (button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, debug_shade);
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);
-    if (button->style != COMPLEX_BUTTON_STYLE_RAW) {
+    if (button->draw_border) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     }
-    if (button->shade_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->shade_on_hover && button->is_focused && !button->is_disabled) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
-    if (button->light_on_hover && button->is_focused && !button->is_disabled) {
+    if (button->draw_hover_state && button->light_on_hover && button->is_focused && !button->is_disabled) {
         graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     graphics_reset_clip_rectangle();
@@ -670,29 +663,26 @@ static void complex_button_ellipsized(complex_button *button, int was_ellipsized
 // === Draw a single button ===
 void complex_button_draw(const complex_button *button)
 {
-    if (button->is_hidden) {
-        return;
-    }
-    if (button->font || button->color_mask || button->style == COMPLEX_BUTTON_STYLE_CUSTOM) {
-        // bypasses the default selection of colors/fonts
-        draw_default_style(button, button->font, button->font_color, COLOR_MASK_NONE, button->color_mask);
+    if (!button || button->is_hidden) {
         return;
     }
     int is_large = button->height > 32 && !button->dont_enlarge_font;
-    color_t font_primary;
-    color_t font_secondary;
-    font_t base_font;
-    font_and_colours(button->style, button->is_disabled, is_large, &base_font, &font_primary, &font_secondary);
+    font_t base_font = button->font ? button->font : (is_large ? FONT_LARGE_BLACK : FONT_NORMAL_BLACK);
+    color_t font_primary = button->font_primary;
+    color_t font_secondary = COLOR_MASK_NONE;
+    if (button->is_disabled) {
+        base_font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
+        font_primary = COLOR_FONT_GRAY;
+    }
 
     switch (button->style) {
         case COMPLEX_BUTTON_STYLE_IMAGE:
             draw_button_style_image(button);
             break;
         case COMPLEX_BUTTON_STYLE_GRAY:
-        case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
             draw_main_menu_style(button, base_font, font_primary, font_secondary);
             break;
-        default: // all other variants housed in the default style draw function
+        default:
             draw_default_style(button, base_font, font_primary, font_secondary, button->color_mask);
     }
 }
@@ -1073,11 +1063,7 @@ void cycling_button_draw_gray_style(const cycling_button *button)
 
     font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
     if (button->style != CYCLING_BUTTON_STYLE_RAW) {
-        if (button->style == CYCLING_BUTTON_STYLE_GRAY_NO_FILL) {
-            large_label_draw_border(button->x, button->y, button->width, button->height);
-        } else {
-            large_label_draw_bg(button->x, button->y, button->width, button->height);
-        }
+        large_label_draw_bg(button->x, button->y, button->width, button->height);
     }
     if (button->is_hovered) {
         graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
@@ -1092,7 +1078,6 @@ void cycling_button_draw(const cycling_button *button)
 {
     switch (button->style) {
         case CYCLING_BUTTON_STYLE_GRAY:
-        case CYCLING_BUTTON_STYLE_GRAY_NO_FILL:
             cycling_button_draw_gray_style(button);
             break;
         default:
