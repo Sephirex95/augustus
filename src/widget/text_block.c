@@ -20,8 +20,6 @@ font_t text_block_font_for_style(text_block_style style)
         case TEXT_BLOCK_STYLE_DEFAULT:
         case TEXT_BLOCK_STYLE_RAW:
             return FONT_NORMAL_BLACK;
-        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
-            return FONT_SMALL_PLAIN;
         case TEXT_BLOCK_STYLE_GRAY:
             return FONT_NORMAL_GREEN;
         case TEXT_BLOCK_STYLE_BROWN:
@@ -39,7 +37,6 @@ color_t text_block_bg_primary_for_style(text_block_style style)
         case TEXT_BLOCK_STYLE_BROWN:
             return COLOR_MASK_PASTEL_BROWN;
         case TEXT_BLOCK_STYLE_DEFAULT:
-        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
         case TEXT_BLOCK_STYLE_SUNKEN:
         case TEXT_BLOCK_STYLE_RAISED:
         case TEXT_BLOCK_STYLE_GRAY:
@@ -54,7 +51,6 @@ color_t text_block_font_primary_for_style(text_block_style style)
     switch (style) {
         case TEXT_BLOCK_STYLE_BROWN:
         case TEXT_BLOCK_STYLE_DEFAULT:
-        case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
         case TEXT_BLOCK_STYLE_SUNKEN:
         case TEXT_BLOCK_STYLE_RAISED:
         case TEXT_BLOCK_STYLE_GRAY:
@@ -136,7 +132,6 @@ static void text_block_draw_background_and_border(const text_block *block)
     if (block->draw_background) {
         switch (block->style) {
             case TEXT_BLOCK_STYLE_DEFAULT:
-            case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
                 unbordered_panel_draw_px_colored(block->x, block->y, block->width, block->height, block->bg_primary);
                 break;
             case TEXT_BLOCK_STYLE_SUNKEN:
@@ -155,7 +150,6 @@ static void text_block_draw_background_and_border(const text_block *block)
     if (block->draw_border) {
         switch (block->style) {
             case TEXT_BLOCK_STYLE_DEFAULT:
-            case TEXT_BLOCK_STYLE_DEFAULT_SMALL:
             case TEXT_BLOCK_STYLE_BROWN:
             case TEXT_BLOCK_STYLE_RAISED:
                 int red = block->draw_hover_state ? block->state_is_hovered : 0;

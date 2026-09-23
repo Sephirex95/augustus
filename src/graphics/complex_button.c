@@ -58,6 +58,7 @@ font_t complex_button_font_for_style(complex_button_style style)
 {
     switch (style) {
         case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_SUNKEN:
             return FONT_NORMAL_BLACK;
         case COMPLEX_BUTTON_STYLE_GRAY:
             return FONT_NORMAL_GREEN;
@@ -77,6 +78,7 @@ static color_t complex_button_bg_primary_for_style(complex_button_style style)
         case COMPLEX_BUTTON_STYLE_BROWN:
             return COLOR_MASK_PASTEL_BROWN;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_SUNKEN:
         case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_RAW:
         case COMPLEX_BUTTON_STYLE_IMAGE:
@@ -90,6 +92,7 @@ static color_t complex_button_font_primary_for_style(complex_button_style style)
 {
     switch (style) {
         case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_SUNKEN:
         case COMPLEX_BUTTON_STYLE_GRAY:
         case COMPLEX_BUTTON_STYLE_BROWN:
         case COMPLEX_BUTTON_STYLE_RAW:
@@ -116,6 +119,9 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
     button->border_on_hover = 1;
 
     switch (style) {
+        case COMPLEX_BUTTON_STYLE_SUNKEN:
+            button->border_on_hover = 0;
+            break;
         case COMPLEX_BUTTON_STYLE_GRAY:
             break;
         case COMPLEX_BUTTON_STYLE_BROWN:
@@ -598,6 +604,7 @@ static void draw_default_style(const complex_button *button, font_t base_font,
             case COMPLEX_BUTTON_STYLE_RAW:
             case COMPLEX_BUTTON_STYLE_IMAGE:
                 break; // no bg fill
+            case COMPLEX_BUTTON_STYLE_SUNKEN:
             case COMPLEX_BUTTON_STYLE_BROWN:
                 inner_panel_draw_colored(button->x, button->y, button->width, button->height, button->bg_primary);
                 break;
@@ -613,12 +620,18 @@ static void draw_default_style(const complex_button *button, font_t base_font,
     int draw_red_border = button->draw_hover_state && button->border_on_hover &&
         !button->is_disabled && button->is_hovered;
     if (button->draw_border) {
-        if (button->flush_with_background) {
-            button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
-                draw_red_border, COLOR_MASK_NONE);
+        if (button->style == COMPLEX_BUTTON_STYLE_SUNKEN) {
+            if (button->draw_hover_state) {
+                graphics_shade_rect(button->x, button->y, button->width, button->height, 2 * button->is_hovered);
+            }
         } else {
-            button_border_draw_colored(button->x, button->y, button->width, button->height,
-                draw_red_border, COLOR_MASK_NONE);
+            if (button->flush_with_background) {
+                button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
+                    draw_red_border, COLOR_MASK_NONE);
+            } else {
+                button_border_draw_colored(button->x, button->y, button->width, button->height,
+                    draw_red_border, COLOR_MASK_NONE);
+            }
         }
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);

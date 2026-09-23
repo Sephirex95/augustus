@@ -15,6 +15,7 @@
 
 typedef enum {
     COMPLEX_BUTTON_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
+    COMPLEX_BUTTON_STYLE_SUNKEN,           // Sunken Sidebar-like style with a gray texture
     COMPLEX_BUTTON_STYLE_GRAY,             // main-menu-like style
     COMPLEX_BUTTON_STYLE_BROWN,            // Inner panel brown fill, white border, brown text
     COMPLEX_BUTTON_STYLE_RAW,              // Content-only defaults.
