@@ -27,24 +27,13 @@ void lang_seq_init(lang_sequence *seq, lang_fragment *fragments, int count)
 
 void lang_seq_current_date_init(lang_date_sequence *date, int full_date_format)
 {
-    int year = game_time_year();
-    int year_abs = year < 0 ? year * (-1) : year;
-    if (full_date_format) {
-        lang_seq_frag_number(&date->fragments[0], widget_top_menu_get_cosmetic_day_of_month());
-        lang_seq_frag_label(&date->fragments[1], TEXT_GROUP_MONTHS, game_time_month());
-        lang_seq_frag_label(&date->fragments[2], TEXT_GROUP_AD_BC, year >= 0 ? 1 : 0);
-        lang_seq_frag_number(&date->fragments[3], year_abs);
+    lang_date_format format = full_date_format ? LANG_DATE_FORMAT_FULL : LANG_DATE_FORMAT_YEAR;
 
-        lang_seq_init(&date->sequence, date->fragments, 4);
-    } else {
-        lang_seq_frag_label(&date->fragments[0], TEXT_GROUP_AD_BC, year >= 0 ? 1 : 0);
-        lang_seq_frag_number(&date->fragments[1], year_abs);
-
-        lang_seq_init(&date->sequence, date->fragments, 2);
-    }
+    lang_sequence_date_init_format(date, game_time_year(), game_time_month(), 0, 1, format);
 }
 
-void lang_sequence_date_init(lang_date_sequence *date, int year, int month, int cosmetic_day, int game_day, int full_date_format)
+void lang_sequence_date_init_format(lang_date_sequence *date, int year, int month, int cosmetic_day, int game_day,
+    lang_date_format format)
 {
     if (game_day) {
         cosmetic_day = widget_top_menu_get_cosmetic_day_of_month();
@@ -53,7 +42,7 @@ void lang_sequence_date_init(lang_date_sequence *date, int year, int month, int 
     int era_id = year >= 0 ? 1 : 0;
     int era_after_year = locale_year_before_ad();
 
-    if (full_date_format) {
+    if (format == LANG_DATE_FORMAT_FULL) {
         lang_seq_frag_number(&date->fragments[0], cosmetic_day);
         lang_seq_frag_label(&date->fragments[1], TEXT_GROUP_MONTHS, month);
 
@@ -64,20 +53,28 @@ void lang_sequence_date_init(lang_date_sequence *date, int year, int month, int 
             lang_seq_frag_label(&date->fragments[2], TEXT_GROUP_AD_BC, era_id);
             lang_seq_frag_number(&date->fragments[3], year_abs);
         }
-
         lang_seq_init(&date->sequence, date->fragments, 4);
-        return;
-    }
+    } else if (format == LANG_DATE_FORMAT_MONTH_YEAR) {
+        lang_seq_frag_label(&date->fragments[0], TEXT_GROUP_MONTHS, month);
 
-    if (era_after_year) {
-        lang_seq_frag_number(&date->fragments[0], year_abs);
-        lang_seq_frag_label(&date->fragments[1], TEXT_GROUP_AD_BC, era_id);
+        if (era_after_year) {
+            lang_seq_frag_number(&date->fragments[1], year_abs);
+            lang_seq_frag_label(&date->fragments[2], TEXT_GROUP_AD_BC, era_id);
+        } else {
+            lang_seq_frag_label(&date->fragments[1], TEXT_GROUP_AD_BC, era_id);
+            lang_seq_frag_number(&date->fragments[2], year_abs);
+        }
+        lang_seq_init(&date->sequence, date->fragments, 3);
     } else {
-        lang_seq_frag_label(&date->fragments[0], TEXT_GROUP_AD_BC, era_id);
-        lang_seq_frag_number(&date->fragments[1], year_abs);
+        if (era_after_year) {
+            lang_seq_frag_number(&date->fragments[0], year_abs);
+            lang_seq_frag_label(&date->fragments[1], TEXT_GROUP_AD_BC, era_id);
+        } else {
+            lang_seq_frag_label(&date->fragments[0], TEXT_GROUP_AD_BC, era_id);
+            lang_seq_frag_number(&date->fragments[1], year_abs);
+        }
+        lang_seq_init(&date->sequence, date->fragments, 2);
     }
-
-    lang_seq_init(&date->sequence, date->fragments, 2);
 }
 
 void lang_seq_frag_label(lang_fragment *f, int text_group, int text_id)

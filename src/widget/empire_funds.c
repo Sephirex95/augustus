@@ -9,9 +9,9 @@
 #include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/image.h"
+#include "graphics/lang_sequence.h"
 #include "graphics/panel.h"
 #include "graphics/window.h"
-#include "widget/date_picker.h"
 #include "widget/text_block.h"
 
 #include <stdint.h>
@@ -141,9 +141,9 @@ static int text_block_text_width_available(const text_block *block)
     return width < 0 ? 0 : width;
 }
 
-static void set_date_sequence(widget_date_picker_date_format format)
+static void set_date_sequence(lang_date_format format)
 {
-    widget_date_picker_date_sequence(&widget_data.date_sequence, game_time_year(), game_time_month(), 0, 1, format);
+    lang_sequence_date_init_format(&widget_data.date_sequence, game_time_year(), game_time_month(), 0, 1, format);
     widget_data.date_block.sequence = widget_data.date_sequence.sequence;
 }
 
@@ -151,15 +151,15 @@ static void update_date_sequence(void)
 {
     int max_width = text_block_text_width_available(&widget_data.date_block);
 
-    set_date_sequence(WIDGET_DATE_PICKER_DATE_FULL);
+    set_date_sequence(LANG_DATE_FORMAT_FULL);
     if (lang_seq_get_width(&widget_data.date_sequence.sequence, widget_data.date_block.font) <= max_width) {
         return;
     }
-    set_date_sequence(WIDGET_DATE_PICKER_DATE_MONTH_YEAR);
+    set_date_sequence(LANG_DATE_FORMAT_MONTH_YEAR);
     if (lang_seq_get_width(&widget_data.date_sequence.sequence, widget_data.date_block.font) <= max_width) {
         return;
     }
-    set_date_sequence(WIDGET_DATE_PICKER_DATE_YEAR);
+    set_date_sequence(LANG_DATE_FORMAT_YEAR);
 }
 
 static void update_money_text(void)
