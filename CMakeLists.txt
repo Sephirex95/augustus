@@ -598,7 +598,6 @@ set(GRAPHICS_FILES
     ${PROJECT_SOURCE_DIR}/src/graphics/screen.c
     ${PROJECT_SOURCE_DIR}/src/graphics/screenshot.c
     ${PROJECT_SOURCE_DIR}/src/graphics/scrollbar.c
-    ${PROJECT_SOURCE_DIR}/src/graphics/slider.c
     ${PROJECT_SOURCE_DIR}/src/graphics/tab_view.c
     ${PROJECT_SOURCE_DIR}/src/graphics/text.c
     ${PROJECT_SOURCE_DIR}/src/graphics/tooltip.c
@@ -641,6 +640,7 @@ set(WIDGET_FILES
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/extra.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/military.c
     ${PROJECT_SOURCE_DIR}/src/widget/sidebar/slide.c
+    ${PROJECT_SOURCE_DIR}/src/widget/slider.c
     ${PROJECT_SOURCE_DIR}/src/widget/text_block.c
     ${PROJECT_SOURCE_DIR}/src/widget/top_menu.c
     ${PROJECT_SOURCE_DIR}/src/widget/top_menu_editor.c

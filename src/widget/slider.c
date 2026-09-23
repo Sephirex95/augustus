@@ -1,4 +1,4 @@
-#include "slider.h"
+#include "widget/slider.h"
 
 #include "assets/assets.h"
 #include "core/calc.h"
@@ -346,7 +346,7 @@ static void draw_slider_vertical(slider_t *slider)
     scrollbar_thumb_draw(slider->x, slider->y + thumb_offset, get_thumb_midsections_count(slider), 1, thumb);
 }
 
-int slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
+int widget_slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
     int value_step, int initial_value, unsigned char is_vertical, slider_display_text display_text)
 {
     memset(slider, 0, sizeof(*slider));
@@ -376,7 +376,7 @@ int slider_init(slider_t *slider, int x, int y, int length, int min_value, int m
     return 1;
 }
 
-int slider_text_block_init(text_block *block, int x, int y, int width, int height, lang_sequence *sequence,
+int widget_slider_text_block_init(text_block *block, int x, int y, int width, int height, lang_sequence *sequence,
     sequence_positioning position)
 {
     lang_sequence seq;
@@ -384,7 +384,7 @@ int slider_text_block_init(text_block *block, int x, int y, int width, int heigh
     return widget_text_block_init_simple(block, x, y, width, height, &seq, position, TEXT_BLOCK_STYLE_RAW);
 }
 
-void slider_draw(const slider_t *slider)
+void widget_slider_draw(const slider_t *slider)
 {
     if (slider->is_hidden) {
         return;
@@ -397,14 +397,14 @@ void slider_draw(const slider_t *slider)
     }
 }
 
-void slider_draw_array(const slider_t *sliders, unsigned int num_sliders)
+void widget_slider_draw_array(const slider_t *sliders, unsigned int num_sliders)
 {
     for (unsigned int i = 0; i < num_sliders; i++) {
-        slider_draw(&sliders[i]);
+        widget_slider_draw(&sliders[i]);
     }
 }
 
-int slider_get_value_from_thumb_offset(slider_t *slider, int thumb_offset)
+static int slider_get_value_from_thumb_offset(slider_t *slider, int thumb_offset)
 {
     int range = slider->max_value - slider->min_value;
     int travel_length = get_thumb_travel_length(slider);
@@ -434,7 +434,7 @@ static void slider_zero_cache_and_state(slider_t *slider)
     slider->is_dragging = 0;
 }
 
-int slider_handle_mouse(slider_t *slider, const mouse *m)
+int widget_slider_handle_mouse(slider_t *slider, const mouse *m)
 {
     if (slider->is_hidden || slider->is_disabled) {
         slider_zero_cache_and_state(slider);
@@ -508,30 +508,34 @@ int slider_handle_mouse(slider_t *slider, const mouse *m)
     return 0;
 }
 
-int slider_handle_mouse_array(slider_t *sliders, const mouse *m, unsigned int num_sliders)
+int widget_slider_handle_mouse_array(slider_t *sliders, const mouse *m, unsigned int num_sliders)
 {
     int handled = 0;
     for (unsigned int i = 0; i < num_sliders; i++) {
-        if (slider_handle_mouse(&sliders[i], m)) {
+        if (widget_slider_handle_mouse(&sliders[i], m)) {
             handled = 1;
         }
     }
     return handled;
 }
 
-int slider_handle_tooltip(const slider_t *slider, tooltip_context *c)
+int widget_slider_handle_tooltip(const slider_t *slider, tooltip_context *c)
 {
-    (void) slider;
-    (void) c;
+    if (!slider || !c || slider->is_hidden || !slider->is_hovered || tooltip_context_is_empty(&slider->tooltip_c)) {
+        return 0;
+    }
 
-    return 0;
+    tooltip_copy_context(c, &slider->tooltip_c);
+    c->type = TOOLTIP_BUTTON;
+    return 1;
 }
 
-int slider_handle_tooltip_array(const slider_t *sliders, tooltip_context *c, unsigned int num_sliders)
+int widget_slider_handle_tooltip_array(const slider_t *sliders, tooltip_context *c, unsigned int num_sliders)
 {
-    (void) sliders;
-    (void) c;
-    (void) num_sliders;
-
+    for (unsigned int i = 0; i < num_sliders; i++) {
+        if (widget_slider_handle_tooltip(&sliders[i], c)) {
+            return 1;
+        }
+    }
     return 0;
 }

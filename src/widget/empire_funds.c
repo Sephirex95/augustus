@@ -3,23 +3,18 @@
 #include "assets/assets.h"
 #include "city/finance.h"
 #include "core/calc.h"
-#include "core/lang.h"
-#include "core/locale.h"
 #include "core/time.h"
 #include "game/resource.h"
 #include "game/time.h"
 #include "graphics/complex_button.h"
 #include "graphics/graphics.h"
 #include "graphics/image.h"
-#include "graphics/lang_text.h"
 #include "graphics/panel.h"
-#include "graphics/text.h"
 #include "graphics/window.h"
+#include "widget/date_picker.h"
 #include "widget/text_block.h"
-#include "widget/top_menu.h"
 
 #include <stdint.h>
-#include <stdio.h>
 
 #define WIDGET_WIDTH 460
 #define WIDGET_MIN_VISIBLE_WIDTH 240
@@ -44,7 +39,7 @@ static struct {
     int is_animating;
     int is_hiding;
     time_millis animation_start;
-    uint8_t date_text[64];
+    lang_date_sequence date_sequence;
     lang_fragment money_fragments[3];
     lang_sequence money_sequence;
     text_block date_block;
@@ -146,52 +141,25 @@ static int text_block_text_width_available(const text_block *block)
     return width < 0 ? 0 : width;
 }
 
-static void set_date_text(int include_day, int include_month)
+static void set_date_sequence(widget_date_picker_date_format format)
 {
-    int year = game_time_year();
-    int display_year = year < 0 ? -year : year;
-    const uint8_t *month = lang_get_string(25, game_time_month());
-    const uint8_t *era = lang_get_string(20, year >= 0 ? 1 : 0);
-    int day = widget_top_menu_get_cosmetic_day_of_month();
-
-    if (include_day) {
-        if (year >= 0 && !locale_year_before_ad()) {
-            snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%d %s %s %d", day,
-                (const char *) month, (const char *) era, display_year);
-        } else {
-            snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%d %s %d %s", day,
-                (const char *) month, display_year, (const char *) era);
-        }
-    } else if (include_month) {
-        if (year >= 0 && !locale_year_before_ad()) {
-            snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%s %s %d",
-                (const char *) month, (const char *) era, display_year);
-        } else {
-            snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%s %d %s",
-                (const char *) month, display_year, (const char *) era);
-        }
-    } else if (year >= 0 && !locale_year_before_ad()) {
-        snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%s %d", (const char *) era,
-            display_year);
-    } else {
-        snprintf((char *) widget_data.date_text, sizeof(widget_data.date_text), "%d %s", display_year,
-            (const char *) era);
-    }
+    widget_date_picker_date_sequence(&widget_data.date_sequence, game_time_year(), game_time_month(), 0, 1, format);
+    widget_data.date_block.sequence = widget_data.date_sequence.sequence;
 }
 
-static void update_date_text(void)
+static void update_date_sequence(void)
 {
     int max_width = text_block_text_width_available(&widget_data.date_block);
 
-    set_date_text(1, 1);
-    if (text_get_width(widget_data.date_text, widget_data.date_block.font) <= max_width) {
+    set_date_sequence(WIDGET_DATE_PICKER_DATE_FULL);
+    if (lang_seq_get_width(&widget_data.date_sequence.sequence, widget_data.date_block.font) <= max_width) {
         return;
     }
-    set_date_text(0, 1);
-    if (text_get_width(widget_data.date_text, widget_data.date_block.font) <= max_width) {
+    set_date_sequence(WIDGET_DATE_PICKER_DATE_MONTH_YEAR);
+    if (lang_seq_get_width(&widget_data.date_sequence.sequence, widget_data.date_block.font) <= max_width) {
         return;
     }
-    set_date_text(0, 0);
+    set_date_sequence(WIDGET_DATE_PICKER_DATE_YEAR);
 }
 
 static void update_money_text(void)
@@ -279,7 +247,6 @@ void widget_empire_funds_initialise(int x, int y, int width)
     widget_text_block_init_simple(&widget_data.date_block,
         x + width - TEXT_BLOCK_MARGIN_X - text_block_width, y + TEXT_BLOCK_Y,
         text_block_width, TEXT_BLOCK_HEIGHT, NULL, SEQUENCE_POSITION_CENTER, TEXT_BLOCK_STYLE_RAW);
-    widget_data.date_block.raw_text = widget_data.date_text;
     widget_data.date_block.image_before = assets_lookup_image_id(ASSET_UI_HOURGLASS_ICON);
     widget_data.date_block.image_after = assets_lookup_image_id(ASSET_UI_HOURGLASS_ICON);
     widget_data.date_block.font = FONT_NORMAL_GREEN;
@@ -288,7 +255,7 @@ void widget_empire_funds_initialise(int x, int y, int width)
     widget_data.date_block.tooltip_c.text_group = 68;
     widget_data.date_block.tooltip_c.text_id = 62;
     widget_data.date_block.is_hidden = 0;
-    update_date_text();
+    update_date_sequence();
 
     complex_button_init_style(&widget_data.banner_button, COMPLEX_BUTTON_STYLE_IMAGE);
     widget_data.banner_button.image.id = assets_get_image_id("UI", "Victory_Banner");
@@ -328,7 +295,7 @@ void widget_empire_funds_draw(int offset_x, int offset_y)
     graphics_reset_clip_rectangle();
 
     update_money_text();
-    update_date_text();
+    update_date_sequence();
     draw_text_block_with_offset(&widget_data.money_block, offset_x, y_offset + offset_y);
     draw_text_block_with_offset(&widget_data.date_block, offset_x, y_offset + offset_y);
     complex_button_draw(&widget_data.banner_button);

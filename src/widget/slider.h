@@ -1,5 +1,5 @@
-#ifndef GRAPHICS_SLIDER_H
-#define GRAPHICS_SLIDER_H
+#ifndef WIDGET_SLIDER_H
+#define WIDGET_SLIDER_H
 
 #include "graphics/lang_sequence.h"
 #include "graphics/tooltip.h"
@@ -60,18 +60,18 @@ typedef struct slider {
 } slider_t;
 
 // returns 1 if successfully initialised
-int slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
+int widget_slider_init(slider_t *slider, int x, int y, int length, int min_value, int max_value,
     int value_step, int initial_value, unsigned char is_vertical, slider_display_text display_text);
-int slider_text_block_init(text_block *block, int x, int y, int width, int height,
+int widget_slider_text_block_init(text_block *block, int x, int y, int width, int height,
     lang_sequence *sequence, sequence_positioning position);
 
-void slider_draw(const slider_t *slider);
-void slider_draw_array(const slider_t *sliders, unsigned int num_sliders);
+void widget_slider_draw(const slider_t *slider);
+void widget_slider_draw_array(const slider_t *sliders, unsigned int num_sliders);
 
-int slider_handle_mouse(slider_t *slider, const mouse *m);
-int slider_handle_mouse_array(slider_t *sliders, const mouse *m, unsigned int num_sliders);
+int widget_slider_handle_mouse(slider_t *slider, const mouse *m);
+int widget_slider_handle_mouse_array(slider_t *sliders, const mouse *m, unsigned int num_sliders);
 
-int slider_handle_tooltip(const slider_t *slider, tooltip_context *c);
-int slider_handle_tooltip_array(const slider_t *sliders, tooltip_context *c, unsigned int num_sliders);
+int widget_slider_handle_tooltip(const slider_t *slider, tooltip_context *c);
+int widget_slider_handle_tooltip_array(const slider_t *sliders, tooltip_context *c, unsigned int num_sliders);
 
-#endif // GRAPHICS_SLIDER_H
+#endif // WIDGET_SLIDER_H

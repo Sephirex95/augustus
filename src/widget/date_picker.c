@@ -1,6 +1,7 @@
 #include "date_picker.h"
 
 #include "assets/assets.h"
+#include "core/locale.h"
 #include "core/string.h"
 #include "game/time.h"
 #include "graphics/window.h"
@@ -161,6 +162,42 @@ static void init_change_button(complex_button *button, date_picker *picker, int 
 
 }
 
+void widget_date_picker_date_sequence(lang_date_sequence *date, int year, int month, int cosmetic_day, int game_day,
+    widget_date_picker_date_format format)
+{
+    /*
+     * Date fragments are kept here so callers do not hand-copy translated month
+     * or era strings into fixed buffers. The sequence stores labels and numbers,
+     * which means width checks and drawing both use the same localized source.
+     *
+     * FULL and YEAR reuse the lower-level date helper because it already owns
+     * the normal game date shape. MONTH_YEAR is the one extra shape needed by
+     * compact widgets: keep the month first, then mirror the helper's localized
+     * era/year order.
+     */
+    if (format == WIDGET_DATE_PICKER_DATE_FULL) {
+        lang_sequence_date_init(date, year, month, cosmetic_day, game_day, 1);
+        return;
+    }
+    if (format == WIDGET_DATE_PICKER_DATE_YEAR) {
+        lang_sequence_date_init(date, year, month, cosmetic_day, game_day, 0);
+        return;
+    }
+
+    int year_abs = year < 0 ? -year : year;
+    int era_id = year >= 0 ? 1 : 0;
+
+    lang_seq_frag_label(&date->fragments[0], 25, month);
+    if (locale_year_before_ad()) {
+        lang_seq_frag_number(&date->fragments[1], year_abs);
+        lang_seq_frag_label(&date->fragments[2], 20, era_id);
+    } else {
+        lang_seq_frag_label(&date->fragments[1], 20, era_id);
+        lang_seq_frag_number(&date->fragments[2], year_abs);
+    }
+    lang_seq_init(&date->sequence, date->fragments, 3);
+}
+
 void widget_date_picker_init(date_picker *picker, int x, int y, int date_field_height, int date_field_width,
     complex_button_style style, int padding, int years_back, int years_forward)
 {
@@ -210,7 +247,7 @@ void widget_date_picker_draw(date_picker *picker)
     // The date sequence is refreshed lazily so the displayed year follows game time changes.
     refresh_button_state(picker);
     int display_year = game_time_year() - picker->selected_year_offset;
-    lang_sequence_date_init(&picker->date, display_year, 0, 0, 0, 0);
+    widget_date_picker_date_sequence(&picker->date, display_year, 0, 0, 0, WIDGET_DATE_PICKER_DATE_YEAR);
     picker->buttons[DATE_PICKER_DATE].sequence = picker->date.sequence;
 
     complex_button_draw_array(picker->buttons, DATE_PICKER_BUTTON_COUNT);
