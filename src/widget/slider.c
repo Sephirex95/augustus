@@ -123,16 +123,13 @@ static int get_thumb_length(slider_t *slider)
     return slider->cached_thumb_length;
 }
 
-/*
- * Amount of space through which the TOP/LEFT edge of the thumb may move.
- *
- * Slider geometry:
- *
- * | button |<---------- track ---------->| button |
- *          |<------ thumb travel ------>|
- *
- * The thumb therefore always stays entirely between the two buttons.
- */
+//  Amount of space through which the TOP/LEFT edge of the thumb may move.
+//  Slider geometry:
+
+//   | button |<---------- track ---------->| button |
+//            |<------ thumb travel ------->|
+
+//  The thumb therefore always stays entirely between the two buttons.
 static int get_thumb_travel_length(slider_t *slider)
 {
     int travel_length = slider->length - 2 * SLIDER_BUTTON_SIDE - get_thumb_length(slider);

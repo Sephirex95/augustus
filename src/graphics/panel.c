@@ -215,139 +215,82 @@ void scrollbar_thumb_draw(int x, int y, int middle_sections, int is_vertical, in
         middle_sections = 0; // -1 is reserved for mini thumb
     }
 
-    if (frame < 1 || frame > 4) {
+    if (frame < 1 || frame > 4) { // clamp because implementations can be sloppy. Better safe than seeing roadblocks.
         frame = 1;
     }
 
-    static const asset_id mini_thumb_ids[4] = {
-        ASSET_UI_SCROLLBAR_MINI_THUMB_01,
-        ASSET_UI_SCROLLBAR_MINI_THUMB_02,
-        ASSET_UI_SCROLLBAR_MINI_THUMB_03,
-        ASSET_UI_SCROLLBAR_MINI_THUMB_04,
-    };
-
-    const int frame_index = frame - 1;
-    if (middle_sections == -1) {
-        int thumb_id = assets_lookup_image_id(mini_thumb_ids[frame_index]);
+    int frame_index = frame - 1; // 0-based
+    if (middle_sections == -1) { // mini thumb route
+        int thumb_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_MINI_THUMB_01 + frame_index);
         int lines_id = assets_lookup_image_id(ASSET_UI_SCROLLBAR_MINI_THUMB_LINES);
+
         const image *thumb_img = image_get(thumb_id);
         const image *lines_img = image_get(lines_id);
 
-        int thumb_width = thumb_img->original.width;
+        int thumb_width = thumb_img->original.width; // checking dims directly instead of define, since code is volatile
         int thumb_height = thumb_img->original.height;
-        if (thumb_width <= 0 || thumb_height <= 0) {
-            return;
-        }
-
         graphics_set_clip_rectangle(x, y, thumb_width, thumb_height);
         image_draw(thumb_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+
         if (lines_img->original.width > 0 && lines_img->original.height > 0) {
             int lines_x = x + (thumb_width - lines_img->original.width) / 2;
             int lines_y = y + (thumb_height - lines_img->original.height) / 2;
             image_draw(lines_id, lines_x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
         }
+
         graphics_reset_clip_rectangle();
         return;
     }
-
-    static const asset_id vertical_start_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP,
-        ASSET_UI_SCROLLBAR_MIDDLE_02_END_TOP,
-        ASSET_UI_SCROLLBAR_MIDDLE_03_END_TOP,
-        ASSET_UI_SCROLLBAR_MIDDLE_04_END_TOP,
-    };
-    static const asset_id vertical_end_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01_END_BOTTOM,
-        ASSET_UI_SCROLLBAR_MIDDLE_02_END_BOTTOM,
-        ASSET_UI_SCROLLBAR_MIDDLE_03_END_BOTTOM,
-        ASSET_UI_SCROLLBAR_MIDDLE_04_END_BOTTOM,
-    };
-    static const asset_id vertical_mid_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_02_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_03_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_04_TRIMMED,
-    };
-
-    static const asset_id horizontal_start_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01B_END_LEFT,
-        ASSET_UI_SCROLLBAR_MIDDLE_02B_END_LEFT,
-        ASSET_UI_SCROLLBAR_MIDDLE_03B_END_LEFT,
-        ASSET_UI_SCROLLBAR_MIDDLE_04B_END_LEFT,
-    };
-    static const asset_id horizontal_end_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01B_END_RIGHT,
-        ASSET_UI_SCROLLBAR_MIDDLE_02B_END_RIGHT,
-        ASSET_UI_SCROLLBAR_MIDDLE_03B_END_RIGHT,
-        ASSET_UI_SCROLLBAR_MIDDLE_04B_END_RIGHT,
-    };
-    static const asset_id horizontal_mid_ids[4] = {
-        ASSET_UI_SCROLLBAR_MIDDLE_01B_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_02B_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_03B_TRIMMED,
-        ASSET_UI_SCROLLBAR_MIDDLE_04B_TRIMMED,
-    };
-
-    int start_id;
-    int end_id;
-    int mid_id;
-    if (is_vertical) {
-        start_id = assets_lookup_image_id(vertical_start_ids[frame_index]);
-        end_id = assets_lookup_image_id(vertical_end_ids[frame_index]);
-        mid_id = assets_lookup_image_id(vertical_mid_ids[frame_index]);
-    } else {
-        start_id = assets_lookup_image_id(horizontal_start_ids[frame_index]);
-        end_id = assets_lookup_image_id(horizontal_end_ids[frame_index]);
-        mid_id = assets_lookup_image_id(horizontal_mid_ids[frame_index]);
-    }
+    // standard or long thumb route
+    asset_id asset_base = is_vertical ? ASSET_UI_SCROLLBAR_MIDDLE_01_END_TOP : ASSET_UI_SCROLLBAR_MIDDLE_01B_END_LEFT;
+    asset_id frame_base = asset_base + frame_index * 4;
+    int start_id = assets_lookup_image_id(frame_base);
+    int end_id = assets_lookup_image_id(frame_base + 1);
+    int middle_id = assets_lookup_image_id(frame_base + 2);
 
     const image *start_img = image_get(start_id);
     const image *end_img = image_get(end_id);
-    const image *mid_img = image_get(mid_id);
+    const image *middle_img = image_get(middle_id);
 
     int start_span = is_vertical ? start_img->original.height : start_img->original.width;
     int end_span = is_vertical ? end_img->original.height : end_img->original.width;
-    int middle_span = is_vertical ? mid_img->original.height : mid_img->original.width;
-    int thumb_width = is_vertical ? mid_img->original.width : start_span + middle_sections * middle_span + end_span;
-    int thumb_height = is_vertical ? start_span + middle_sections * middle_span + end_span : mid_img->original.height;
+    int middle_span = is_vertical ? middle_img->original.height : middle_img->original.width;
 
-    if (start_span <= 0 || end_span <= 0 || middle_span <= 0 || thumb_width <= 0 || thumb_height <= 0) {
-        return;
-    }
+    int thumb_width = is_vertical ? middle_img->original.width : start_span + middle_sections * middle_span + end_span;
+
+    int thumb_height = is_vertical ? start_span + middle_sections * middle_span + end_span : middle_img->original.height;
 
     graphics_set_clip_rectangle(x, y, thumb_width, thumb_height);
 
-    if (is_vertical) {
-        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
+    image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
 
+    if (is_vertical) {
         int middle_y = y + start_span;
-        for (int i = 0; i < middle_sections; ++i) {
-            image_draw(mid_id, x, middle_y, COLOR_MASK_NONE, SCALE_NONE);
+
+        for (int i = 0; i < middle_sections; i++) {
+            image_draw(middle_id, x, middle_y, COLOR_MASK_NONE, SCALE_NONE);
             middle_y += middle_span;
         }
 
         image_draw(end_id, x, middle_y, COLOR_MASK_NONE, SCALE_NONE);
     } else {
-        image_draw(start_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
-
         int middle_x = x + start_span;
-        for (int i = 0; i < middle_sections; ++i) {
-            image_draw(mid_id, middle_x, y, COLOR_MASK_NONE, SCALE_NONE);
+
+        for (int i = 0; i < middle_sections; i++) {
+            image_draw(middle_id, middle_x, y, COLOR_MASK_NONE, SCALE_NONE);
             middle_x += middle_span;
         }
 
         image_draw(end_id, middle_x, y, COLOR_MASK_NONE, SCALE_NONE);
     }
+    // white grip lines in the middle of the thumb
+    int lines_id = assets_lookup_image_id(is_vertical ? ASSET_UI_SCROLLBAR_LINES_ALPHA : ASSET_UI_SCROLLBAR_LINES_ALPHA_B);
 
-    if (middle_sections > 0) {
-        int lines_alpha_id = assets_lookup_image_id(
-            is_vertical ? ASSET_UI_SCROLLBAR_LINES_ALPHA : ASSET_UI_SCROLLBAR_LINES_ALPHA_B);
-        const image *lines_alpha_img = image_get(lines_alpha_id);
-        int lines_x = x + (thumb_width - lines_alpha_img->original.width) / 2;
-        int lines_y = y + (thumb_height - lines_alpha_img->original.height) / 2;
-        image_draw(lines_alpha_id, lines_x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
-    }
+    const image *lines_img = image_get(lines_id);
+    int lines_x = x + (thumb_width - lines_img->original.width) / 2;
+    int lines_y = y + (thumb_height - lines_img->original.height) / 2;
 
+    image_draw(lines_id, lines_x, lines_y, COLOR_MASK_NONE, SCALE_NONE);
     graphics_reset_clip_rectangle();
 }
 
