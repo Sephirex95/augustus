@@ -599,20 +599,6 @@ void large_label_draw_border_colored(int x, int y, int width, int height, color_
     graphics_reset_clip_rectangle();
 }
 
-static void draw_tiled_image(int image_id, int x, int y, int width, int height)
-{
-    const image *img = image_get(image_id);
-    if (img->width <= 0 || img->height <= 0 || width <= 0 || height <= 0) {
-        return;
-    }
-
-    for (int yy = y; yy < y + height; yy += img->height) {
-        for (int xx = x; xx < x + width; xx += img->width) {
-            image_draw(image_id, xx, yy, COLOR_MASK_NONE, SCALE_NONE);
-        }
-    }
-}
-
 void segmented_border_draw_colored(int x, int y, int width, int height, color_t color)
 {
     if (width <= 0 || height <= 0) {
@@ -630,20 +616,20 @@ void segmented_border_draw_colored(int x, int y, int width, int height, color_t 
          xx < x + SEGMENTED_CORNER_SIZE + inner_width;
          xx += SEGMENTED_HORIZONTAL_WIDTH) {
         image_draw(image_base + 1, xx, y, color, SCALE_NONE);
-        image_draw(image_base + 7, xx, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
+        image_draw(image_base + 6, xx, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
     }
 
     for (int yy = y + SEGMENTED_CORNER_SIZE;
          yy < y + SEGMENTED_CORNER_SIZE + inner_height;
          yy += SEGMENTED_VERTICAL_HEIGHT) {
         image_draw(image_base + 3, x, yy, color, SCALE_NONE);
-        image_draw(image_base + 5, x + width - SEGMENTED_CORNER_SIZE, yy, color, SCALE_NONE);
+        image_draw(image_base + 4, x + width - SEGMENTED_CORNER_SIZE, yy, color, SCALE_NONE);
     }
 
     image_draw(image_base, x, y, color, SCALE_NONE);
     image_draw(image_base + 2, x + width - SEGMENTED_CORNER_SIZE, y, color, SCALE_NONE);
-    image_draw(image_base + 6, x, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
-    image_draw(image_base + 8,
+    image_draw(image_base + 5, x, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
+    image_draw(image_base + 7,
         x + width - SEGMENTED_CORNER_SIZE,
         y + height - SEGMENTED_CORNER_SIZE,
         color,
