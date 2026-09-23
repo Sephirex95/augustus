@@ -31,7 +31,7 @@ static void copy_button_animation(complex_button *dst, const complex_button *src
     }
 
     if (complex_button_animation_init(dst, src_animation.frames, src_animation.frame_count,
-        src_animation.trigger)) {
+        src_animation.trigger, src_animation.loop_mode)) {
         btn_img *copied_frames = dst->animation.frames;
         dst->animation = src_animation;
         dst->animation.frames = copied_frames;

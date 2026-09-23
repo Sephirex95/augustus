@@ -8,6 +8,9 @@
 
 #include <string.h>
 
+static btn_img plus_sign[1];
+static btn_img minus_sign[1];
+
 typedef enum {
     DATE_PICKER_DECREASE = 0,
     DATE_PICKER_DATE,
@@ -135,7 +138,7 @@ static void date_click(complex_button *button)
     }
 }
 
-static void init_change_button(complex_button *button, date_picker *picker, int x, int y, int image_id,
+static void init_change_button(complex_button *button, date_picker *picker, int x, int y, int asset_id,
     void (*click_handler)(complex_button *button))
 {
     memset(button, 0, sizeof(*button));
@@ -143,11 +146,19 @@ static void init_change_button(complex_button *button, date_picker *picker, int 
     button->y = y;
     button->width = DATE_PICKER_BUTTON_WIDTH;
     button->height = DATE_PICKER_BUTTON_HEIGHT;
-    button->image.id = assets_lookup_image_id(image_id);
+    button->image.id = assets_lookup_image_id(asset_id);
     button->style = COMPLEX_BUTTON_STYLE_IMAGE;
     button->left_click_handler = click_handler;
     button->light_on_hover = 2;
     button->user_data = picker;
+    plus_sign[0].id = assets_lookup_image_id(ASSET_UI_PLUS_BUTTON_CLICK);
+    minus_sign[0].id = assets_lookup_image_id(ASSET_UI_MINUS_BUTTON_CLICK);
+    if (asset_id == ASSET_UI_PLUS_BUTTON_IDLE) {
+        complex_button_animation_init(button, plus_sign, 1, BUTTON_ANIMATION_TRIGGER_CLICK, BUTTON_ANIMATION_ONCE);
+    } else if (asset_id == ASSET_UI_MINUS_BUTTON_IDLE) {
+        complex_button_animation_init(button, minus_sign, 1, BUTTON_ANIMATION_TRIGGER_CLICK, BUTTON_ANIMATION_ONCE);
+    }
+
 }
 
 void widget_date_picker_init(date_picker *picker, int x, int y, int date_field_height, int date_field_width,

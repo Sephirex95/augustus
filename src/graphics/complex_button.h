@@ -175,8 +175,9 @@ int complex_button_handle_mouse_array(complex_button *buttons, const mouse *m, u
 int complex_button_handle_tooltip(const complex_button *button, tooltip_context *c);
 int complex_button_handle_tooltip_array(const complex_button *buttons, tooltip_context *c, unsigned int num_buttons);
 
-int complex_button_animation_init(complex_button *button, const btn_img *frames,
-    unsigned short frame_count, animation_trigger trigger);
+
+int complex_button_animation_init(complex_button *button, const btn_img *frames, unsigned short frame_count,
+     animation_trigger trigger, animation_mode mode);
 void complex_button_animation_destroy(complex_button *button);
 void complex_button_animation_start(complex_button *button);
 void complex_button_animation_stop(complex_button *button);
