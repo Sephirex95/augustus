@@ -38,11 +38,11 @@ void grid_picker_anchor_init(complex_button *anchor, int x, int y, int width, in
     }
 
     memset(anchor, 0, sizeof(*anchor));
+    complex_button_init_style(anchor, style);
     anchor->x = x;
     anchor->y = y;
     anchor->width = width;
     anchor->height = height;
-    anchor->style = style;
     anchor->sequence.fragments = (lang_fragment *) sequence;
     anchor->sequence.count = sequence_size;
     anchor->sequence_position = SEQUENCE_POSITION_CENTER;

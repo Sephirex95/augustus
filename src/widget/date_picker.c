@@ -142,12 +142,12 @@ static void init_change_button(complex_button *button, date_picker *picker, int 
     void (*click_handler)(complex_button *button))
 {
     memset(button, 0, sizeof(*button));
+    complex_button_init_style(button, COMPLEX_BUTTON_STYLE_IMAGE);
     button->x = x;
     button->y = y;
     button->width = DATE_PICKER_BUTTON_WIDTH;
     button->height = DATE_PICKER_BUTTON_HEIGHT;
     button->image.id = assets_lookup_image_id(asset_id);
-    button->style = COMPLEX_BUTTON_STYLE_IMAGE;
     button->left_click_handler = click_handler;
     button->light_on_hover = 2;
     button->user_data = picker;
@@ -189,11 +189,11 @@ void widget_date_picker_init(date_picker *picker, int x, int y, int date_field_h
 
     complex_button *date = &picker->buttons[DATE_PICKER_DATE];
     memset(date, 0, sizeof(*date));
+    complex_button_init_style(date, style);
     date->x = date_x;
     date->y = y;
     date->width = date_field_width;
     date->height = date_field_height;
-    date->style = style;
     date->sequence_position = SEQUENCE_POSITION_CENTER;
     date->left_click_handler = date_click;
     date->user_data = picker;

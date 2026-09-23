@@ -486,27 +486,28 @@ static void setup_header_footer_buttons(void)
     dropdown_buttons[DD_TRADE_SORT].selected_index = 1; // default to "Name"
     dropdown_buttons[DD_TRADE_SORT].selected_callback = sort_dropdown_selected;
 
+    complex_button_init_style(&complex_buttons[BTN_RESET_SORT], COMPLEX_BUTTON_STYLE_RAW);
     complex_buttons[BTN_RESET_SORT].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     complex_buttons[BTN_RESET_SORT].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     complex_buttons[BTN_RESET_SORT].image_before = sort_icon;
-    complex_buttons[BTN_RESET_SORT].style = COMPLEX_BUTTON_STYLE_RAW;
     complex_buttons[BTN_RESET_SORT].shade_on_hover = debug_shade;
     complex_buttons[BTN_RESET_SORT].hover_handler = reset_sort_hover;
     complex_buttons[BTN_RESET_SORT].left_click_handler = reset_sort_click;
     complex_buttons[BTN_RESET_SORT].tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
 
+    complex_button_init_style(&complex_buttons[BTN_TRADE_LEDGER], COMPLEX_BUTTON_STYLE_GRAY);
     complex_buttons[BTN_TRADE_LEDGER].width = SIDEBAR_HEADER_LEDGER_BTN_SQ; // square button
     complex_buttons[BTN_TRADE_LEDGER].height = SIDEBAR_HEADER_LEDGER_BTN_SQ;
     complex_buttons[BTN_TRADE_LEDGER].image.id = assets_lookup_image_id(ASSET_UI_TRADE_LEDGER_BUTTON_IDLE);
     complex_buttons[BTN_TRADE_LEDGER].image.auto_center = 1;
-    complex_buttons[BTN_TRADE_LEDGER].style = COMPLEX_BUTTON_STYLE_GRAY_NO_FILL;
+    complex_buttons[BTN_TRADE_LEDGER].draw_background = 0;
     complex_buttons[BTN_TRADE_LEDGER].hover_handler = trade_ledger_hover;
     complex_buttons[BTN_TRADE_LEDGER].left_click_handler = trade_ledger_click;
     complex_buttons[BTN_TRADE_LEDGER].tooltip_c.translation_key = TR_UI_TOOLTIP_OPEN_TRADE_LEDGER;
 
     cycling_buttons[BTN_SORT_DIRECTION].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     cycling_buttons[BTN_SORT_DIRECTION].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
-    cycling_buttons[BTN_SORT_DIRECTION].style = CYCLING_BUTTON_STYLE_GRAY_NO_FILL;
+    cycling_buttons[BTN_SORT_DIRECTION].style = CYCLING_BUTTON_STYLE_GRAY;
     cycling_buttons[BTN_SORT_DIRECTION].state_count = 2;
     cycling_buttons[BTN_SORT_DIRECTION].states[0].image_before = arrow_down_icon;
     cycling_buttons[BTN_SORT_DIRECTION].states[1].image_before = arrow_up_icon;
@@ -516,10 +517,10 @@ static void setup_header_footer_buttons(void)
     cycling_buttons[BTN_SORT_DIRECTION].state_index = window_empire_sidebar_sort_get_sorting_reversed() ? 1 : 0;
 
     // filtering section
+    complex_button_init_style(&complex_buttons[BTN_RESET_FILTER], COMPLEX_BUTTON_STYLE_RAW);
     complex_buttons[BTN_RESET_FILTER].width = SIDEBAR_HEADER_BUTTON_HEIGHT; // square button
     complex_buttons[BTN_RESET_FILTER].height = SIDEBAR_HEADER_BUTTON_HEIGHT;
     complex_buttons[BTN_RESET_FILTER].image_before = filter_icon;
-    complex_buttons[BTN_RESET_FILTER].style = COMPLEX_BUTTON_STYLE_RAW;
     complex_buttons[BTN_RESET_FILTER].shade_on_hover = debug_shade;
     complex_buttons[BTN_RESET_FILTER].hover_handler = reset_filter_hover;
     complex_buttons[BTN_RESET_FILTER].left_click_handler = reset_filter_click;
@@ -571,9 +572,9 @@ static void setup_header_footer_buttons(void)
         .text_group = CUSTOM_TRANSLATION,
         .text_id = TR_UI_SIDEBAR_TRADE_HISTORY
     };
+    complex_button_init_style(&complex_buttons[BTN_TRADE_HISTORY], COMPLEX_BUTTON_STYLE_GRAY);
     complex_buttons[BTN_TRADE_HISTORY].width = TRADE_YEAR_CONTROL_WIDTH;
     complex_buttons[BTN_TRADE_HISTORY].height = TRADE_YEAR_FIELD_HEIGHT;
-    complex_buttons[BTN_TRADE_HISTORY].style = COMPLEX_BUTTON_STYLE_GRAY;
     complex_buttons[BTN_TRADE_HISTORY].sequence.fragments = &trade_history;
     complex_buttons[BTN_TRADE_HISTORY].sequence.count = 1;
     complex_buttons[BTN_TRADE_HISTORY].tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_1;

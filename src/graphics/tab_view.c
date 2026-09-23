@@ -58,7 +58,7 @@ static complex_button_style button_style_for_tab_style(tab_view_style style)
         case TAB_VIEW_STYLE_GRAY:
             return COMPLEX_BUTTON_STYLE_GRAY;
         case TAB_VIEW_STYLE_DEFAULT_SMALL:
-            return COMPLEX_BUTTON_STYLE_DEFAULT_SMALL;
+            return COMPLEX_BUTTON_STYLE_DEFAULT;
         default:
             return COMPLEX_BUTTON_STYLE_DEFAULT;
     }
@@ -161,12 +161,12 @@ void tab_view_init_simple(tab_view *view, int x, int y, int width, int height, i
     // Initialize tab buttons with defaults
     for (int i = 0; i < tab_count; i++) {
         memset(&view->tabs[i].button, 0, sizeof(complex_button));
+        complex_button_init_style(&view->tabs[i].button, button_style_for_tab_style(style));
         view->tabs[i].button.left_click_handler = tab_click_handler;
         view->tabs[i].button.user_data = view;
-        view->tabs[i].button.style = button_style_for_tab_style(style);
         view->tabs[i].button.font = button_font_for_tab_style(style);
         view->tabs[i].button.sequence_position = SEQUENCE_POSITION_CENTER;
-        view->tabs[i].button.color_mask = 0; // default color mask, can be overridden later
+        view->tabs[i].button.bg_primary = COLOR_MASK_NONE; // default background color, can be overridden later
         view->tabs[i].visible = 1;
         view->tabs[i].enabled = 1;
     }
@@ -330,7 +330,7 @@ int tab_view_layout(tab_view *view)
     for (int i = 0; i < tab_count; i++) {
         view->tabs[i].button.x = tab_x + (i == tab_count - 1) - (i == 0);// first pass -1, last pass +1. see note* below
         view->tabs[i].button.y = tab_y;
-        view->tabs[i].button.color_mask = color_for_active_tab_button(
+        view->tabs[i].button.bg_primary = color_for_active_tab_button(
             view->view_properties.style,
             view->state.active_tab == i
         );

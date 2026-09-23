@@ -109,7 +109,6 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
     button->style = style;
     button->font = complex_button_font_for_style(style);
     button->font_primary = complex_button_font_primary_for_style(style);
-    button->color_mask = COLOR_MASK_NONE;
     button->bg_primary = complex_button_bg_primary_for_style(style);
     button->draw_hover_state = 1;
     button->draw_border = 1;
@@ -585,7 +584,7 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
 }
 
 static void draw_default_style(const complex_button *button, font_t base_font,
-    color_t font_primary, color_t font_secondary, color_t color_mask)
+    color_t font_primary, color_t font_secondary)
 {
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
@@ -594,7 +593,7 @@ static void draw_default_style(const complex_button *button, font_t base_font,
         switch (button->style) {
             case COMPLEX_BUTTON_STYLE_CUSTOM:
                 unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                    height_blocks + 1, button->bg_primary ? button->bg_primary : color_mask);
+                    height_blocks + 1, button->bg_primary);
                 break;
             case COMPLEX_BUTTON_STYLE_RAW:
             case COMPLEX_BUTTON_STYLE_IMAGE:
@@ -683,7 +682,7 @@ void complex_button_draw(const complex_button *button)
             draw_main_menu_style(button, base_font, font_primary, font_secondary);
             break;
         default:
-            draw_default_style(button, base_font, font_primary, font_secondary, button->color_mask);
+            draw_default_style(button, base_font, font_primary, font_secondary);
     }
 }
 

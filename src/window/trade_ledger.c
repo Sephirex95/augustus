@@ -308,9 +308,10 @@ static void refresh_irrelevant_resources(void)
 
 static void setup_resource_header_button(void)
 {
+    complex_button_init_style(&resource_header_button, COMPLEX_BUTTON_STYLE_RAW);
     resource_header_button.width =
         lang_text_get_width(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, FONT_NORMAL_BLACK) + 8;
-    //    resource_header_button.color_mask = brown_correction;
+    //    resource_header_button.bg_primary = brown_correction;
     resource_header_button.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
     resource_header_button.is_active = 0;
     resource_header_button.is_hovered = 0;
@@ -421,7 +422,7 @@ static void draw_trade_status_button(resource_type resource, int image_id, int x
     button->y = y;
     button->width = LEDGER_TRADE_STATUS_ICON_WIDTH;
     button->height = LEDGER_TRADE_STATUS_ICON_WIDTH;
-    button->style = COMPLEX_BUTTON_STYLE_RAW;
+    complex_button_init_style(button, COMPLEX_BUTTON_STYLE_RAW);
 
     button->image.id = image_id;
     button->image.auto_center = 1;
@@ -528,7 +529,7 @@ static void draw_foreground(void)
         ledger_tabs.tabs[1].button.tooltip_c.translation_key = TR_UI_LEDGER_DISABLED_2; // tooltip for disabled tab
         ledger_tabs.tabs[1].button.tooltip_c.type = TOOLTIP_BUTTON;
         ledger_tabs.tabs[1].button.font = FONT_NORMAL_PLAIN;
-        ledger_tabs.tabs[1].button.font_color = COLOR_FONT_GRAY;
+        ledger_tabs.tabs[1].button.font_primary = COLOR_FONT_GRAY;
 
         tabs_initialized = tab_view_layout(&ledger_tabs) == TAB_LAYOUT_OK; // layout tabs and set initialized flag based on success
     }

@@ -290,9 +290,9 @@ void widget_empire_funds_initialise(int x, int y, int width)
     widget_data.date_block.is_hidden = 0;
     update_date_text();
 
+    complex_button_init_style(&widget_data.banner_button, COMPLEX_BUTTON_STYLE_IMAGE);
     widget_data.banner_button.image.id = assets_get_image_id("UI", "Victory_Banner");
     widget_data.banner_button.image.auto_center = 0;
-    widget_data.banner_button.style = COMPLEX_BUTTON_STYLE_IMAGE;
     widget_data.banner_button.left_click_handler = button_toggle_visibility;
     update_banner_button(0, current_y_offset(), 0);
 }

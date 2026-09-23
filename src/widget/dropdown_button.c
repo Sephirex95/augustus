@@ -46,7 +46,7 @@ static complex_button_style dropdown_button_style_to_complex_style(dropdown_butt
         case DD_BUTTON_STYLE_DEFAULT:
             return COMPLEX_BUTTON_STYLE_DEFAULT;
         case DD_BUTTON_STYLE_DEFAULT_SMALL:
-            return COMPLEX_BUTTON_STYLE_DEFAULT_SMALL;
+            return COMPLEX_BUTTON_STYLE_DEFAULT;
         case DD_BUTTON_STYLE_GRAY:
             return COMPLEX_BUTTON_STYLE_GRAY;
         default:
@@ -93,9 +93,14 @@ static void update_anchor(dropdown_button *dd)
     anchor->sequence_position = selected->sequence_position;
     anchor->image_before = selected->image_before;
     anchor->image_after = selected->image_after;
-    anchor->color_mask = selected->color_mask;
+    anchor->font_primary = selected->font_primary;
+    anchor->bg_primary = selected->bg_primary;
     anchor->font = selected->font;
     anchor->style = selected->style;
+    anchor->draw_border = selected->draw_border;
+    anchor->draw_hover_state = selected->draw_hover_state;
+    anchor->draw_background = selected->draw_background;
+    anchor->border_on_hover = selected->border_on_hover;
     if (selected->tooltip_c.type) { // only copy tooltip to anchor if the selected option has a valid tooltip
         tooltip_copy_context(&anchor->tooltip_c, &selected->tooltip_c);
     }
@@ -128,9 +133,14 @@ static void restore_anchor(dropdown_button *dd)
     anchor->sequence_position = anchor_og->sequence_position;
     anchor->image_before = anchor_og->image_before;
     anchor->image_after = anchor_og->image_after;
-    anchor->color_mask = anchor_og->color_mask;
+    anchor->font_primary = anchor_og->font_primary;
+    anchor->bg_primary = anchor_og->bg_primary;
     anchor->font = anchor_og->font;
     anchor->style = anchor_og->style;
+    anchor->draw_border = anchor_og->draw_border;
+    anchor->draw_hover_state = anchor_og->draw_hover_state;
+    anchor->draw_background = anchor_og->draw_background;
+    anchor->border_on_hover = anchor_og->border_on_hover;
     tooltip_copy_context(&anchor->tooltip_c, &anchor_og->tooltip_c);
 }
 
@@ -246,13 +256,17 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     dd->padding = 10; // TODO: Check why the width calculation downstream doesnt change with padding change
     complex_button_style style = dropdown_button_style_to_complex_style(dd_style);
     font_t style_font = complex_button_font_for_style(style); // ensure font is set for style
+    if (dd_style == DD_BUTTON_STYLE_DEFAULT_SMALL) {
+        style_font = FONT_SMALL_PLAIN;
+    }
     // Setup origin (button 0)
     complex_button *origin = &dd->buttons[0];
+    complex_button_init_style(origin, style);
     origin->x = x;
     origin->y = y;
     origin->height = height ? height : font_definition_for(style_font)->line_height + 8;
     origin->width = buttons_width;
-    origin->style = style;
+    origin->font = style_font;
     origin->is_hidden = 0;
     origin->is_disabled = 0;
     int has_selection = dd->selected_index > 0;
@@ -270,7 +284,8 @@ void dropdown_button_init_simple(int x, int y, int width, int height, const lang
     // Setup options [1..count-1]
     for (unsigned int i = 1; i < count; i++) {
         complex_button *opt = &dd->buttons[i];
-        opt->style = style;
+        complex_button_init_style(opt, style);
+        opt->font = style_font;
         opt->is_hidden = 0;
         opt->is_disabled = 0;
         opt->sequence.fragments = (lang_fragment *) &frags[i];

@@ -288,6 +288,7 @@ static const lang_message *get_custom_or_standard_lang_message(int text_id)
 
 static int setup_request_button(const lang_message *msg)
 {
+    complex_button_init_style(&complex_button_dispatch_request, COMPLEX_BUTTON_STYLE_DEFAULT);
     if (msg->message_type != MESSAGE_TYPE_IMPERIAL) {
         complex_button_dispatch_request.is_hidden = 1;
         return 0;
