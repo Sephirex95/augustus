@@ -14,11 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DISABLED_SHADING 3
+
 static void complex_button_ellipsized(complex_button *button, int was_ellipsized);
 static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary);
 static void end_animation(complex_button_animation *anim);
-static int debug_shade = 0;
-static int debug_sunken = 0;
 
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button)
 {
@@ -108,7 +108,9 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
     if (!button) {
         return;
     }
-
+    if (style == COMPLEX_BUTTON_STYLE_CUSTOM) {
+        return; // custom style has no defaults
+    }
     button->style = style;
     button->font = complex_button_font_for_style(style);
     button->font_primary = complex_button_font_primary_for_style(style);
@@ -121,24 +123,18 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
     switch (style) {
         case COMPLEX_BUTTON_STYLE_SUNKEN:
             button->border_on_hover = 0;
-            break;
-        case COMPLEX_BUTTON_STYLE_GRAY:
-            break;
-        case COMPLEX_BUTTON_STYLE_BROWN:
+            button->shade_on_hover = 2;
             break;
         case COMPLEX_BUTTON_STYLE_IMAGE:
-            button->draw_border = 0;
-            button->draw_background = 0;
-            button->border_on_hover = 0;
-            break;
         case COMPLEX_BUTTON_STYLE_RAW:
             button->draw_border = 0;
             button->draw_background = 0;
             button->border_on_hover = 0;
             break;
         case COMPLEX_BUTTON_STYLE_CUSTOM:
-            break;
         case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_BROWN:
+        case COMPLEX_BUTTON_STYLE_GRAY:
         default:
             break;
     }
@@ -569,7 +565,7 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
     if (sequence->fragments && sequence->count > 0) {
         if (font == FONT_NORMAL_PLAIN || font == FONT_LARGE_PLAIN || font == FONT_SMALL_PLAIN) {
             lang_seq_draw_with_shadow(sequence, button->x, text_y, button->width, font, font_primary, font_secondary,
-                sequence_position_is_centered(position), debug_sunken);
+                sequence_position_is_centered(position), 1);
         } else {
             if (sequence_position_is_centered(position)) {
                 lang_seq_draw_centered_ellipsized(sequence, button->x, text_y, button->width, font, font_primary,
@@ -649,10 +645,10 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     }
 
     if (button->draw_hover_state && !button->is_disabled && button->is_hovered) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
     }
     if (button->is_disabled) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, debug_shade);
+        graphics_shade_rect(button->x, button->y, button->width, button->height, DISABLED_SHADING);
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);
     if (button->draw_border) {
