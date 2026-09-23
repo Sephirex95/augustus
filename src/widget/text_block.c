@@ -26,6 +26,8 @@ font_t text_block_font_for_style(text_block_style style)
             return FONT_NORMAL_GREEN;
         case TEXT_BLOCK_STYLE_BROWN:
             return FONT_NORMAL_BROWN;
+        case TEXT_BLOCK_STYLE_RAISED:
+        case TEXT_BLOCK_STYLE_SUNKEN:
         default:
             return FONT_NORMAL_BLACK;
     }

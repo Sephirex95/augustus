@@ -162,7 +162,7 @@ typedef struct cycling_button {
 
 color_t complex_button_basic_colors(int id);
 font_t complex_button_font_for_style(complex_button_style style);
-color_t complex_button_mask_for_style(complex_button_style style);
+
 
 // Complex Buttons
 // drawing

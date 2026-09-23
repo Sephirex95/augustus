@@ -90,7 +90,7 @@ static void font_and_colours(complex_button_style style, int is_disabled, int is
             case COMPLEX_BUTTON_STYLE_GRAY:
             case COMPLEX_BUTTON_STYLE_GRAY_NO_FILL:
             case COMPLEX_BUTTON_STYLE_BROWN:
-                *font = FONT_NORMAL_GREEN;
+                *font = FONT_NORMAL_BROWN;
                 if (is_large) {
                     *font = FONT_LARGE_BROWN;
                 }
