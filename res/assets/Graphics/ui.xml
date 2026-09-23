@@ -1772,14 +1772,14 @@
 		<layer group="this" image="Scrollbar_Dark_Start" rotate="90" x="0" y="0"/>
 	</image>
 	<!-- Note: Assets for drawing segmented borders -->
-	<image id="segmented_border_01" src="segmented_border_01" width="8" height="12"/>
-	<image id="segmented_border_02" src="segmented_border_02" width="12" height="8"/>
-	<image id="segmented_border_03" src="segmented_border_03" width="8" height="12"/>
-	<image id="segmented_border_04" src="segmented_border_04" width="8" height="11"/>
-	<image id="segmented_border_06" src="segmented_border_06" width="8" height="11"/>
-	<image id="segmented_border_07" src="segmented_border_07" width="8" height="12"/>
-	<image id="segmented_border_08" src="segmented_border_08" width="12" height="8"/>
-	<image id="segmented_border_09" src="segmented_border_09" width="8" height="12"/>
+	<image id="segmented_border_01" src="segmented_border_01" width="5" height="5"/>
+	<image id="segmented_border_02" src="segmented_border_02" width="66" height="5"/>
+	<image id="segmented_border_03" src="segmented_border_03" width="5" height="5"/>
+	<image id="segmented_border_04" src="segmented_border_04" width="5" height="6"/>
+	<image id="segmented_border_06" src="segmented_border_06" width="5" height="6"/>
+	<image id="segmented_border_07" src="segmented_border_07" width="5" height="5"/>
+	<image id="segmented_border_08" src="segmented_border_08" width="66" height="5"/>
+	<image id="segmented_border_09" src="segmented_border_09" width="5" height="5"/>
 	<!-- Note: Assetss for drawing custom-dimension main-menu-style buttons -->
 	<image id="Button_Menu_Left_Panel" width="13" height="19">
 		<layer group="15" image="0" x ="-3" y="-3"/>

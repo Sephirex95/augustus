@@ -8,6 +8,10 @@
 #define INNER_PANEL_MIN_SIZE (2 * BLOCK_SIZE)
 #define SCROLL_PANEL_WIDTH 24
 
+#define SEGMENTED_CORNER_SIZE 5
+#define SEGMENTED_HORIZONTAL_WIDTH 66
+#define SEGMENTED_VERTICAL_HEIGHT 6
+
 void outer_panel_draw(int x, int y, int width_blocks, int height_blocks)
 {
     int image_base = image_group(GROUP_DIALOG_BACKGROUND);
@@ -615,45 +619,35 @@ void segmented_border_draw_colored(int x, int y, int width, int height, color_t 
         return;
     }
 
-    int top_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_01);
-    int top_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_02);
-    int top_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_03);
-    int left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_04);
-    int right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_06);
-    int bottom_left_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_07);
-    int bottom_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_08);
-    int bottom_right_id = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_09);
+    int image_base = assets_lookup_image_id(ASSET_UI_SEGMENTED_BORDER_01);
 
-    const image *top_left = image_get(top_left_id);
-    const image *top = image_get(top_id);
-    const image *top_right = image_get(top_right_id);
-    const image *left = image_get(left_id);
-    const image *right = image_get(right_id);
-    const image *bottom_left = image_get(bottom_left_id);
-    const image *bottom = image_get(bottom_id);
-    const image *bottom_right = image_get(bottom_right_id);
-
-    int top_x = x + top_left->width;
-    int top_width = width - top_left->width - top_right->width;
-    int bottom_x = x + bottom_left->width;
-    int bottom_y = y + height - bottom->height;
-    int bottom_width = width - bottom_left->width - bottom_right->width;
-    int side_y = y + top_left->height;
-    int left_height = height - top_left->height - bottom_left->height;
-    int right_height = height - top_right->height - bottom_right->height;
+    int inner_width = width - 2 * SEGMENTED_CORNER_SIZE;
+    int inner_height = height - 2 * SEGMENTED_CORNER_SIZE;
 
     graphics_set_clip_rectangle(x, y, width, height);
 
-    draw_tiled_image(top_id, top_x, y, top_width, top->height);
-    draw_tiled_image(bottom_id, bottom_x, bottom_y, bottom_width, bottom->height);
-    draw_tiled_image(left_id, x, side_y, left->width, left_height);
-    draw_tiled_image(right_id, x + width - right->width, y + top_right->height, right->width, right_height);
+    for (int xx = x + SEGMENTED_CORNER_SIZE;
+         xx < x + SEGMENTED_CORNER_SIZE + inner_width;
+         xx += SEGMENTED_HORIZONTAL_WIDTH) {
+        image_draw(image_base + 1, xx, y, color, SCALE_NONE);
+        image_draw(image_base + 7, xx, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
+    }
 
-    image_draw(top_left_id, x, y, COLOR_MASK_NONE, SCALE_NONE);
-    image_draw(top_right_id, x + width - top_right->width, y, COLOR_MASK_NONE, SCALE_NONE);
-    image_draw(bottom_left_id, x, y + height - bottom_left->height, COLOR_MASK_NONE, SCALE_NONE);
-    image_draw(bottom_right_id, x + width - bottom_right->width, y + height - bottom_right->height,
-        COLOR_MASK_NONE, SCALE_NONE);
+    for (int yy = y + SEGMENTED_CORNER_SIZE;
+         yy < y + SEGMENTED_CORNER_SIZE + inner_height;
+         yy += SEGMENTED_VERTICAL_HEIGHT) {
+        image_draw(image_base + 3, x, yy, color, SCALE_NONE);
+        image_draw(image_base + 5, x + width - SEGMENTED_CORNER_SIZE, yy, color, SCALE_NONE);
+    }
+
+    image_draw(image_base, x, y, color, SCALE_NONE);
+    image_draw(image_base + 2, x + width - SEGMENTED_CORNER_SIZE, y, color, SCALE_NONE);
+    image_draw(image_base + 6, x, y + height - SEGMENTED_CORNER_SIZE, color, SCALE_NONE);
+    image_draw(image_base + 8,
+        x + width - SEGMENTED_CORNER_SIZE,
+        y + height - SEGMENTED_CORNER_SIZE,
+        color,
+        SCALE_NONE);
 
     graphics_reset_clip_rectangle();
 }
