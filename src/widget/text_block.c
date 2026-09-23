@@ -147,12 +147,13 @@ static void text_block_draw_background_and_border(const text_block *block)
         }
 
     }
+    int red;
     if (block->draw_border) {
         switch (block->style) {
             case TEXT_BLOCK_STYLE_DEFAULT:
             case TEXT_BLOCK_STYLE_BROWN:
             case TEXT_BLOCK_STYLE_RAISED:
-                int red = block->draw_hover_state ? block->state_is_hovered : 0;
+                red = block->draw_hover_state ? block->state_is_hovered : 0;
                 button_border_draw(block->x, block->y, block->width, block->height, red);
                 break;
             case TEXT_BLOCK_STYLE_GRAY:

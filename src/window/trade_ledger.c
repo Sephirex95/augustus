@@ -254,18 +254,12 @@ static void refresh_displayed_rows(void)
         ledger_resource_row *row = &displayed_rows[displayed_row_count++];
 
         row->resource = resource;
-        row->values[LEDGER_HEADER_IMPORTED] =
-            city_finance_trade_ledger_get_imported(resource, selected_year_index);
-        row->values[LEDGER_HEADER_PRODUCED] =
-            city_finance_trade_ledger_get_produced(resource, selected_year_index);
-        row->values[LEDGER_HEADER_CONSUMED] =
-            city_finance_trade_ledger_get_consumed(resource, selected_year_index);
-        row->values[LEDGER_HEADER_EXPORTED] =
-            city_finance_trade_ledger_get_exported(resource, selected_year_index);
-        row->values[LEDGER_HEADER_STOCK] =
-            city_finance_trade_ledger_get_stock(resource, selected_year_index);
-        row->values[LEDGER_HEADER_BALANCE] =
-            city_finance_trade_ledger_get_balance(resource, selected_year_index);
+        row->values[LEDGER_HEADER_IMPORTED] = city_finance_trade_ledger_get_imported(resource, selected_year_index);
+        row->values[LEDGER_HEADER_PRODUCED] = city_finance_trade_ledger_get_produced(resource, selected_year_index);
+        row->values[LEDGER_HEADER_CONSUMED] = city_finance_trade_ledger_get_consumed(resource, selected_year_index);
+        row->values[LEDGER_HEADER_EXPORTED] = city_finance_trade_ledger_get_exported(resource, selected_year_index);
+        row->values[LEDGER_HEADER_STOCK] = city_finance_trade_ledger_get_stock(resource, selected_year_index);
+        row->values[LEDGER_HEADER_BALANCE] = city_finance_trade_ledger_get_balance(resource, selected_year_index);
     }
 
     if (active_sort_header >= 0) {
@@ -309,9 +303,7 @@ static void refresh_irrelevant_resources(void)
 static void setup_resource_header_button(void)
 {
     complex_button_init_style(&resource_header_button, COMPLEX_BUTTON_STYLE_RAW);
-    resource_header_button.width =
-        lang_text_get_width(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, FONT_NORMAL_BLACK) + 8;
-    //    resource_header_button.bg_primary = brown_correction;
+    resource_header_button.width = lang_text_get_width(CUSTOM_TRANSLATION, TR_PARAMETER_TYPE_RESOURCE, FONT_NORMAL_BLACK) + 8;
     resource_header_button.tooltip_c.translation_key = TR_UI_TOOLTIP_RESET_SORTING;
     resource_header_button.is_active = 0;
     resource_header_button.is_hovered = 0;
@@ -341,7 +333,6 @@ static void setup_header_buttons(void)
             button->states[state].image_before = 0;
             button->states[state].image_after = 0;
             button->states[state].font = FONT_NORMAL_BLACK;
-            //button->states[state].color_mask = brown_correction;
             button->states[state].tooltip_c.translation_key = header_button_tooltips[i];
         }
 
@@ -379,8 +370,7 @@ static uint8_t *append_trade_quantity(uint8_t *cursor, uint8_t *buffer, int buff
 {
     cursor = string_copy(string_from_ascii(" "), cursor, remaining_text_length(cursor, buffer, buffer_size));
     if (show_max_for_zero && quantity == 0) {
-        return string_copy(translation_for(TR_ADVISOR_TRADE_NO_LIMIT), cursor,
-            remaining_text_length(cursor, buffer, buffer_size));
+        return string_copy(translation_for(TR_ADVISOR_TRADE_NO_LIMIT), cursor, remaining_text_length(cursor, buffer, buffer_size));
     }
     cursor += string_from_int(cursor, quantity, 0);
     return cursor;
