@@ -119,6 +119,9 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
     button->draw_border = 1;
     button->draw_background = 1;
     button->border_on_hover = 1;
+    button->disabled_no_effect = 0;
+    button->disabled_no_tooltip = 0;
+    button->disabled_no_hover = 1;
 
     switch (style) {
         case COMPLEX_BUTTON_STYLE_GRAY:
@@ -134,6 +137,7 @@ void complex_button_init_style(complex_button *button, complex_button_style styl
             button->draw_border = 0;
             button->draw_background = 0;
             button->border_on_hover = 0;
+            button->light_on_hover = 1; //delicate highlight since many image buttons already have hover frames
             break;
         case COMPLEX_BUTTON_STYLE_CUSTOM:
         case COMPLEX_BUTTON_STYLE_DEFAULT:
@@ -444,22 +448,31 @@ const static image *get_current_animation_frame(const complex_button *button)
     return image_get(frame_img->id);
 }
 
-static void draw_button_style_image(const complex_button *button)
+static void draw_image_style(const complex_button *button)
 {
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
     if (button->has_animation) {
-        // de-const cast to allow animation handling
+        // De-const cast to allow animation handling
         complex_button *mutable_button = (complex_button *) button;
         handle_animation(mutable_button);
     }
 
     const btn_img *frame_img = get_current_animation_frame_info(button);
     const image *image_main = get_current_animation_frame(button);
-    const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
-    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
 
+    // Background
     if (image_main && frame_img) {
         int x, y;
+        color_t image_mask = COLOR_MASK_NONE;
+
+        // Disabled state
+        if (button->is_disabled) {
+            if (!button->disabled_no_effect) {
+                image_mask = COLOR_MASK_GRAY;
+            }
+        }
+
         if (frame_img->auto_center) {
             int image_width = image_main->width;
             int image_height = image_main->height;
@@ -469,27 +482,115 @@ static void draw_button_style_image(const complex_button *button)
             x = button->x + frame_img->image_x_offset;
             y = button->y + frame_img->image_y_offset;
         }
+
         image_draw(frame_img->id, x, y, image_mask, SCALE_NONE);
-        graphics_reset_clip_rectangle();
     }
 
+    // Hover state
+    if (button->draw_hover_state) {
+        if (button->is_disabled) {
+            if (!button->disabled_no_hover && button->is_hovered) {
+                graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+            }
+        } else {
+            if (button->is_hovered) {
+                graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+            }
+        }
+    }
 
-    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered && !button->is_disabled) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+    // Contents
+    // The image is the complete button visual, so there is no separate contents pass.
+    // Image style does not draw a border.
+
+    graphics_reset_clip_rectangle();
+}
+
+static void draw_default_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
+{
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+
+    int height_blocks = button->height / BLOCK_SIZE;
+    int draw_red_border = 0;
+
+    // Background
+    if (button->draw_background) {
+        switch (button->style) {
+            case COMPLEX_BUTTON_STYLE_RAW:
+                break;
+
+            case COMPLEX_BUTTON_STYLE_SUNKEN:
+            case COMPLEX_BUTTON_STYLE_BROWN:
+                inner_panel_draw_colored(button->x, button->y, button->width, button->height, button->bg_primary);
+                break;
+
+            case COMPLEX_BUTTON_STYLE_CUSTOM:
+            case COMPLEX_BUTTON_STYLE_DEFAULT:
+            default:
+                unbordered_panel_draw_px_colored(button->x, button->y, button->width, button->height, button->bg_primary);
+                break;
+        }
     }
-    if (button->draw_hover_state && button->light_on_hover && button->is_hovered && !button->is_disabled) {
-        graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+
+    // Disabled state
+    // Disabled contents are handled by complex_button_draw() and draw_button_contents().
+
+    // Hover state
+    if (button->draw_hover_state) {
+        if (button->is_disabled) {
+            if (!button->disabled_no_hover && button->is_hovered) {
+                if (button->style == COMPLEX_BUTTON_STYLE_SUNKEN) {
+                    graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+                } else {
+                    graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                    graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+                }
+
+                if (button->border_on_hover) {
+                    draw_red_border = 1;
+                }
+            }
+        } else {
+            if (button->is_hovered) {
+                if (button->style == COMPLEX_BUTTON_STYLE_SUNKEN) {
+                    graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+                } else {
+                    graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                    graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+                }
+
+                if (button->border_on_hover) {
+                    draw_red_border = 1;
+                }
+            }
+        }
     }
-    return;
+
+    // Contents
+    draw_button_contents(button, base_font, font_primary, font_secondary);
+
+    // Border
+    if (button->draw_border) {
+        if (button->style != COMPLEX_BUTTON_STYLE_SUNKEN) {
+            if (button->flush_with_background) {
+                button_border_draw_colored_flush(button->x, button->y, button->width, button->height, draw_red_border, COLOR_MASK_NONE);
+            } else {
+                button_border_draw_colored(button->x, button->y, button->width, button->height, draw_red_border, COLOR_MASK_NONE);
+            }
+        }
+    }
+
+    graphics_reset_clip_rectangle();
 }
 
 static void draw_button_contents(const complex_button *button, font_t font, color_t font_primary, color_t font_secondary)
 {
     const int inner_margin = 2;
-    const color_t image_mask = button->is_disabled ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
-
-    sequence_positioning position = button->sequence_position ?
-        button->sequence_position : SEQUENCE_POSITION_CENTER;
+    const color_t image_mask = button->is_disabled && !button->disabled_no_effect ? COLOR_MASK_GRAY : COLOR_MASK_NONE;
+    // cant set const inside an if statement, so we do this.
+    sequence_positioning position = button->sequence_position ? button->sequence_position : SEQUENCE_POSITION_CENTER;
 
     int text_y = sequence_y_offset(button, position, font);
     const lang_sequence *sequence = &button->sequence;
@@ -551,7 +652,6 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
             y = button->y + button->image.image_y_offset;
         }
         image_draw(button->image.id, x, y, image_mask, SCALE_NONE);
-        graphics_reset_clip_rectangle();
         return;
     }
 
@@ -588,80 +688,32 @@ static void draw_button_contents(const complex_button *button, font_t font, colo
     }
 }
 
-static void draw_default_style(const complex_button *button, font_t base_font,
-    color_t font_primary, color_t font_secondary)
-{
-    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-
-    int height_blocks = button->height / BLOCK_SIZE;
-    if (button->draw_background) {
-        switch (button->style) {
-            case COMPLEX_BUTTON_STYLE_CUSTOM:
-                unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                    height_blocks + 1, button->bg_primary);
-                break;
-            case COMPLEX_BUTTON_STYLE_RAW:
-            case COMPLEX_BUTTON_STYLE_IMAGE:
-                break; // no bg fill
-            case COMPLEX_BUTTON_STYLE_SUNKEN:
-            case COMPLEX_BUTTON_STYLE_BROWN:
-                inner_panel_draw_colored(button->x, button->y, button->width, button->height, button->bg_primary);
-                break;
-            case COMPLEX_BUTTON_STYLE_DEFAULT:
-            case COMPLEX_BUTTON_STYLE_GRAY:
-            default:
-                unbordered_panel_draw_colored(button->x, button->y, button->width / BLOCK_SIZE + 1,
-                    height_blocks + 1, button->bg_primary);
-                break;
-        }
-    }
-
-    int draw_red_border = button->draw_hover_state && button->border_on_hover &&
-        !button->is_disabled && button->is_hovered;
-    if (button->draw_border) {
-        if (button->style == COMPLEX_BUTTON_STYLE_SUNKEN) {
-            if (button->draw_hover_state) {
-                graphics_shade_rect(button->x, button->y, button->width, button->height, 2 * button->is_hovered);
-            }
-        } else {
-            if (button->flush_with_background) {
-                button_border_draw_colored_flush(button->x, button->y, button->width, button->height,
-                    draw_red_border, COLOR_MASK_NONE);
-            } else {
-                button_border_draw_colored(button->x, button->y, button->width, button->height,
-                    draw_red_border, COLOR_MASK_NONE);
-            }
-        }
-    }
-    draw_button_contents(button, base_font, font_primary, font_secondary);
-    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered && !button->is_disabled) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
-    }
-    graphics_reset_clip_rectangle();
-}
-
 static void draw_main_menu_style(const complex_button *button, font_t base_font, color_t font_primary, color_t font_secondary)
 {
     graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
     if (button->draw_background) {
         large_label_draw_bg_colored(button->x, button->y, button->width, button->height, button->bg_primary);
     }
-
-    if (button->draw_hover_state && !button->is_disabled && button->is_hovered) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
-    }
-    if (button->is_disabled) {
+    if (button->is_disabled && !button->disabled_no_effect) { // if disabled_no_effect is set, dont draw shading
         graphics_shade_rect(button->x, button->y, button->width, button->height, DISABLED_SHADING);
+    }
+    if (button->draw_hover_state) {
+        if (button->is_disabled) {
+            if (!button->disabled_no_hover && button->is_hovered) { // no hover effect when disabled
+                graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+                // apply shading and lighting - if either is set to 0, fnc will return without drawing.
+            }
+        } else {
+            if (button->is_hovered) {
+                graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
+                graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
+            }
+        }
     }
     draw_button_contents(button, base_font, font_primary, font_secondary);
     if (button->draw_border) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
-    }
-    if (button->draw_hover_state && button->shade_on_hover && button->is_hovered && !button->is_disabled) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, button->shade_on_hover);
-    }
-    if (button->draw_hover_state && button->light_on_hover && button->is_hovered && !button->is_disabled) {
-        graphics_light_up_rect(button->x, button->y, button->width, button->height, button->light_on_hover);
     }
     graphics_reset_clip_rectangle();
 }
@@ -682,17 +734,24 @@ void complex_button_draw(const complex_button *button)
     color_t font_primary = button->font_primary;
     color_t font_secondary = COLOR_MASK_NONE;
     if (button->is_disabled) {
-        base_font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
-        font_primary = COLOR_FONT_GRAY;
+        if (!button->disabled_no_effect) {
+            base_font = is_large ? FONT_LARGE_PLAIN : FONT_NORMAL_PLAIN;
+            font_primary = COLOR_FONT_GRAY;
+        }
     }
 
-    switch (button->style) {
+    switch (button->style) { // determine the appropriate drawing function based on style
         case COMPLEX_BUTTON_STYLE_IMAGE:
-            draw_button_style_image(button);
+            draw_image_style(button);
             break;
         case COMPLEX_BUTTON_STYLE_GRAY:
             draw_main_menu_style(button, base_font, font_primary, font_secondary);
             break;
+        case COMPLEX_BUTTON_STYLE_DEFAULT:
+        case COMPLEX_BUTTON_STYLE_SUNKEN:
+        case COMPLEX_BUTTON_STYLE_BROWN:
+        case COMPLEX_BUTTON_STYLE_RAW:
+        case COMPLEX_BUTTON_STYLE_CUSTOM:
         default:
             draw_default_style(button, base_font, font_primary, font_secondary);
     }
@@ -733,7 +792,7 @@ int complex_button_handle_mouse(complex_button *btn, const mouse *m)
         btn->is_hovered = inside;
     }
     if (btn->is_disabled) {
-        return 0; // disabled buttons do not handle mouse past establishing focus state for tooltip
+        return 0; // disabled buttons do not handle mouse past establishing focus state for tooltip/hover
     }
     if (btn->is_ellipsized && btn->is_hovered) { //if the button is ellipsized, show tooltip
         static uint8_t tooltip_text[512];

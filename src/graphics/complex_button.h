@@ -13,6 +13,26 @@
 #define MAX_CYCLE_BUTTON_STATES 10 // arbitrary
 #define DEFAULT_ANIMATION_FRAME_DURATION 100 // milliseconds
 
+// COMPLEX BUTTON STYLES
+//
+// Style    Background         Border             Hover              Image
+// -----------------------------------------------------------------------------
+// DEFAULT  Unbordered panel   Standard / flush   Shade/light        Optional
+// BROWN    Inner panel        Standard / flush   Shade/light        Optional
+// SUNKEN   Inner panel        None               Sunken shade       Optional
+// RAW      None               Standard / flush   Shade/light        Optional
+// CUSTOM   Custom panel       Standard / flush   Shade/light        Optional
+// GRAY     Large-label panel  Large-label        Shade/light        Optional
+// IMAGE    Image / animation  None               Shade/light        Required
+//
+// DEFAULT is the general-purpose button style.
+// BROWN integrates the button with inner-panel backgrounds.
+// SUNKEN is intended for recessed/inset controls.
+// RAW provides no background, leaving the surrounding visual to the caller.
+// CUSTOM uses bg_primary for a caller-defined panel color.
+// GRAY uses the main-menu / large-label visual style.
+// IMAGE uses the image or current animation frame as the complete base visual.
+
 typedef enum {
     COMPLEX_BUTTON_STYLE_DEFAULT,          // Basic: white/red border, default plain background fill
     COMPLEX_BUTTON_STYLE_SUNKEN,           // Sunken Sidebar-like style with a gray texture
@@ -86,19 +106,22 @@ typedef struct complex_button {
     color_t bg_primary; // primary color mask for background drawing
     tooltip_context tooltip_c;
 
-    // user flags
+    // user flags                           
     unsigned char draw_border;              // 1 = draw style border, 0 = no border
     unsigned char draw_hover_state;         // 1 = draw hover effects, 0 = no hover visuals
     unsigned char draw_background;          // 1 = draw style background, 0 = no fill
     unsigned char is_disabled;              // 1 = disabled, 0 = enabled
     unsigned char is_hidden;                // 1 = hidden, 0 = visible
-    unsigned char flush_with_background;    // if set, bottom border is not drawn
+    unsigned char flush_with_background;    // 1 = bottom border is not drawn
     unsigned char shade_on_hover;           // 0-7, if set, button is graphics_shade_rect with this value
     unsigned char light_on_hover;           // 0-7, if set, button is graphics_light_up_rect with this value
-    unsigned char border_on_hover;          // if set, border switches to hover state when focused
-    unsigned char dont_enlarge_font;        // if set, the fontsize override to large wont be applied
+    unsigned char border_on_hover;          // 1 = border switches to hover state when focused
+    unsigned char dont_enlarge_font;        // 1 = the fontsize override to large wont be applied
     unsigned char expanded_hitbox_radius;   // not yet fully implemented 
-    unsigned char has_animation;            // if set, button will animate using the embedded animation state
+    unsigned char has_animation;            // 1 = button will animate using the embedded animation state
+    unsigned char disabled_no_tooltip;      // when disabled-> 1 = tooltip is not shown; 0 by default
+    unsigned char disabled_no_hover;        // when disabled-> 1 = hover effects are not shown; 1 by default
+    unsigned char disabled_no_effect;       // when disabled-> 1 = disabled effects aren't drawn (e.g. grey out); 0 by default
 
     // function pointers
     void (*left_click_handler)(struct complex_button *button);
