@@ -10,6 +10,15 @@
 #include "graphics/window.h"
 #include "sound/effect.h"
 
+static const cycling_button_state *cycling_button_get_state(const cycling_button *button);
+static color_t cycling_button_color_for_style(cycling_button_style style);
+static font_t cycling_button_font_for_style(cycling_button_style style);
+static void draw_cycling_button_contents(const cycling_button *button, const cycling_button_state *state, font_t font);
+static void cycling_button_draw_default_style(const cycling_button *button);
+static void cycling_button_draw_gray_style(const cycling_button *button);
+
+#pragma region Helpers
+
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button)
 {
     if (!button || button->state_count <= 0 || button->state_count > MAX_CYCLE_BUTTON_STATES) {
@@ -44,6 +53,77 @@ static font_t cycling_button_font_for_style(cycling_button_style style)
             return FONT_NORMAL_GREEN;
         default:
             return FONT_NORMAL_BLACK;
+    }
+}
+
+#pragma endregion Helpers
+#pragma region Drawing
+
+void cycling_button_draw(const cycling_button *button)
+{
+    switch (button->style) {
+        case CYCLING_BUTTON_STYLE_GRAY:
+            cycling_button_draw_gray_style(button);
+            break;
+        default:
+            cycling_button_draw_default_style(button);
+    }
+}
+
+void cycling_button_draw_array(const cycling_button *buttons, unsigned int num_buttons)
+{
+    for (unsigned int i = 0; i < num_buttons; i++) {
+        cycling_button_draw(&buttons[i]);
+    }
+}
+
+static void cycling_button_draw_default_style(const cycling_button *button)
+{
+    if (!button) {
+        return;
+    }
+
+    const cycling_button_state *state = cycling_button_get_state(button);
+    if (!state) {
+        return;
+    }
+
+    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
+
+    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+
+    if (button->fill_bg) {
+        unbordered_panel_draw_px(button->x, button->y, button->width, button->height);
+    }
+
+    draw_cycling_button_contents(button, state, font);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        button_border_draw(button->x, button->y, button->width, button->height, button->is_hovered);
+    }
+    graphics_reset_clip_rectangle();
+}
+
+static void cycling_button_draw_gray_style(const cycling_button *button)
+{
+    if (!button) {
+        return;
+    }
+
+    const cycling_button_state *state = cycling_button_get_state(button);
+    if (!state) {
+        return;
+    }
+
+    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        large_label_draw_bg(button->x, button->y, button->width, button->height);
+    }
+    if (button->is_hovered) {
+        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
+    }
+    draw_cycling_button_contents(button, state, font);
+    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
+        large_label_draw_border(button->x, button->y, button->width, button->height);
     }
 }
 
@@ -108,73 +188,8 @@ static void draw_cycling_button_contents(const cycling_button *button, const cyc
     }
 }
 
-static void cycling_button_draw_default_style(const cycling_button *button)
-{
-    if (!button) {
-        return;
-    }
-
-    const cycling_button_state *state = cycling_button_get_state(button);
-    if (!state) {
-        return;
-    }
-
-    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
-
-    graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-
-    if (button->fill_bg) {
-        unbordered_panel_draw_px(button->x, button->y, button->width, button->height);
-    }
-
-    draw_cycling_button_contents(button, state, font);
-    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
-        button_border_draw(button->x, button->y, button->width, button->height, button->is_hovered);
-    }
-    graphics_reset_clip_rectangle();
-}
-
-static void cycling_button_draw_gray_style(const cycling_button *button)
-{
-    if (!button) {
-        return;
-    }
-
-    const cycling_button_state *state = cycling_button_get_state(button);
-    if (!state) {
-        return;
-    }
-
-    font_t font = state->font ? state->font : cycling_button_font_for_style(button->style);
-    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
-        large_label_draw_bg(button->x, button->y, button->width, button->height);
-    }
-    if (button->is_hovered) {
-        graphics_shade_rect(button->x, button->y, button->width, button->height, 2);
-    }
-    draw_cycling_button_contents(button, state, font);
-    if (button->style != CYCLING_BUTTON_STYLE_RAW) {
-        large_label_draw_border(button->x, button->y, button->width, button->height);
-    }
-}
-
-void cycling_button_draw(const cycling_button *button)
-{
-    switch (button->style) {
-        case CYCLING_BUTTON_STYLE_GRAY:
-            cycling_button_draw_gray_style(button);
-            break;
-        default:
-            cycling_button_draw_default_style(button);
-    }
-}
-
-void cycling_button_draw_array(const cycling_button *buttons, unsigned int num_buttons)
-{
-    for (unsigned int i = 0; i < num_buttons; i++) {
-        cycling_button_draw(&buttons[i]);
-    }
-}
+#pragma endregion Drawing
+#pragma region Input Handling
 
 int cycling_button_handle_mouse(cycling_button *btn, const mouse *m)
 {
@@ -233,6 +248,9 @@ int cycling_button_handle_mouse_array(cycling_button *buttons, const mouse *m, u
     return handled;
 }
 
+#pragma endregion Input Handling
+#pragma region Tooltip
+
 int cycling_button_handle_tooltip(const cycling_button *button, tooltip_context *c)
 {
     if (!button || !c || !button->is_hovered) {
@@ -258,3 +276,5 @@ int cycling_button_handle_tooltip_array(const cycling_button *buttons, tooltip_c
     }
     return 0;
 }
+
+#pragma endregion Tooltip

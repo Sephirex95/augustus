@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#pragma region State
+
 int checkbox_button_is_checked(const checkbox_button *button)
 {
     return button->is_checked;
@@ -36,6 +38,9 @@ int checkbox_button_toggle(checkbox_button *button)
     button->is_checked = !button->is_checked;
     return button->is_checked;
 }
+
+#pragma endregion State
+#pragma region Drawing
 
 void checkbox_button_draw(const checkbox_button *button)
 {
@@ -123,6 +128,9 @@ void checkbox_button_draw_array(const checkbox_button *buttons, unsigned int num
     }
 }
 
+#pragma endregion Drawing
+#pragma region Input Handling
+
 int checkbox_button_handle_mouse(checkbox_button *btn, const mouse *m)
 {
     if (!btn) {
@@ -171,6 +179,9 @@ int checkbox_button_handle_mouse_array(checkbox_button *buttons, const mouse *m,
     return handled;
 }
 
+#pragma endregion Input Handling
+#pragma region Tooltip
+
 int checkbox_button_handle_tooltip(const checkbox_button *button, tooltip_context *c)
 {
     if (button->is_hovered) {
@@ -189,3 +200,5 @@ int checkbox_button_handle_tooltip_array(const checkbox_button *buttons, tooltip
     }
     return 0;
 }
+
+#pragma endregion Tooltip
