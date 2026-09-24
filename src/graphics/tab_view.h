@@ -1,7 +1,7 @@
 #ifndef GRAPHICS_TAB_VIEW_H
 #define GRAPHICS_TAB_VIEW_H
 
-#include "graphics/complex_button.h"
+#include "widget/complex_button.h"
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
 #include "input/mouse.h"
