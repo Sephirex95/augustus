@@ -16,29 +16,42 @@ typedef enum {
 } cycling_button_style;
 
 typedef struct cycling_button_state {
+    // UI standard properties
     lang_sequence sequence;
-    int image_before;
-    int image_after;
     color_t color_mask;
     font_t font;
     tooltip_context tooltip_c;
+
+    // other properties
+    int image_before;
+    int image_after;
 } cycling_button_state;
 
 typedef struct cycling_button {
+    // dimensions
     short x;
     short y;
     short width;
     short height;
-    short is_hovered;
-    short fill_bg; // 1 = fill background, 0 = transparent
+
+    // UI standard properties
     cycling_button_style style;
+
+    // user flags
+    short fill_bg; // 1 = fill background, 0 = transparent
+
+    // function pointers
     void (*left_click_handler)(struct cycling_button *button);
     void (*right_click_handler)(struct cycling_button *button);
     void (*hover_handler)(struct cycling_button *button);
 
+    // other properties
     cycling_button_state states[MAX_CYCLE_BUTTON_STATES];
     int state_index;
     int state_count; // =< MAX_CYCLE_BUTTON_STATES
+
+    // cache and state properties
+    short is_hovered;
     short is_ellipsized;          // 1 = text was ellipsized on last draw, 0 = full text shown
 } cycling_button;
 

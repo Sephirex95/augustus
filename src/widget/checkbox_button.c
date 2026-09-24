@@ -12,6 +12,31 @@
 
 #include <stdint.h>
 
+int checkbox_button_is_checked(const checkbox_button *button)
+{
+    return button->is_checked;
+}
+
+int checkbox_button_check(checkbox_button *button)
+{
+    int changed_state = button->is_checked == 0;
+    button->is_checked = 1;
+    return changed_state;
+}
+
+int checkbox_button_uncheck(checkbox_button *button)
+{
+    int changed_state = button->is_checked == 1;
+    button->is_checked = 0;
+    return changed_state;
+}
+
+int checkbox_button_toggle(checkbox_button *button)
+{
+    button->is_checked = !button->is_checked;
+    return button->is_checked;
+}
+
 void checkbox_button_draw(const checkbox_button *button)
 {
     if (!button) {
