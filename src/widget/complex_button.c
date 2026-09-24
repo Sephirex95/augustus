@@ -622,14 +622,9 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
     if (button->draw_background) {
         large_label_draw_bg_colored(button->x, button->y, button->width, button->height, button->bg_primary);
         graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-        // re-establish clip, label does it's own
+        // re-establish clip, label functions reset the clip rectangle internally
     }
-    if (button->is_disabled && !button->disabled_no_effect) { // if disabled_no_effect is set, dont draw shading
-        // disabled shading isn't graphics_shade_rect
-        graphics_tint_rect(button->x, button->y, button->width, button->height, TINT_COLOR, TINT_OPACITY);
-        graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
-        // re-establish clip, label does it's own
-    }
+
     if (button->draw_hover_state) {
         if (button->is_disabled) {
             if (!button->disabled_no_hover && button->is_hovered) { // no hover effect when disabled
@@ -644,11 +639,17 @@ static void draw_main_menu_style(const complex_button *button, font_t base_font,
             }
         }
     }
+    // text and images 
     draw_button_contents(button, base_font, font_primary, font_secondary);
+
     if (button->is_disabled && !button->disabled_no_effect) {
-        label_draw_greyout_pattern(button->x, button->y, button->width, button->height, DISABLED_PATTERN_OPACITY);
-        // greyout patter ON TOP of contents
+        label_draw_greyout_pattern(button->x, button->y, button->width, button->height, DISABLED_PATTERN_OPACITY, 1);
+        graphics_tint_rect(button->x, button->y, button->width, button->height, TINT_COLOR, TINT_OPACITY);
+        // disabled effects drawn after content to avoid changing font
+        graphics_set_clip_rectangle(button->x, button->y, button->width, button->height);
+        // re-establish clip, label functions reset the clip rectangle internally
     }
+
     if (button->draw_border) {
         large_label_draw_border(button->x, button->y, button->width, button->height);
     }
