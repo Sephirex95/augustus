@@ -10,6 +10,8 @@
 #include "graphics/window.h"
 #include "sound/effect.h"
 
+#include <stddef.h>
+
 static const cycling_button_state *cycling_button_get_state(const cycling_button *button);
 static color_t cycling_button_color_for_style(cycling_button_style style);
 static font_t cycling_button_font_for_style(cycling_button_style style);

@@ -11,6 +11,7 @@
 #include "sound/effect.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 #pragma region State
 
