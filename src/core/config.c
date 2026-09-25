@@ -226,7 +226,7 @@ static int default_values[CONFIG_MAX_ENTRIES] = {
     [CONFIG_UI_CLIMATE_GRID_COLORS] = 1,
     [CONFIG_UI_SCROLL_CAMERA_UNLOCKED] = 1,
     [CONFIG_UI_SCROLL_LEGACY_SCROLLBAR] = 0,
-    [CONFIG_FIX_EMPIRE_MAP_DIMENSIONS] = 1,//keep the comma after last entry please
+    [CONFIG_FIX_EMPIRE_MAP_DIMENSIONS] = 0,//keep the comma after last entry please
 };
 
 static const char default_string_values[CONFIG_STRING_MAX_ENTRIES][CONFIG_STRING_VALUE_MAX] = { 0 };
