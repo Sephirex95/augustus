@@ -321,7 +321,7 @@ static int sidebar_city_count = 0;
 static grid_box_type sidebar_grid_box;
 static int trade_history_years_stored;
 static int low_res_mode = 0;
-static color_t debug_color = COLOR_LIGHT_GRAY;
+
 //original button properties
 static image_button image_button_help[] = {
     { 0, 0, 27, 27, IB_NORMAL, GROUP_CONTEXT_ICONS, 0, button_help, button_none, 0, 0, 1 }
@@ -2276,7 +2276,7 @@ static void draw_map(void)
     graphics_set_clip_rectangle(map_clip_x_min, map_clip_y_min, map_clip_x_max - map_clip_x_min, map_clip_y_max - map_clip_y_min);
     if (config_get(CONFIG_FIX_EMPIRE_MAP_DIMENSIONS)) {
         unbordered_panel_draw_px_colored(map_clip_x_min, map_clip_y_min, map_clip_x_max - map_clip_x_min,
-            map_clip_y_max - map_clip_y_min, debug_color);
+            map_clip_y_max - map_clip_y_min, COLOR_LIGHT_GRAY);
     }
     // Reset all edge drawn flags for this frame
     empire_reset_route_drawn_flags();
